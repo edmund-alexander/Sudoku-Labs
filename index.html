@@ -304,9 +304,9 @@
               }
             }
 
+            // Avoid sending a custom Content-Type for GET (prevents CORS preflight)
             const response = await fetch(url.toString(), {
               method: 'GET',
-              headers: { 'Content-Type': 'application/json' },
               redirect: 'follow'
             });
             
@@ -316,11 +316,18 @@
             
             return await response.json();
           } else {
-            // For POST, send data in body
+            // For POST, send form-encoded to avoid preflight
+            let bodyStr = '';
+            if (args[0] && typeof args[0] === 'object') {
+              bodyStr = new URLSearchParams(args[0]).toString();
+            } else if (args[0] !== undefined) {
+              bodyStr = 'data=' + encodeURIComponent(args[0]);
+            }
+
             const response = await fetch(url.toString(), {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(args[0] || {}),
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: bodyStr,
               redirect: 'follow'
             });
             
@@ -441,6 +448,13 @@
         } catch (e) {
           console.error('Failed to log error to GAS:', e);
         }
+      };
+
+      // Detect whether GAS backend is configured/available
+      const isGasEnvironment = () => {
+        try {
+          return typeof GAS_URL === 'string' && GAS_URL.indexOf('script.google.com') !== -1;
+        } catch (e) { return false; }
       };
 
       // --- VISUAL EFFECTS ---

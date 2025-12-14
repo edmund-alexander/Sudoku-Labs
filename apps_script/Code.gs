@@ -12,7 +12,7 @@
 // 5. Update frontend GAS_URL to match this deployment URL
 // ============================================================================
 
-const SHEET_ID = '1a7-R53GPrnR0etBKPwqRA09-ZCHjO_DxPFvkKN_ZTWE';
+const SHEET_ID = '1QU6QNWy6w6CNivq-PvmVJNcM1tUFWgQFzpN01Mo7QFs';
 
 // ============================================================================
 // API ROUTER - All requests route through doGet and doPost
@@ -51,10 +51,30 @@ function doPost(e) {
   
   try {
     if (e.postData && e.postData.contents) {
-      data = JSON.parse(e.postData.contents);
+      // Try JSON first, then fall back to form-urlencoded parsing
+      try {
+        data = JSON.parse(e.postData.contents);
+      } catch (jsonErr) {
+        try {
+          // parse application/x-www-form-urlencoded (key1=val1&key2=val2)
+          const contents = e.postData.contents || '';
+          const parts = contents.split('&');
+          const obj = {};
+          parts.forEach(p => {
+            if (!p) return;
+            const kv = p.split('=');
+            const k = decodeURIComponent(kv[0] || '').trim();
+            const v = decodeURIComponent(kv.slice(1).join('=') || '').trim();
+            if (k) obj[k] = v;
+          });
+          data = obj;
+        } catch (formErr) {
+          return makeJsonResponse({ error: 'Invalid request body' });
+        }
+      }
     }
   } catch (parseErr) {
-    return makeJsonResponse({ error: 'Invalid JSON in request body' });
+    return makeJsonResponse({ error: 'Invalid request body' });
   }
   
   try {
