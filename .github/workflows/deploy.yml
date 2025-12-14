@@ -15,18 +15,23 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v3
 
-      - name: Prepare build directory 📦
+      - name: Assemble Build Directory 📦
         run: |
-          mkdir -p build/config
-          cp -r apps_script config docs src index.html diagnostic.sh build/
+          mkdir -p build/config build/src build/docs build/apps_script
+          cp index.html diagnostic.sh build/
+          cp -r src/. build/src/
+          cp -r docs/. build/docs/
+          cp -r apps_script/. build/apps_script/
+          cp config/config.example.js build/config/
 
-      - name: Create local config 📝
-        run: echo "window.CONFIG = { GAS_URL: '${{ secrets.GAS_URL }}' };" > build/config/config.local.js
+      - name: Inject GAS_URL Secret 🤫
+        run: |
+          echo "window.CONFIG = { GAS_URL: '${{ secrets.GAS_URL }}' };" > build/config/config.local.js
         env:
           GAS_URL: ${{ secrets.GAS_URL }}
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          branch: gh-pages # The branch the action should deploy to.
-          folder: build # The folder the action should deploy.
+          branch: gh-pages
+          folder: build
