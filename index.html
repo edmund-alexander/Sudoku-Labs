@@ -429,7 +429,19 @@
           return uid;
       }
 
-      const logError = async (message, error) => { console.log(message, error); };
+      const logError = async (message, error) => { 
+        console.log(message, error); 
+        try {
+          await runGasFn('logClientError', {
+            type: error?.name || 'Error',
+            message: message || error?.message || 'Unknown error',
+            userAgent: navigator.userAgent,
+            count: 1
+          });
+        } catch (e) {
+          console.error('Failed to log error to GAS:', e);
+        }
+      };
 
       // --- VISUAL EFFECTS ---
       const triggerConfetti = () => {
