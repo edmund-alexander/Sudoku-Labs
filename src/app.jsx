@@ -433,7 +433,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
             return (
               <div className="grid grid-cols-3 gap-0 w-full h-full p-0.5">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                  <div key={n} className="flex items-center justify-center text-[5px] sm:text-[7px] md:text-[8px] leading-none text-gray-500 dark:text-gray-400">
+                  <div key={n} className="flex items-center justify-center text-[0.4rem] sm:text-[0.5rem] md:text-xs leading-none text-gray-500 dark:text-gray-400">
                     {notes.includes(n) ? n : ''}
                   </div>
                 ))}
@@ -1022,7 +1022,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
            </div>
            
            <div className="text-center mb-6 sm:mb-10">
-             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-2">Sudoku <span className="text-blue-600">Logic</span> Lab</h1>
+             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-2">Sudoku <span className="text-blue-600">Logic</span> Lab</h1>
            </div>
 
            <div className="w-full max-w-sm space-y-3 sm:space-y-4">
@@ -1589,7 +1589,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                     </div>
                 )}
 
-                <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 lg:gap-8 justify-center items-start">
+                <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 md:gap-7 lg:gap-8 justify-center items-start">
                   
                   {/* Left: Board */}
                   <div className="flex-shrink-0 mx-auto xl:mx-0">
