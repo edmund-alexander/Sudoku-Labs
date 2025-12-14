@@ -37,6 +37,11 @@ cd Sudoku-Labs
 # Or fork first, then clone your fork
 git clone https://github.com/YOUR_USERNAME/Sudoku-Labs.git
 cd Sudoku-Labs
+
+# Configure Git to handle divergent branches (recommended)
+git config pull.rebase false  # merge (default)
+# Or use: git config pull.rebase true   # rebase
+# Or use: git config pull.ff only       # fast-forward only
 ```
 
 ### 2. Configure Backend Connection

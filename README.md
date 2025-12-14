@@ -28,6 +28,9 @@ Just visit the live game: **[Play Now](https://edmund-alexander.github.io/Sudoku
    ```bash
    git clone https://github.com/edmund-alexander/Sudoku-Labs.git
    cd Sudoku-Labs
+   
+   # Configure Git to handle divergent branches (recommended)
+   git config pull.rebase false  # merge (default)
    ```
 
 2. **Set up configuration**
@@ -160,12 +163,18 @@ See [Configuration Guide](docs/CONFIGURATION.md) for details.
 Contributions are welcome! Here's how you can help:
 
 1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes**
-4. **Test thoroughly**
-5. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-6. **Push to your fork** (`git push origin feature/amazing-feature`)
-7. **Open a Pull Request**
+2. **Clone your fork and configure Git**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/Sudoku-Labs.git
+   cd Sudoku-Labs
+   git config pull.rebase false  # Configure pull strategy
+   ```
+3. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+4. **Make your changes**
+5. **Test thoroughly**
+6. **Commit your changes** (`git commit -m 'Add amazing feature'`)
+7. **Push to your fork** (`git push origin feature/amazing-feature`)
+8. **Open a Pull Request**
 
 ### Development Guidelines
 
@@ -373,6 +382,13 @@ The authentication system uses a **natural flow** approach:
 ### Local Development
 
 1. Clone the repository
+   ```bash
+   git clone https://github.com/edmund-alexander/Sudoku-Labs.git
+   cd Sudoku-Labs
+   
+   # Configure Git to handle divergent branches
+   git config pull.rebase false  # merge (default)
+   ```
 2. Create `config/config.local.js` (copy from `config/config.example.js`)
 3. Start a local server:
    ```bash
