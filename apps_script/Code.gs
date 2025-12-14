@@ -4,6 +4,8 @@
 // This script is a REST API backend for the Sudoku game frontend.
 // Frontend is hosted on GitHub Pages and calls this API via HTTP fetch.
 // 
+// Test deployment - verifying AI agent can deploy via GitHub Actions
+// 
 // DEPLOYMENT REQUIREMENTS:
 // 1. Deploy as "Web App"
 // 2. Execute as: Your email address (the account that owns the Sheet)
