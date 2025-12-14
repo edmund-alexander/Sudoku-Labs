@@ -129,7 +129,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
       // GAS Backend API URL - Configure this with your deployment URL
       // Format: https://script.google.com/macros/s/[DEPLOYMENT_ID]/exec
       // SECURITY: Do not hardcode deployment URLs. Use config/config.local.js in production.
-      const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzZg11UDcIZGbwHvrtxb5E2enGspkQnjsBPbCP5Aw6BYP5Jo5cq3JqPr8PHOZgbgn2kOg/exec';
+      const DEFAULT_GAS_URL = '';
       const GAS_URL = (typeof CONFIG !== 'undefined' && CONFIG.GAS_URL) || DEFAULT_GAS_URL;
 
       // Unified function caller: uses fetch to call GAS API endpoints
@@ -186,6 +186,47 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
           console.error('GAS API Error:', error);
           throw error;
         }
+      };
+
+      // Local fallback generator for dev when GAS is not available
+      const generateLocalBoard = (difficulty) => {
+        // Known valid solution to use as baseline
+        const solution = [
+          5,3,4,6,7,8,9,1,2,6,7,2,1,9,5,3,4,8,1,9,8,3,4,2,5,6,7,
+          8,5,9,7,6,1,4,2,3,4,2,6,8,5,3,7,9,1,7,1,3,9,2,4,8,5,6,
+          9,6,1,5,3,7,2,8,4,2,8,7,4,1,9,6,3,5,3,4,5,2,8,6,1,7,9
+        ];
+
+        let boardArray = [...solution];
+
+        let removeCount = 30;
+        if (difficulty === 'Easy') removeCount = 30;
+        if (difficulty === 'Medium') removeCount = 45;
+        if (difficulty === 'Hard') removeCount = 55;
+        if (difficulty === 'Daily') removeCount = 40;
+
+        let attempts = 0;
+        const indices = Array.from({length:81}, (_,i) => i);
+        while (attempts < removeCount && indices.length) {
+          const idx = Math.floor(Math.random() * indices.length);
+          const i = indices.splice(idx,1)[0];
+          if (boardArray[i] !== 0) {
+            boardArray[i] = 0;
+            attempts++;
+          }
+        }
+
+        return boardArray.map((val, index) => ({
+          id: index,
+          row: Math.floor(index / 9),
+          col: index % 9,
+          value: val === 0 ? null : val,
+          solution: solution[index],
+          isFixed: val !== 0,
+          notes: [],
+          isError: false,
+          isHinted: false
+        }));
       };
 
       const saveGame = (state) => {
@@ -805,8 +846,18 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
           if(soundEnabled) SoundManager.init();
           setLoading(true);
           try {
-            const newBoard = await runGasFn('generateSudoku', diff);
-            if (!newBoard) throw new Error("Could not generate board");
+            let newBoard = null;
+            try {
+              newBoard = await runGasFn('generateSudoku', diff);
+            } catch (err) {
+              console.warn('GAS generation failed, falling back to local generator', err);
+              newBoard = null;
+            }
+
+            if (!newBoard) {
+              // Fallback to local generator for dev when GAS isn't configured
+              newBoard = generateLocalBoard(diff);
+            }
 
             setBoard(newBoard); setDifficulty(diff); setStatus('playing');
             setTimer(0); setMistakes(0); setHistory([newBoard]); setSelectedCell(null);
@@ -1058,6 +1109,9 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         return (
           <div className="min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-300 text-gray-900 dark:text-gray-100">
             <div className="w-full max-w-5xl flex flex-col gap-6">
+                {!isGasEnvironment() && (
+                  <div className="w-full max-w-5xl mx-auto mb-2 p-2 rounded text-sm text-yellow-800 bg-yellow-100 border border-yellow-200 text-center">GAS not configured — using local generator for puzzles. Create <span className="font-mono">config/config.local.js</span> with your <span className="font-mono">GAS_URL</span> to enable cloud persistence.</div>
+                )}
                 
                 {/* Header */}
                 <div className="flex justify-between items-center px-4 lg:px-0">
@@ -1095,6 +1149,26 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
 
                   {/* Right: Sidebar */}
                   <div className="flex flex-col gap-4 w-full lg:w-80">
+
+                      {/* Number Pad (top of sidebar) */}
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <h3 className="text-xs font-bold uppercase text-gray-500 mb-2">Numbers</h3>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[1,2,3,4,5,6,7,8,9].map(n => (
+                            <button
+                              key={n}
+                              onClick={() => { if (soundEnabled) SoundManager.play('select'); handleNumberInput(n); }}
+                              disabled={status !== 'playing'}
+                              className={`py-3 rounded-lg font-bold transition-colors ${status === 'playing' ? 'bg-gray-100 dark:bg-gray-700 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600' : 'bg-gray-50 dark:bg-gray-900 opacity-60 cursor-not-allowed'}`}
+                            >
+                              <div className="relative">
+                                <span className="text-lg sm:text-xl">{n}</span>
+                                <span className="absolute -bottom-1 -right-1 text-[10px] px-1 py-0.5 bg-gray-100 dark:bg-gray-900 rounded-full">{remaining[n] || 0}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       
 
 

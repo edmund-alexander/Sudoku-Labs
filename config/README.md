@@ -52,7 +52,7 @@ The `index.html` file loads `config.local.js` before initializing the game:
 <!-- Then the app loads and uses window.CONFIG.GAS_URL -->
 ```
 
-If `config.local.js` doesn't exist, the app falls back to a hardcoded default in index.html.
+If `config.local.js` doesn't exist or `GAS_URL` is not set, the app will run in developer mode and use a local puzzle generator and `localStorage` for persistence. To enable full cloud functionality (leaderboard, chat, logs), create `config/config.local.js` with a valid `GAS_URL` as shown in `config/config.example.js`.
 
 ## Adding More Configuration
 
