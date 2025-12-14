@@ -1,5 +1,60 @@
 # Copilot / AI Agent Instructions for Sudoku-Labs
 
+Short, actionable guide to get an AI coding agent productive in this repo.
+
+**Big picture**
+- Frontend: [index.html](index.html) is the HTML shell. The app source is [src/app.jsx](src/app.jsx) and is compiled in-browser with Babel (see the `<script type="text/babel">` include).
+- Backend: [apps_script/Code.gs](apps_script/Code.gs) — Google Apps Script (GAS) Web App. All API traffic uses `doGet(e)` with an `action` query parameter.
+- Data store: Google Sheets (sheets: `Leaderboard`, `Chat`, `Logs`) accessed via `SHEET_ID` in `Code.gs`.
+
+**Key repo conventions & gotchas (must-know)**
+- All client ↔ GAS calls use HTTP GET with `action=...` (see `runGasFn` mapping in [src/app.jsx](src/app.jsx)). Writes (saveScore, postChat, logError) are implemented as GET to avoid GAS POST redirect/auth issues.
+- `config/config.example.js` is the template. Developers provide a local `config/config.local.js` (gitignored) that sets `CONFIG.GAS_URL`. The app falls back to a local generator and localStorage when `GAS_URL` is missing.
+- Deploy GAS as a *Web App* with **Who has access = "Anyone (even anonymous)"**; otherwise requests will redirect (302) to a Google auth page and return HTML instead of JSON.
+
+**Data flows & integration points**
+- Frontend → GAS: `runGasFn(fnName, payload)` builds a URL with `action` and query params. Mapping in [src/app.jsx](src/app.jsx): `generateSudoku`, `getLeaderboard`, `saveScore`, `getChat`, `postChat`, `logError`.
+- Local fallback: [src/app.jsx](src/app.jsx) contains `generateLocalBoard()` and localStorage helpers (`saveGame`, `loadGame`) and a `KEYS` constant. Use these for offline/dev behavior.
+
+**Important code locations**
+- API router & helpers: [apps_script/Code.gs](apps_script/Code.gs)
+- Frontend app & GAS client: [src/app.jsx](src/app.jsx)
+- HTML shell & runtime config load: [index.html](index.html)
+- Config template: [config/config.example.js](config/config.example.js) and [config/README.md](config/README.md)
+- Deployment & troubleshooting: [docs/DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md), [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+
+**Developer workflows (explicit commands & checks)**
+- Quick backend health check (replace with your GAS_URL):
+  ```bash
+  curl "$GAS_URL?action=ping"
+  curl "$GAS_URL?action=generateSudoku&difficulty=Easy"
+  ```
+- Edit/deploy GAS:
+  1. Paste `apps_script/Code.gs` into a new Apps Script project.
+  2. Run `setupSheets_()` once to create `Leaderboard`, `Chat`, `Logs`.
+  3. Deploy → Web App, execute as owner, set Who has access = Anyone (even anonymous).
+  4. Copy the deployment URL into `config/config.local.js` as `CONFIG.GAS_URL`.
+- Frontend local testing: serve the repo (simple Python/Node static server) and open `index.html`. The app compiles `src/app.jsx` in-browser; for production precompile and bundle.
+
+**Patterns & conventions to preserve when coding**
+- Keep `doGet(e)` action names and `runGasFn` mapping in sync. Example: adding `action=foo` requires a `runGasFn` mapping entry and handler in `Code.gs`.
+- Always sanitize sheet inputs in GAS using `sanitizeInput_` and `sanitizeOutput_`.
+- Avoid introducing POST-only endpoints (public GAS redirects POSTs). If you must support POST, provide a GET-compatible alternative or document the auth requirements.
+- Use the `KEYS` and localStorage helpers in `src/app.jsx` for state persistence: `sudoku_v2_state`, `sudoku_v2_leaderboard`, `sudoku_v2_chat`, `sudoku_v2_uid`, `sudoku_v2_sound`, `sudoku_v2_campaign`.
+
+**Project-specific features to be aware of**
+- Campaign mode: `CAMPAIGN_LEVELS` in `src/app.jsx` drives the map UI and unlock logic; progress saved to `CAMPAIGN_PROGRESS` key.
+- SoundManager: lightweight WebAudio-based manager in `src/app.jsx` — call `SoundManager.init()` before play in browsers that suspend audio contexts.
+- Local fallback puzzle generator: `generateLocalBoard()` mirrors server generator for dev and offline use.
+
+**Debugging tips (project-specific)**
+- If GAS returns HTML, confirm deployment access. Use `curl -v` to inspect `Location:` headers.
+- Use `diagnostic.sh` for pre-built curl checks and `docs/TROUBLESHOOTING.md` for flags and examples.
+- When investigating frontend behavior, inspect `runGasFn` caller sites in `src/app.jsx` and check Network tab for the built query string.
+
+If you'd like, I can expand this with a step-by-step example: add a new GAS action + update `runGasFn` + test with `curl`.
+# Copilot / AI Agent Instructions for Sudoku-Labs
+
 Short, actionable guidance to get coding agents productive in this repo.
 
 1) Big picture
