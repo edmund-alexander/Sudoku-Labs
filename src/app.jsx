@@ -709,8 +709,224 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
          )
       };
 
-      const OpeningScreen = ({ onStart, onResume, onCampaign, hasSavedGame, darkMode, toggleDarkMode, loading, soundEnabled, toggleSound }) => (
+
+      const AuthModal = ({ onClose, soundEnabled, onAuthSuccess }) => {
+        const [mode, setMode] = useState('choice'); // 'choice', 'login', 'register'
+        const [username, setUsername] = useState('');
+        const [password, setPassword] = useState('');
+        const [error, setError] = useState('');
+        const [loading, setLoading] = useState(false);
+
+        const handleLogin = async () => {
+          if (!username || !password) {
+            setError('Please enter username and password');
+            return;
+          }
+          
+          setLoading(true);
+          setError('');
+          
+          try {
+            const result = await loginUser(username, password);
+            if (result.success) {
+              if (soundEnabled) SoundManager.play('success');
+              onAuthSuccess(result.user);
+              onClose();
+            } else {
+              setError(result.error || 'Login failed');
+              if (soundEnabled) SoundManager.play('error');
+            }
+          } catch (e) {
+            setError('Login failed. Please try again.');
+            if (soundEnabled) SoundManager.play('error');
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        const handleRegister = async () => {
+          if (!username || !password) {
+            setError('Please enter username and password');
+            return;
+          }
+          
+          if (username.length < 3) {
+            setError('Username must be at least 3 characters');
+            return;
+          }
+          
+          if (password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+          }
+          
+          setLoading(true);
+          setError('');
+          
+          try {
+            const result = await registerUser(username, password);
+            if (result.success) {
+              if (soundEnabled) SoundManager.play('success');
+              onAuthSuccess(result.user);
+              onClose();
+            } else {
+              setError(result.error || 'Registration failed');
+              if (soundEnabled) SoundManager.play('error');
+            }
+          } catch (e) {
+            setError('Registration failed. Please try again.');
+            if (soundEnabled) SoundManager.play('error');
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        const handleGuest = () => {
+          if (soundEnabled) SoundManager.play('select');
+          onClose();
+        };
+
+        return (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">
+            <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-8 rounded-2xl shadow-2xl max-w-md w-full relative border border-gray-200 dark:border-gray-700 animate-pop">
+              <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <Icons.X />
+              </button>
+
+              {mode === 'choice' && (
+                <div className="space-y-6">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white">
+                      <Icons.User />
+                    </div>
+                    <h2 className="text-2xl font-bold">Welcome!</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Choose how you'd like to play</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleGuest}
+                      className="w-full py-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl font-semibold transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                      <span>🎮</span> Continue as Guest
+                    </button>
+
+                    <button
+                      onClick={() => { if (soundEnabled) SoundManager.play('select'); setMode('login'); }}
+                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                      <span>🔑</span> Login
+                    </button>
+
+                    <button
+                      onClick={() => { if (soundEnabled) SoundManager.play('select'); setMode('register'); }}
+                      className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-semibold transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                      <span>✨</span> Register
+                    </button>
+                  </div>
+
+                  {!isGasEnvironment() && (
+                    <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-xs text-yellow-800 dark:text-yellow-200 text-center">
+                      Authentication requires GAS backend. Configure GAS_URL to enable.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(mode === 'login' || mode === 'register') && (
+                <div className="space-y-6">
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold">{mode === 'login' ? 'Login' : 'Create Account'}</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      {mode === 'login' ? 'Welcome back!' : 'Join the Sudoku community'}
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Username</label>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') mode === 'login' ? handleLogin() : handleRegister(); }}
+                        className="w-full px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+                        placeholder="Enter username"
+                        disabled={loading}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Password</label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') mode === 'login' ? handleLogin() : handleRegister(); }}
+                        className="w-full px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+                        placeholder="Enter password"
+                        disabled={loading}
+                      />
+                      {mode === 'register' && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 6 characters</p>
+                      )}
+                    </div>
+
+                    {error && (
+                      <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
+                        {error}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={mode === 'login' ? handleLogin : handleRegister}
+                      disabled={loading}
+                      className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-bold transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
+                    </button>
+
+                    <button
+                      onClick={() => { if (soundEnabled) SoundManager.play('select'); setMode('choice'); setError(''); }}
+                      disabled={loading}
+                      className="w-full py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-xl font-semibold transition-colors disabled:opacity-50"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const OpeningScreen = ({ onStart, onResume, onCampaign, hasSavedGame, darkMode, toggleDarkMode, loading, soundEnabled, toggleSound, authUser, onShowAuth, onLogout }) => (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 text-gray-900 dark:text-gray-100 animate-fade-in relative z-10">
+           <div className="absolute top-4 left-4">
+              {authUser ? (
+                <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                      {authUser.displayName[0].toUpperCase()}
+                    </div>
+                    <span className="font-medium text-sm">{authUser.displayName}</span>
+                  </div>
+                  <button onClick={onLogout} className="text-xs px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={onShowAuth} 
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-full shadow-lg font-semibold transition-all transform hover:scale-[1.02]"
+                >
+                  <Icons.User /> Sign In
+                </button>
+              )}
+           </div>
+           
            <div className="absolute top-4 right-4 flex gap-2">
               <button onClick={toggleSound} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                   {soundEnabled ? <Icons.VolumeUp /> : <Icons.VolumeOff />}
@@ -851,6 +1067,10 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         const [campaignProgress, setCampaignProgress] = useState(getCampaignProgress());
         const [questCompleted, setQuestCompleted] = useState(false);
         
+        // Auth State
+        const [authUser, setAuthUserState] = useState(getAuthUser());
+        const [showAuthModal, setShowAuthModal] = useState(false);
+        
         const timerRef = useRef(null);
         const chatEndRef = useRef(null);
         const isSendingRef = useRef(false);
@@ -940,6 +1160,21 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
             });
         };
 
+        const handleAuthSuccess = (user) => {
+          setAuthUserState(user);
+        };
+
+        const handleLogout = () => {
+          if (soundEnabled) SoundManager.play('uiTap');
+          logout();
+          setAuthUserState(null);
+        };
+
+        const handleShowAuthModal = () => {
+          if (soundEnabled) SoundManager.play('select');
+          setShowAuthModal(true);
+        };
+
         const startNewGame = async (diff, quest = null) => {
           if(soundEnabled) SoundManager.init();
           setLoading(true);
@@ -961,6 +1196,11 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
             setTimer(0); setMistakes(0); setHistory([newBoard]); setSelectedCell(null);
             setShowModal('none'); setActiveQuest(quest); setQuestCompleted(false);
             setView('game');
+            
+            // Track game start for authenticated users
+            if (authUser && !quest) {
+              await updateProfile({ incrementGames: true });
+            }
           } catch (e) { console.error(e); alert("Failed to start game."); } finally { setLoading(false); }
         };
 
@@ -1014,6 +1254,11 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
 
         const handleWin = async (finalBoard, finalMistakes, finalTime) => {
             saveScore({ name: getUserId(), time: finalTime, difficulty, date: new Date().toLocaleDateString() });
+            
+            // Update user profile if authenticated
+            if (authUser) {
+              await updateProfile({ incrementGames: true, incrementWins: true });
+            }
             
             if (activeQuest) {
                 const gameStats = { status: 'won', time: finalTime, mistakes: finalMistakes };
@@ -1174,14 +1419,26 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         // 2. MAIN MENU (Opening Screen)
         if (view === 'menu') {
             return (
-                <OpeningScreen 
-                    onStart={startNewGame} 
-                    onResume={() => { setView('game'); setStatus('playing'); }}
-                    onCampaign={() => setView('campaign')}
-                    hasSavedGame={status === 'paused'}
-                    darkMode={darkMode} toggleDarkMode={toggleDarkMode}
-                    loading={loading} soundEnabled={soundEnabled} toggleSound={toggleSound}
-                />
+                <>
+                  <OpeningScreen 
+                      onStart={startNewGame} 
+                      onResume={() => { setView('game'); setStatus('playing'); }}
+                      onCampaign={() => setView('campaign')}
+                      hasSavedGame={status === 'paused'}
+                      darkMode={darkMode} toggleDarkMode={toggleDarkMode}
+                      loading={loading} soundEnabled={soundEnabled} toggleSound={toggleSound}
+                      authUser={authUser}
+                      onShowAuth={handleShowAuthModal}
+                      onLogout={handleLogout}
+                  />
+                  {showAuthModal && (
+                    <AuthModal 
+                      onClose={() => setShowAuthModal(false)} 
+                      soundEnabled={soundEnabled}
+                      onAuthSuccess={handleAuthSuccess}
+                    />
+                  )}
+                </>
             );
         }
 
