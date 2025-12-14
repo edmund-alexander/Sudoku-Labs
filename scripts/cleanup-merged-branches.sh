@@ -51,7 +51,7 @@ branches=(
 # Delete each branch
 for branch in "${branches[@]}"; do
     echo "Deleting: $branch"
-    if git push origin --delete "$branch" 2>&1; then
+    if git push origin --delete "$branch"; then
         echo "  ✅ Successfully deleted $branch"
     else
         echo "  ❌ Failed to delete $branch (may already be deleted)"

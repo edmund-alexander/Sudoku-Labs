@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for all branches
 
@@ -49,8 +49,11 @@ jobs:
         run: |
           echo "Finding branches merged into main..."
           
-          # Get all remote branches except main, gh-pages, and the current branch
-          all_branches=$(git ls-remote --heads origin | grep -v "main\|gh-pages" | sed 's|.*refs/heads/||' | sort)
+          # Get all remote branches
+          all_branches=$(git ls-remote --heads origin | sed 's|.*refs/heads/||' | sort)
+          
+          # Filter out protected branches
+          all_branches=$(echo "$all_branches" | grep -v -E '^(main|gh-pages)$')
           
           echo "All non-protected branches:"
           echo "$all_branches"
@@ -63,7 +66,7 @@ jobs:
             git fetch origin $branch:refs/remotes/origin/$branch 2>/dev/null || continue
             
             # Check if the branch's commits are all in main
-            not_in_main=$(git log origin/main..origin/$branch --oneline | wc -l)
+            not_in_main=$(git rev-list --count origin/main..origin/$branch)
             
             if [ "$not_in_main" -eq 0 ]; then
               echo "✅ Branch '$branch' is fully merged into main"
