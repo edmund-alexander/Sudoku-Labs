@@ -144,8 +144,6 @@ When a user logs in or registers:
 2. Enter a username (min 3 characters) and password (min 6 characters)
 3. Click "Create Account"
 4. You should see your username in the top-left corner of the main menu
-5. Click "Create Account"
-6. You should see your username in the top-left corner
 
 ### 5. Verify in Google Sheets
 

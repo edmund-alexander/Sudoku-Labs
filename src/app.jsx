@@ -1281,6 +1281,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         const handleWin = async (finalBoard, finalMistakes, finalTime) => {
             // Prompt for authentication after winning if not authenticated and GAS is available
             // This allows users to save their score to cloud
+            // Note: Skip prompt during campaign mode to avoid interrupting the quest flow
             if (!authUser && isGasEnvironment() && !activeQuest) {
               // Use a slight delay so the user sees they won first
               setTimeout(() => {
@@ -1391,16 +1392,15 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         const handleOpenLeaderboard = async () => {
             if (soundEnabled) SoundManager.play('uiTap');
             
+            // Fetch leaderboard data once
+            const leaderboardData = await getLeaderboard();
+            setLeaderboard(leaderboardData);
+            
             // Suggest authentication if viewing leaderboard as guest and GAS is available
             if (!authUser && isGasEnvironment()) {
               handleShowAuthModal('leaderboard');
-              // Still show leaderboard, just after prompting
-              setLeaderboard(await getLeaderboard()); 
-              setShowModal('leaderboard');
-              return;
             }
             
-            setLeaderboard(await getLeaderboard()); 
             setShowModal('leaderboard');
         };
 
