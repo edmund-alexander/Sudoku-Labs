@@ -4,8 +4,9 @@ config/config.local.js
 .env.local
 
 # Debug & Diagnostic Scripts
-diagnostic.sh
 *.debug
+diagnostic.*.sh
+*.local.sh
 
 # Logs
 node_modules/
@@ -18,6 +19,10 @@ npm-debug.log*
 *.swp
 *.swo
 *~
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints
 
 # OS
 .DS_Store
