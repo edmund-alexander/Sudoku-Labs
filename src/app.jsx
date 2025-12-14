@@ -127,6 +127,9 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         AUTH_USER: 'sudoku_v2_auth_user',
         AUTH_MODE: 'sudoku_v2_auth_mode'
       };
+      
+      // UI Configuration Constants
+      const AUTH_PROMPT_DELAY_MS = 1500; // Delay before showing auth prompt after winning
 
       // GAS Backend API URL - Configure this with your deployment URL
       // Format: https://script.google.com/macros/s/[DEPLOYMENT_ID]/exec
@@ -736,7 +739,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
           },
           general: {
             title: 'Welcome!',
-            subtitle: 'Choose how you\'d like to play',
+            subtitle: "Choose how you'd like to play",
             benefit: null
           }
         };
@@ -1286,7 +1289,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
               // Use a slight delay so the user sees they won first
               setTimeout(() => {
                 handleShowAuthModal('leaderboard');
-              }, 1500);
+              }, AUTH_PROMPT_DELAY_MS);
             }
             
             saveScore({ name: getUserDisplayName(), time: finalTime, difficulty, date: new Date().toLocaleDateString() });
@@ -1392,16 +1395,20 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         const handleOpenLeaderboard = async () => {
             if (soundEnabled) SoundManager.play('uiTap');
             
-            // Fetch leaderboard data once
+            // Check auth status before async operations to avoid race conditions
+            const shouldPromptAuth = !authUser && isGasEnvironment();
+            
+            // Fetch leaderboard data
             const leaderboardData = await getLeaderboard();
             setLeaderboard(leaderboardData);
             
-            // Suggest authentication if viewing leaderboard as guest and GAS is available
-            if (!authUser && isGasEnvironment()) {
+            // Show leaderboard modal
+            setShowModal('leaderboard');
+            
+            // Suggest authentication if viewing leaderboard as guest
+            if (shouldPromptAuth) {
               handleShowAuthModal('leaderboard');
             }
-            
-            setShowModal('leaderboard');
         };
 
         const toggleChat = () => {
