@@ -1275,7 +1275,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
               <p>Sudoku Logic Lab v2.1</p>
               <p className="mt-1">
                 Lovingly created by Edmund
-                (<a href="https://github.com/edmundalexander" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">GitHub</a> | <a href="https://www.paypal.com/paypalme/edmundalexanders" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Buy me a coffee</a>)
+                (<a href="https://github.com/edmund-alexander" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">GitHub</a> | <a href="https://www.paypal.com/paypalme/edmundalexanders" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Buy me a green tea</a>)
               </p>
               {!isGasEnvironment() && <p>Persistence simulates Google Apps Script using LocalStorage (Dev) / Sheets (Prod).</p>}
             </div>
