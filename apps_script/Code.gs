@@ -355,30 +355,66 @@ function solveSudoku_(board) {
 }
 
 // --- Setup Helper (run once manually in editor) ---
+// Instructions:
+// 1. Open Google Apps Script editor
+// 2. Copy this entire Code.gs content
+// 3. In the editor console, run setupSheets_() to initialize the spreadsheet
 function setupSheets_() {
   const ss = getSpreadsheet_();
+  
   const sheetsToCreate = [
-    { name: 'Leaderboard', headers: ['Name', 'Time', 'Difficulty', 'Date'] },
-    { name: 'Chat', headers: ['ID', 'Sender', 'Text', 'Timestamp'] },
-    { name: 'Logs', headers: ['Timestamp', 'Type', 'Message', 'UserAgent', 'Count'] }
+    {
+      name: 'Leaderboard',
+      headers: ['Name', 'Time (seconds)', 'Difficulty', 'Date'],
+      description: 'Stores completed game scores'
+    },
+    {
+      name: 'Chat',
+      headers: ['ID', 'Sender', 'Text', 'Timestamp'],
+      description: 'Community chat messages'
+    },
+    {
+      name: 'Logs',
+      headers: ['Timestamp', 'Type', 'Message', 'UserAgent', 'Count'],
+      description: 'Client-side error and event logs'
+    }
   ];
 
   sheetsToCreate.forEach(config => {
     let sheet = ss.getSheetByName(config.name);
+    
+    // Create sheet if it doesn't exist
     if (!sheet) {
       sheet = ss.insertSheet(config.name);
-      Logger.log('Created sheet: ' + config.name);
+      Logger.log('✓ Created sheet: ' + config.name);
+    } else {
+      Logger.log('✓ Sheet already exists: ' + config.name);
     }
     
-    // Add headers if empty
-    const data = sheet.getDataRange().getValues();
-    if (data.length === 0 || data[0].every(cell => cell === '')) {
-      sheet.appendRow(config.headers);
-      Logger.log('Added headers to: ' + config.name);
+    // Add headers if sheet is empty or headers are missing
+    try {
+      const data = sheet.getDataRange().getValues();
+      const isEmpty = data.length === 0 || (data.length === 1 && data[0].every(cell => cell === ''));
+      
+      if (isEmpty) {
+        sheet.appendRow(config.headers);
+        Logger.log('  ├─ Added headers: ' + config.headers.join(', '));
+      } else {
+        Logger.log('  ├─ Headers already present');
+      }
+      
+      Logger.log('  └─ Description: ' + config.description);
+    } catch (err) {
+      Logger.log('  └─ Error setting up ' + config.name + ': ' + err);
     }
   });
   
-  Logger.log('Sheets setup complete');
+  Logger.log('\n✓ Sheets setup complete!');
+  Logger.log('\nNext steps:');
+  Logger.log('1. Deploy this script as a Web App');
+  Logger.log('2. Execute as: Me');
+  Logger.log('3. Who has access: Anyone');
+  Logger.log('4. Copy the deployment URL into frontend GAS_URL constant');
 }
 
 // --- Sanitization & Security ---
