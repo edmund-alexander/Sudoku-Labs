@@ -33,6 +33,18 @@ function doGet(e) {
       case 'getChat':
         return makeJsonResponse(getChatData());
       
+      case 'saveScore':
+        // Handle saveScore via GET to avoid POST redirect issues
+        return makeJsonResponse(saveLeaderboardScore(e.parameter));
+      
+      case 'postChat':
+        // Handle postChat via GET to avoid POST redirect issues
+        return makeJsonResponse(postChatData(e.parameter));
+      
+      case 'logError':
+        // Handle logError via GET to avoid POST redirect issues
+        return makeJsonResponse(logClientError(e.parameter));
+      
       case 'ping':
         return makeJsonResponse({ ok: true, timestamp: new Date().toISOString() });
       

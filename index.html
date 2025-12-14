@@ -276,10 +276,10 @@
           const actionMap = {
             generateSudoku: { action: 'generateSudoku', method: 'GET' },
             getLeaderboardData: { action: 'getLeaderboard', method: 'GET' },
-            saveLeaderboardScore: { action: 'saveScore', method: 'POST' },
+            saveLeaderboardScore: { action: 'saveScore', method: 'GET' },
             getChatData: { action: 'getChat', method: 'GET' },
-            postChatData: { action: 'postChat', method: 'POST' },
-            logClientError: { action: 'logError', method: 'POST' }
+            postChatData: { action: 'postChat', method: 'GET' },
+            logClientError: { action: 'logError', method: 'GET' }
           };
 
           const mapping = actionMap[fnName];
@@ -288,55 +288,32 @@
             return null;
           }
 
-          const { action, method } = mapping;
+          const { action } = mapping;
           const url = new URL(GAS_URL);
           url.searchParams.set('action', action);
 
-          if (method === 'GET') {
-            // For GET, add parameters to URL
-            if (args[0] !== undefined) {
-              if (typeof args[0] === 'object') {
-                Object.entries(args[0]).forEach(([k, v]) => {
-                  url.searchParams.set(k, v);
-                });
-              } else {
-                url.searchParams.set('data', args[0]);
-              }
+          // Add all arguments as URL parameters
+          if (args[0] !== undefined) {
+            if (typeof args[0] === 'object') {
+              Object.entries(args[0]).forEach(([k, v]) => {
+                url.searchParams.set(k, v);
+              });
+            } else {
+              url.searchParams.set('data', args[0]);
             }
-
-            // Avoid sending a custom Content-Type for GET (prevents CORS preflight)
-            const response = await fetch(url.toString(), {
-              method: 'GET',
-              redirect: 'follow'
-            });
-            
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            return await response.json();
-          } else {
-            // For POST, send form-encoded to avoid preflight
-            let bodyStr = '';
-            if (args[0] && typeof args[0] === 'object') {
-              bodyStr = new URLSearchParams(args[0]).toString();
-            } else if (args[0] !== undefined) {
-              bodyStr = 'data=' + encodeURIComponent(args[0]);
-            }
-
-            const response = await fetch(url.toString(), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: bodyStr,
-              redirect: 'follow'
-            });
-            
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            return await response.json();
           }
+
+          // All requests use GET to avoid GAS POST redirect issues
+          const response = await fetch(url.toString(), {
+            method: 'GET',
+            redirect: 'follow'
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          return await response.json();
         } catch (error) {
           console.error('GAS API Error:', error);
           throw error;
