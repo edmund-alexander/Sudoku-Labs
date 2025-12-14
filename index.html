@@ -129,6 +129,12 @@
 
     <!-- Load configuration from config/config.local.js (local values, not exposed publicly) -->
     <!-- Falls back to inline CONFIG if file not found -->
+    <script>
+      // Default config values - will be overwritten by config.local.js if it exists
+      window.CONFIG = {
+        GAS_URL: null, // Set a default or leave as null
+      };
+    </script>
     <script src="config/config.local.js" onerror="console.warn('config.local.js not found, using fallback');"></script>
 
 <script type="text/babel" data-presets="react, typescript" src="src/app.jsx"></script>
