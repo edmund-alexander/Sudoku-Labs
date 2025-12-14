@@ -306,7 +306,8 @@
 
             const response = await fetch(url.toString(), {
               method: 'GET',
-              headers: { 'Content-Type': 'application/json' }
+              headers: { 'Content-Type': 'application/json' },
+              redirect: 'follow'
             });
             
             if (!response.ok) {
@@ -319,7 +320,8 @@
             const response = await fetch(url.toString(), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(args[0] || {})
+              body: JSON.stringify(args[0] || {}),
+              redirect: 'follow'
             });
             
             if (!response.ok) {
