@@ -19,6 +19,10 @@ npm-debug.log*
 *.swo
 *~
 
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
 # OS
 .DS_Store
 Thumbs.db
