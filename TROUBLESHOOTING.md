@@ -94,6 +94,50 @@ curl "$GAS_URL?action=postChat&username=User&text=Hello"
 curl "$GAS_URL?action=getChat"
 ```
 
+### Debugging with curl (terminal)
+
+Use `curl` to reproduce and inspect requests from the terminal. Helpful flags:
+
+- `-v` or `--verbose`: show request + response headers (good for redirects and TLS)
+- `-i`: include response headers in output
+- `-I`: fetch only response headers (HEAD)
+- `-L`: follow redirects
+- `-w "%{http_code}\n"`: output HTTP status code after the response
+- `--trace-ascii <file>` or `--trace`: full trace of request/response for debugging
+
+Examples:
+
+# 1) Simple GET (follow redirects, show headers, pretty print response)
+```
+curl -s -L -i "$GAS_URL?action=ping"
+```
+
+# 2) Verbose GET with status code shown
+```
+curl -s -L -v "$GAS_URL?action=generateSudoku&difficulty=Easy" -w "\nStatus: %{http_code}\n"
+```
+
+# 3) Test a form-style POST (you may still hit GAS redirect behavior)
+```
+curl -s -v -X POST "$GAS_URL?action=postChat" -d "username=Test&text=hello" -w "\nStatus: %{http_code}\n"
+```
+
+# 4) Force sending no `Content-Type` header (some servers redirect if content-type triggers auth)
+```
+curl -s -v -X POST "$GAS_URL?action=postChat" -d "username=Test&text=hello" -H "Content-Type:" -w "\nStatus: %{http_code}\n"
+```
+
+# 5) Capture full trace to a file for sharing
+```
+curl --trace-ascii curl-trace.txt -L "$GAS_URL?action=getChat"
+# then inspect curl-trace.txt
+```
+
+Tips:
+- If you see an HTML page like "Page not found" or a Google Drive redirect, the deployment may require different access settings (see Deployment Checklist).
+- Use `-L` to follow redirects and `-v` to see `Location:` headers the server is returning.
+- Compare a working browser request (open DevTools → Network, click the fetch request) vs `curl -v` to spot header differences.
+
 ### Alternative Solutions (Not Used)
 
 1. **Use Apps Script library instead of Web App**: More complex, not necessary
