@@ -30,6 +30,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -75,7 +76,7 @@ Environment Variables:
 // Configuration
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CLASP_JSON_PATH = path.join(ROOT_DIR, '.clasp.json');
-const CLASPRC_PATH = path.join(ROOT_DIR, '.clasprc.json');
+const CLASPRC_PATH = path.join(os.homedir(), '.clasprc.json');
 const CODE_GS_PATH = path.join(ROOT_DIR, 'apps_script', 'Code.gs');
 
 // Utility functions
