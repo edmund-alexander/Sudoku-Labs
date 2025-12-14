@@ -1,8 +1,6 @@
-#!/bin/bash
+#!/bin/bash -euo pipefail
 # Script to clean up merged branches
 # This script deletes remote branches that have been merged into main
-
-set -e
 
 echo "🧹 Branch Cleanup Script"
 echo "========================"

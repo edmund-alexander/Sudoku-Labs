@@ -63,10 +63,10 @@ jobs:
           merged_branches=""
           for branch in $all_branches; do
             # Check if branch is merged by comparing commits
-            git fetch origin $branch:refs/remotes/origin/$branch 2>/dev/null || continue
+            git fetch origin "$branch":refs/remotes/origin/"$branch" 2>/dev/null || continue
             
             # Check if the branch's commits are all in main
-            not_in_main=$(git rev-list --count origin/main..origin/$branch)
+            not_in_main=$(git rev-list --count origin/main..origin/"$branch")
             
             if [ "$not_in_main" -eq 0 ]; then
               echo "✅ Branch '$branch' is fully merged into main"
