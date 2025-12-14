@@ -3,14 +3,14 @@
 Short, actionable guidance to get coding agents productive in this repo.
 
 1) Big picture
--- Frontend: [index.html](index.html) — HTML shell. The React/Babel app was moved to `src/app.jsx` and is compiled in-browser (Babel standalone). Hosted on GitHub Pages.
-- Backend: [apps_script/Code.gs](apps_script/Code.gs) — Google Apps Script Web App exposing a GET-based API routed via `doGet()` using an `action` query parameter.
+-- Frontend: [index.html](../index.html) — HTML shell. The React/Babel app was moved to `src/app.jsx` and is compiled in-browser (Babel standalone). Hosted on GitHub Pages.
+- Backend: [apps_script/Code.gs](../apps_script/Code.gs) — Google Apps Script Web App exposing a GET-based API routed via `doGet()` using an `action` query parameter.
 - Data store: Google Sheets (three sheets: `Leaderboard`, `Chat`, `Logs`) accessed by `SHEET_ID` in `Code.gs`.
 
 2) Key conventions and gotchas
--- All client ↔ GAS calls use HTTP GET with `action` query param (see `runGasFn` in [index.html](index.html) / `src/app.jsx` and `doGet` in [apps_script/Code.gs](apps_script/Code.gs)). Avoid introducing POST-only patterns — public GAS deployments redirect POSTs to auth pages.
+-- All client ↔ GAS calls use HTTP GET with `action` query param (see `runGasFn` in [index.html](../index.html) / `src/app.jsx` and `doGet` in [apps_script/Code.gs](../apps_script/Code.gs)). Avoid introducing POST-only patterns — public GAS deployments redirect POSTs to auth pages.
 - Config: `config/config.example.js` is the template; local secrets live in `config/config.local.js` (gitignored). The frontend loads `config/config.local.js` if present.
-- Deployment: GAS must be deployed as a Web App with access set to "Anyone (even anonymous)" — otherwise requests will 302/403. See [docs/DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md).
+- Deployment: GAS must be deployed as a Web App with access set to "Anyone (even anonymous)" — otherwise requests will 302/403. See [docs/DEPLOYMENT_CHECKLIST.md](../docs/DEPLOYMENT_CHECKLIST.md).
 
 3) Developer workflows (what to run / test)
 - Quick API health check: `diagnostic.sh` (curl-based) — use this to verify `ping` and headers.
@@ -23,7 +23,7 @@ Short, actionable guidance to get coding agents productive in this repo.
 - To add config values, update `config/config.example.js` and expect developers to mirror them in `config.local`.
 
 5) Tests & debugging tips
-- Reproduce endpoints locally with `curl "${GAS_URL}?action=..."` (examples in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)).
+- Reproduce endpoints locally with `curl "${GAS_URL}?action=..."` (examples in [docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md)).
 - Use `curl -I -H 'Origin: http://localhost:8000' "$GAS_URL?action=ping"` to inspect CORS-like behavior; `diagnostic.sh` already includes useful examples.
 - When changing `Code.gs`, re-deploy Apps Script and update `config/config.local.js` if the deployment URL changes.
 
@@ -31,11 +31,11 @@ Short, actionable guidance to get coding agents productive in this repo.
 - Never commit `config/config.local.js` or any real GAS URLs / credentials. The repo expects this file in `.gitignore` and shows `config/config.example.js` as the template.
 
 7) Files to inspect when troubleshooting
-- [apps_script/Code.gs](apps_script/Code.gs) — routing, SHEET_ID constant, helpers
-- [index.html](index.html) — HTML shell; loads `src/app.jsx` (Babel/React) and `config/config.local.js`.
-- [src/app.jsx](src/app.jsx) — extracted in-browser React/Babel app (components, `runGasFn`, UI logic). Edit here for frontend behavior.
-- [config/config.example.js](config/config.example.js) and [config/README.md](config/README.md)
-- [docs/DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) and [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+- [apps_script/Code.gs](../apps_script/Code.gs) — routing, SHEET_ID constant, helpers
+- [index.html](../index.html) — HTML shell; loads `src/app.jsx` (Babel/React) and `config/config.local.js`.
+- [src/app.jsx](../src/app.jsx) — extracted in-browser React/Babel app (components, `runGasFn`, UI logic). Edit here for frontend behavior.
+- [config/config.example.js](../config/config.example.js) and [config/README.md](../config/README.md)
+- [docs/DEPLOYMENT_CHECKLIST.md](../docs/DEPLOYMENT_CHECKLIST.md) and [docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md)
 - `diagnostic.sh` — quick CLI checks
 
 If anything is unclear or you'd like this tailored (more examples, test commands, or a checklist for PR reviewers), tell me which sections to expand.
