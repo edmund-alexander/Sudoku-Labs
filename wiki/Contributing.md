@@ -39,6 +39,9 @@ Ready to code? See [Development Setup](Development-Setup) first, then follow the
 git clone https://github.com/YOUR_USERNAME/Sudoku-Labs.git
 cd Sudoku-Labs
 git remote add upstream https://github.com/edmund-alexander/Sudoku-Labs.git
+
+# Configure Git to handle divergent branches
+git config pull.rebase false  # merge (recommended)
 ```
 
 ### 2. Create a Branch
