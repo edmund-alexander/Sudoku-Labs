@@ -1271,7 +1271,14 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                </button>
             </div>
             {renderModal()}
-            <div className="mt-4 text-[10px] text-gray-400 text-center max-w-md"><p>Sudoku Logic Lab v2.1</p>{!isGasEnvironment() && <p>Persistence simulates Google Apps Script using LocalStorage (Dev) / Sheets (Prod).</p>}</div>
+            <div className="mt-4 text-[10px] text-gray-400 text-center max-w-md">
+              <p>Sudoku Logic Lab v2.1</p>
+              <p className="mt-1">
+                Lovingly created by Edmund
+                (<a href="https://github.com/edmundalexander" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">GitHub</a> | <a href="https://www.paypal.com/qrcodes/p2pqrc/DJ3YP5KPB53RS" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Buy me a coffee</a>)
+              </p>
+              {!isGasEnvironment() && <p>Persistence simulates Google Apps Script using LocalStorage (Dev) / Sheets (Prod).</p>}
+            </div>
           </div>
         );
       };
