@@ -59,6 +59,12 @@ function doGet(e) {
       
       case 'updateUserProfile':
         return makeJsonResponse(updateUserProfile(e.parameter));
+
+      case 'getUserState':
+        return makeJsonResponse(getUserState(e.parameter));
+
+      case 'saveUserState':
+        return makeJsonResponse(saveUserState(e.parameter));
       
       default:
         return makeJsonResponse({ error: 'Unknown action: ' + action });
@@ -280,6 +286,8 @@ function registerUser(data) {
   if (!data || typeof data !== 'object') {
     return { success: false, error: 'Invalid request data' };
   }
+
+  ensureUsersSheetHeaders_();
   
   const username = sanitizeInput_(data.username || '', 20);
   const password = sanitizeInput_(data.password || '', 100);
@@ -336,6 +344,8 @@ function loginUser(data) {
   if (!data || typeof data !== 'object') {
     return { success: false, error: 'Invalid request data' };
   }
+
+  ensureUsersSheetHeaders_();
   
   const username = sanitizeInput_(data.username || '', 20);
   const password = sanitizeInput_(data.password || '', 100);
@@ -381,6 +391,8 @@ function getUserProfile(data) {
   if (!data || !data.userId) {
     return { success: false, error: 'User ID required' };
   }
+
+  ensureUsersSheetHeaders_();
   
   const userId = sanitizeInput_(data.userId, 50);
   
@@ -419,6 +431,8 @@ function updateUserProfile(data) {
   if (!data || !data.userId) {
     return { success: false, error: 'User ID required' };
   }
+
+  ensureUsersSheetHeaders_();
   
   const userId = sanitizeInput_(data.userId, 50);
   const displayName = data.displayName ? sanitizeInput_(data.displayName, 30) : null;
@@ -462,6 +476,83 @@ function updateUserProfile(data) {
     Logger.log('updateUserProfile error: ' + err);
     return { success: false, error: 'Failed to update profile' };
   }
+}
+
+// Persist and retrieve per-user cosmetic/unlock state
+// Unlocks column stores JSON: { unlockedThemes: string[], unlockedSoundPacks: string[] }
+// GameStats column stores JSON as used by frontend for unlock logic
+function getUserState(data) {
+  if (!data || !data.userId) {
+    return { success: false, error: 'User ID required' };
+  }
+
+  const userId = sanitizeInput_(data.userId, 50);
+  ensureUsersSheetHeaders_();
+
+  const rowInfo = getUserRowById_(userId);
+  if (!rowInfo) return { success: false, error: 'User not found' };
+
+  const { row, map } = rowInfo;
+  const unlocksRaw = row[map['Unlocks']] || '';
+  const gameStatsRaw = row[map['GameStats']] || '';
+
+  const unlocks = safeParseJson_(unlocksRaw, { unlockedThemes: [], unlockedSoundPacks: [] });
+  const gameStats = safeParseJson_(gameStatsRaw, {});
+
+  return {
+    success: true,
+    state: {
+      unlockedThemes: Array.isArray(unlocks.unlockedThemes) ? unlocks.unlockedThemes : [],
+      unlockedSoundPacks: Array.isArray(unlocks.unlockedSoundPacks) ? unlocks.unlockedSoundPacks : [],
+      activeTheme: row[map['ActiveTheme']] || null,
+      activeSoundPack: row[map['ActiveSoundPack']] || null,
+      gameStats: (gameStats && typeof gameStats === 'object') ? gameStats : {}
+    }
+  };
+}
+
+function saveUserState(data) {
+  if (!data || !data.userId) {
+    return { success: false, error: 'User ID required' };
+  }
+
+  const userId = sanitizeInput_(data.userId, 50);
+  ensureUsersSheetHeaders_();
+
+  const rowInfo = getUserRowById_(userId);
+  if (!rowInfo) return { success: false, error: 'User not found' };
+
+  const { rowIndex, map, sheet } = rowInfo;
+
+  const unlockedThemes = Array.isArray(data.unlockedThemes) ? data.unlockedThemes : safeParseJson_(data.unlockedThemes, []);
+  const unlockedSoundPacks = Array.isArray(data.unlockedSoundPacks) ? data.unlockedSoundPacks : safeParseJson_(data.unlockedSoundPacks, []);
+  const activeTheme = data.activeTheme ? sanitizeInput_(data.activeTheme, 30) : null;
+  const activeSoundPack = data.activeSoundPack ? sanitizeInput_(data.activeSoundPack, 30) : null;
+  const gameStats = (typeof data.gameStats === 'string') ? safeParseJson_(data.gameStats, {}) : (data.gameStats || {});
+
+  // Persist unlocks JSON
+  if (map['Unlocks'] !== undefined) {
+    const payload = {
+      unlockedThemes: Array.isArray(unlockedThemes) ? unlockedThemes : [],
+      unlockedSoundPacks: Array.isArray(unlockedSoundPacks) ? unlockedSoundPacks : []
+    };
+    sheet.getRange(rowIndex, map['Unlocks'] + 1).setValue(JSON.stringify(payload).substring(0, 2000));
+  }
+
+  // Persist active selections
+  if (map['ActiveTheme'] !== undefined && activeTheme !== null) {
+    sheet.getRange(rowIndex, map['ActiveTheme'] + 1).setValue(activeTheme);
+  }
+  if (map['ActiveSoundPack'] !== undefined && activeSoundPack !== null) {
+    sheet.getRange(rowIndex, map['ActiveSoundPack'] + 1).setValue(activeSoundPack);
+  }
+
+  // Persist game stats JSON (used to re-drive unlock logic client-side)
+  if (map['GameStats'] !== undefined && gameStats && typeof gameStats === 'object') {
+    sheet.getRange(rowIndex, map['GameStats'] + 1).setValue(JSON.stringify(gameStats).substring(0, 2000));
+  }
+
+  return { success: true };
 }
 
 // Simple hash function (NOT SECURE - for demo purposes only)
@@ -623,12 +714,67 @@ function setupSheets_() {
       } else if (name === 'Logs') {
         sheet.appendRow(['Timestamp', 'Type', 'Message', 'UserAgent', 'Count']);
       } else if (name === 'Users') {
-        sheet.appendRow(['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'TotalGames', 'TotalWins']);
+        sheet.appendRow(['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'TotalGames', 'TotalWins', 'Unlocks', 'ActiveTheme', 'ActiveSoundPack', 'GameStats']);
       }
     }
   });
   
   Logger.log('Sheets initialized successfully');
+
+// Ensure the Users sheet contains all expected columns. Adds missing columns to the header row.
+function ensureUsersSheetHeaders_() {
+  const sheet = getSpreadsheet_().getSheetByName('Users');
+  if (!sheet) return;
+
+  const required = ['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'TotalGames', 'TotalWins', 'Unlocks', 'ActiveTheme', 'ActiveSoundPack', 'GameStats'];
+  const lastCol = sheet.getLastColumn();
+  const headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+
+  let updated = false;
+  required.forEach((h) => {
+    if (!headers.includes(h)) {
+      headers.push(h);
+      updated = true;
+    }
+  });
+
+  if (updated) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+}
+
+function getUserHeaderMap_() {
+  const sheet = getSpreadsheet_().getSheetByName('Users');
+  if (!sheet) return null;
+  const lastCol = sheet.getLastColumn();
+  if (lastCol === 0) return null;
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const map = {};
+  headers.forEach((h, idx) => { map[h] = idx; });
+  return { map, sheet, headers };
+}
+
+function getUserRowById_(userId) {
+  const info = getUserHeaderMap_();
+  if (!info) return null;
+  const { map, sheet } = info;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][map['UserID']] === userId) {
+      return { rowIndex: i + 1, row: data[i], map, sheet };
+    }
+  }
+  return null;
+}
+
+function safeParseJson_(str, fallback) {
+  if (typeof str !== 'string') return fallback;
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    return fallback;
+  }
+}
 }
 
 function sanitizeInput_(str, maxLength) {
