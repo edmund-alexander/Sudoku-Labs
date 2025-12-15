@@ -701,25 +701,23 @@ function getSpreadsheet_() {
 
 function setupSheets_() {
   const ss = getSpreadsheet_();
-  const sheets = ['Leaderboard', 'Chat', 'Logs', 'Users'];
-  
-  sheets.forEach(name => {
-    if (!ss.getSheetByName(name)) {
-      const sheet = ss.insertSheet(name);
-      
-      if (name === 'Leaderboard') {
-        sheet.appendRow(['Name', 'Time (seconds)', 'Difficulty', 'Date']);
-      } else if (name === 'Chat') {
-        sheet.appendRow(['ID', 'Sender', 'Text', 'Timestamp']);
-      } else if (name === 'Logs') {
-        sheet.appendRow(['Timestamp', 'Type', 'Message', 'UserAgent', 'Count']);
-      } else if (name === 'Users') {
-        sheet.appendRow(['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'TotalGames', 'TotalWins', 'Unlocks', 'ActiveTheme', 'ActiveSoundPack', 'GameStats']);
-      }
+  const definitions = {
+    Leaderboard: ['Name', 'Time (seconds)', 'Difficulty', 'Date'],
+    Chat: ['ID', 'Sender', 'Text', 'Timestamp'],
+    Logs: ['Timestamp', 'Type', 'Message', 'UserAgent', 'Count'],
+    Users: ['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'TotalGames', 'TotalWins', 'Unlocks', 'ActiveTheme', 'ActiveSoundPack', 'GameStats']
+  };
+
+  Object.entries(definitions).forEach(([name, headers]) => {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      sheet = ss.insertSheet(name);
     }
+    ensureSheetHeaders_(sheet, headers);
   });
-  
+
   Logger.log('Sheets initialized successfully');
+}
 
 // Ensure the Users sheet contains all expected columns. Adds missing columns to the header row.
 function ensureUsersSheetHeaders_() {
@@ -727,20 +725,31 @@ function ensureUsersSheetHeaders_() {
   if (!sheet) return;
 
   const required = ['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'TotalGames', 'TotalWins', 'Unlocks', 'ActiveTheme', 'ActiveSoundPack', 'GameStats'];
-  const lastCol = sheet.getLastColumn();
-  const headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  ensureSheetHeaders_(sheet, required);
+}
 
-  let updated = false;
-  required.forEach((h) => {
-    if (!headers.includes(h)) {
-      headers.push(h);
-      updated = true;
+// Ensure a sheet's header row contains the required fields in order; append missing headers if needed.
+function ensureSheetHeaders_(sheet, requiredHeaders) {
+  if (!sheet || !Array.isArray(requiredHeaders) || requiredHeaders.length === 0) return;
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  const existing = (lastRow >= 1 && lastCol > 0)
+    ? sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    : [];
+
+  const headers = [...existing];
+  requiredHeaders.forEach((h, idx) => {
+    if (headers[idx] !== h) {
+      headers[idx] = h;
     }
   });
 
-  if (updated) {
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-  }
+  // Expand to full width
+  const targetWidth = Math.max(headers.length, requiredHeaders.length);
+  while (headers.length < targetWidth) headers.push('');
+
+  sheet.getRange(1, 1, 1, targetWidth).setValues([headers.slice(0, targetWidth)]);
 }
 
 function getUserHeaderMap_() {
@@ -774,7 +783,6 @@ function safeParseJson_(str, fallback) {
   } catch (e) {
     return fallback;
   }
-}
 }
 
 function sanitizeInput_(str, maxLength) {
