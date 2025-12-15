@@ -10,7 +10,7 @@
  * - sound.js (SoundManager)
  * - services.js (API, storage, leaderboard, chat)
  * 
- * @version 2.2.0
+ * @version 2.3.0
  */
 
 const { useState, useEffect, useCallback, useRef, memo, useMemo, Component } = React;
@@ -67,100 +67,183 @@ class ErrorBoundary extends Component {
  * Call with: window.runDebugTests() in browser console
  */
 window.runDebugTests = async function() {
-  console.log('🔍 Starting Debug Tests...\n');
+  console.log('%c🔍 Starting Debug Tests...', 'color: blue; font-size: 16px; font-weight: bold');
+  console.log('');
   
   const results = {
     passed: [],
-    failed: []
+    failed: [],
+    warnings: []
   };
   
   try {
-    // Test 1: Ping backend
-    console.log('Test 1: Backend Ping...');
-    const pingResult = await runGasFn('ping');
-    if (pingResult && pingResult.ok) {
-      console.log('✅ Backend is responding');
-      results.passed.push('Backend Ping');
+    // Test 1: Check GAS configuration
+    console.log('%cTest 1: GAS Configuration...', 'font-weight: bold');
+    if (isGasEnvironment()) {
+      console.log('✅ GAS_URL is configured and valid');
+      results.passed.push('GAS Configuration');
     } else {
-      console.log('❌ Backend ping failed');
-      results.failed.push('Backend Ping');
+      console.log('⚠️  GAS_URL not configured - using local fallback');
+      results.warnings.push('GAS not configured');
     }
     
-    // Test 2: Check if user authenticated
-    console.log('\nTest 2: User Authentication Status...');
+    // Test 2: Ping backend (if configured)
+    if (isGasEnvironment()) {
+      console.log('\n%cTest 2: Backend Ping...', 'font-weight: bold');
+      try {
+        const pingResult = await runGasFn('ping');
+        if (pingResult && pingResult.ok) {
+          console.log('✅ Backend is responding');
+          console.log('   Timestamp:', pingResult.timestamp);
+          results.passed.push('Backend Ping');
+        } else {
+          console.log('❌ Backend ping failed');
+          results.failed.push('Backend Ping');
+        }
+      } catch (e) {
+        console.log('❌ Backend unreachable:', e.message);
+        results.failed.push('Backend Ping');
+      }
+    }
+    
+    // Test 3: Check user authentication
+    console.log('\n%cTest 3: User Authentication Status...', 'font-weight: bold');
     const session = StorageService.getUserSession();
     if (session && session.userId) {
       console.log('✅ User authenticated:', session.username);
+      console.log('   User ID:', session.userId);
       results.passed.push('User Session');
       
-      // Test 3: Get user profile
-      console.log('\nTest 3: Fetching User Profile...');
-      const profile = await runGasFn('getUserProfile', { userId: session.userId });
-      if (profile && profile.success) {
-        console.log('✅ User Profile Retrieved:');
-        console.table({
-          'Total Games': profile.user.totalGames,
-          'Total Wins': profile.user.totalWins,
-          'Easy Wins': profile.user.easyWins || 0,
-          'Medium Wins': profile.user.mediumWins || 0,
-          'Hard Wins': profile.user.hardWins || 0,
-          'Perfect Wins': profile.user.perfectWins || 0,
-          'Fast Wins': profile.user.fastWins || 0,
-          'Win Rate': (profile.user.totalGames > 0 ? ((profile.user.totalWins / profile.user.totalGames) * 100).toFixed(2) : 0) + '%'
-        });
-        results.passed.push('User Profile Fetch');
-      } else {
-        console.log('❌ Failed to fetch user profile:', profile?.error);
-        results.failed.push('User Profile Fetch');
-      }
-      
-      // Test 4: Get user state
-      console.log('\nTest 4: Fetching User State (Unlocks)...');
-      const state = await runGasFn('getUserState', { userId: session.userId });
-      if (state && state.success && state.state) {
-        console.log('✅ User State Retrieved:');
-        console.log('  Unlocked Themes:', state.state.unlockedThemes || []);
-        console.log('  Unlocked Sound Packs:', state.state.unlockedSoundPacks || []);
-        console.log('  Game Stats:', state.state.gameStats || {});
-        results.passed.push('User State Fetch');
-      } else {
-        console.log('❌ Failed to fetch user state:', state?.error);
-        results.failed.push('User State Fetch');
+      // Test 4: Get user profile (if GAS configured)
+      if (isGasEnvironment()) {
+        console.log('\n%cTest 4: Fetching User Profile...', 'font-weight: bold');
+        try {
+          const profile = await runGasFn('getUserProfile', { userId: session.userId });
+          if (profile && profile.success) {
+            console.log('✅ User Profile Retrieved:');
+            console.table({
+              'Total Games': profile.user.totalGames,
+              'Total Wins': profile.user.totalWins,
+              'Easy Wins': profile.user.easyWins || 0,
+              'Medium Wins': profile.user.mediumWins || 0,
+              'Hard Wins': profile.user.hardWins || 0,
+              'Perfect Wins': profile.user.perfectWins || 0,
+              'Fast Wins': profile.user.fastWins || 0,
+              'Win Rate': (profile.user.totalGames > 0 ? ((profile.user.totalWins / profile.user.totalGames) * 100).toFixed(2) : 0) + '%'
+            });
+            results.passed.push('User Profile Fetch');
+          } else {
+            console.log('❌ Failed to fetch user profile:', profile?.error);
+            results.failed.push('User Profile Fetch');
+          }
+        } catch (e) {
+          console.log('❌ User profile fetch error:', e.message);
+          results.failed.push('User Profile Fetch');
+        }
+        
+        // Test 5: Get user state
+        console.log('\n%cTest 5: Fetching User State (Unlocks)...', 'font-weight: bold');
+        try {
+          const state = await runGasFn('getUserState', { userId: session.userId });
+          if (state && state.success && state.state) {
+            console.log('✅ User State Retrieved:');
+            console.log('   Unlocked Themes:', state.state.unlockedThemes || []);
+            console.log('   Unlocked Sound Packs:', state.state.unlockedSoundPacks || []);
+            console.log('   Game Stats:', state.state.gameStats || {});
+            results.passed.push('User State Fetch');
+          } else {
+            console.log('❌ Failed to fetch user state:', state?.error);
+            results.failed.push('User State Fetch');
+          }
+        } catch (e) {
+          console.log('❌ User state fetch error:', e.message);
+          results.failed.push('User State Fetch');
+        }
       }
     } else {
       console.log('⚠️  No authenticated user. Login first to test user endpoints.');
-      results.passed.push('User Session Check (No User)');
+      results.warnings.push('No User Session');
     }
     
-    // Test 5: Local storage check
-    console.log('\nTest 5: Checking Local Storage...');
+    // Test 6: Local storage check
+    console.log('\n%cTest 6: Checking Local Storage...', 'font-weight: bold');
     const localStorage_stats = StorageService.getGameStats();
     const localStorage_themes = StorageService.getUnlockedThemes();
     const localStorage_packs = StorageService.getUnlockedSoundPacks();
+    const localStorage_campaign = StorageService.getCampaignProgress();
     console.log('✅ Local Storage Accessible:');
-    console.log('  Game Stats:', localStorage_stats);
-    console.log('  Unlocked Themes:', localStorage_themes);
-    console.log('  Unlocked Packs:', localStorage_packs);
+    console.log('   Game Stats:', localStorage_stats);
+    console.log('   Unlocked Themes:', localStorage_themes);
+    console.log('   Unlocked Sound Packs:', localStorage_packs);
+    console.log('   Campaign Progress:', localStorage_campaign);
     results.passed.push('Local Storage Check');
+    
+    // Test 7: Sound Manager
+    console.log('\n%cTest 7: Sound Manager...', 'font-weight: bold');
+    if (typeof SoundManager !== 'undefined') {
+      console.log('✅ SoundManager available');
+      console.log('   Current Pack:', SoundManager.currentPack);
+      console.log('   Available Packs:', Object.keys(SoundManager.packHandlers));
+      results.passed.push('Sound Manager');
+    } else {
+      console.log('❌ SoundManager not loaded');
+      results.failed.push('Sound Manager');
+    }
     
     // Summary
     console.log('\n' + '='.repeat(50));
-    console.log('📊 DEBUG TEST SUMMARY');
+    console.log('%c📊 DEBUG TEST SUMMARY', 'color: blue; font-size: 14px; font-weight: bold');
     console.log('='.repeat(50));
-    console.log(`✅ Passed: ${results.passed.length} tests`);
-    console.log(`❌ Failed: ${results.failed.length} tests`);
-    if (results.failed.length > 0) {
-      console.log('\nFailed Tests:', results.failed);
+    console.log(`%c✅ Passed: ${results.passed.length} tests`, 'color: green');
+    if (results.warnings.length > 0) {
+      console.log(`%c⚠️  Warnings: ${results.warnings.length}`, 'color: orange');
+      console.log('   ', results.warnings.join(', '));
     }
-    console.log('\n💡 All systems operational!' + (results.failed.length > 0 ? ' Some issues detected.' : ''));
+    if (results.failed.length > 0) {
+      console.log(`%c❌ Failed: ${results.failed.length} tests`, 'color: red');
+      console.log('   ', results.failed.join(', '));
+    }
+    console.log('\n💡 ' + (results.failed.length === 0 ? 'All systems operational!' : 'Some issues detected - check failed tests above.'));
+    
+    return results;
   } catch (err) {
     console.error('❌ Debug test error:', err);
+    return { error: err.message };
   }
 };
 
+/**
+ * Clear all local data (for testing)
+ * Call with: window.clearAllData()
+ */
+window.clearAllData = function() {
+  if (!confirm('This will clear all local game data including progress, unlocks, and settings. Continue?')) {
+    return;
+  }
+  Object.values(KEYS).forEach(key => {
+    localStorage.removeItem(key);
+  });
+  console.log('✅ All local data cleared. Refresh the page to start fresh.');
+};
+
+/**
+ * Grant test unlocks (for testing)
+ * Call with: window.grantTestUnlocks()
+ */
+window.grantTestUnlocks = function() {
+  const allThemes = Object.keys(THEMES);
+  const allPacks = Object.keys(SOUND_PACKS);
+  StorageService.saveUnlockedThemes(allThemes);
+  StorageService.saveUnlockedSoundPacks(allPacks);
+  console.log('✅ All themes and sound packs unlocked for testing. Refresh to see changes.');
+};
+
 // Make debug mode available globally
-console.log('%c🔧 Debug Mode Available', 'color: blue; font-size: 14px; font-weight: bold;');
-console.log('%cRun: window.runDebugTests()', 'color: green; font-size: 12px;');
+console.log('%c🧩 Sudoku Logic Lab v2.3', 'color: blue; font-size: 16px; font-weight: bold');
+console.log('%c🔧 Debug Commands:', 'color: gray; font-size: 12px');
+console.log('%c   window.runDebugTests() - Run diagnostic tests', 'color: gray; font-size: 11px');
+console.log('%c   window.clearAllData() - Clear all local data', 'color: gray; font-size: 11px');
+console.log('%c   window.grantTestUnlocks() - Unlock all themes/sounds', 'color: gray; font-size: 11px');
 
 const Cell = memo(({ data, isSelected, onClick, isCompletedBox }) => {
   const { row, col, value, isFixed, isError, notes, isHinted } = data;
@@ -1419,7 +1502,7 @@ const OpeningScreen = ({ onStart, onResume, onCampaign, hasSavedGame, darkMode, 
         )}
       </div>
 
-      <footer className="mt-8 sm:mt-10 text-[10px] sm:text-xs text-gray-400">v2.2 • Logic Lab Series</footer>
+      <footer className="mt-8 sm:mt-10 text-[10px] sm:text-xs text-gray-400">v2.3 • Logic Lab Series</footer>
     </div>
   );
 };
@@ -1674,23 +1757,46 @@ const App = () => {
     setShowAwardsZone(true);
     
     // Sync latest gameStats from backend to ensure database edits are reflected
+    // This merges local and cloud data, taking the higher values
     if (isUserAuthenticated() && isGasEnvironment() && appUserSession?.userId) {
       try {
         const remote = await runGasFn('getUserState', { userId: appUserSession.userId });
-        if (remote?.success && remote.state?.gameStats) {
-          const remoteStats = remote.state.gameStats;
-          StorageService.saveGameStats(remoteStats);
+        if (remote?.success && remote.state) {
+          const localStats = StorageService.getGameStats();
+          const remoteStats = remote.state.gameStats || {};
           
-          // Re-run unlock checks now that we have latest stats
-          const newThemes = UnlockService.checkThemeUnlocks(remoteStats);
-          if (newThemes.length > 0) {
-            setUnlockedThemes(StorageService.getUnlockedThemes());
-          }
+          // Merge stats - take max of each field to preserve progress from both sources
+          const mergedStats = { ...localStats };
+          Object.keys({ ...localStats, ...remoteStats }).forEach((k) => {
+            mergedStats[k] = Math.max(Number(localStats[k] || 0), Number(remoteStats[k] || 0));
+          });
+          StorageService.saveGameStats(mergedStats);
           
-          const newPacks = UnlockService.checkSoundPackUnlocks(remoteStats);
-          if (newPacks.length > 0) {
-            setUnlockedSoundPacks(StorageService.getUnlockedSoundPacks());
-          }
+          // Merge unlocks from local and remote
+          const localThemes = StorageService.getUnlockedThemes();
+          const localPacks = StorageService.getUnlockedSoundPacks();
+          const mergedThemes = Array.from(new Set([...localThemes, ...(remote.state.unlockedThemes || [])]));
+          const mergedPacks = Array.from(new Set([...localPacks, ...(remote.state.unlockedSoundPacks || [])]));
+          
+          // Re-run unlock checks with merged stats
+          const newThemes = UnlockService.checkThemeUnlocks(mergedStats);
+          const newPacks = UnlockService.checkSoundPackUnlocks(mergedStats);
+          
+          // Update state with merged unlocks
+          const finalThemes = Array.from(new Set([...mergedThemes, ...newThemes]));
+          const finalPacks = Array.from(new Set([...mergedPacks, ...newPacks]));
+          
+          StorageService.saveUnlockedThemes(finalThemes);
+          StorageService.saveUnlockedSoundPacks(finalPacks);
+          setUnlockedThemes(finalThemes);
+          setUnlockedSoundPacks(finalPacks);
+          
+          // Persist merged state back to cloud
+          await persistUserStateToBackend({
+            unlockedThemes: finalThemes,
+            unlockedSoundPacks: finalPacks,
+            gameStats: mergedStats
+          });
         }
       } catch (err) {
         console.error('Failed to sync game stats:', err);
@@ -2597,7 +2703,7 @@ const App = () => {
 
       {/* Footer - positioned with reduced spacing */}
       <footer className="mt-6 sm:mt-8 pt-4 pb-4 text-[10px] sm:text-xs md:text-sm text-gray-400 text-center px-2 w-full">
-        Sudoku Logic Lab v2.1 • Created by Edmund (<a href="https://github.com/edmund-alexander" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">GitHub</a> | <a href="https://www.paypal.com/paypalme/edmundalexanders" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Buy me a green tea</a>)
+        Sudoku Logic Lab v2.3 • Created by Edmund (<a href="https://github.com/edmund-alexander" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">GitHub</a> | <a href="https://www.paypal.com/paypalme/edmundalexanders" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Buy me a green tea</a>)
       </footer>
     </div>
   );
