@@ -165,8 +165,8 @@ If you're contributing or deploying your own instance:
 ## Questions?
 
 If you have questions about security that aren't covered here, please:
-- Check our [FAQ](wiki/FAQ.md) 
-- Review our [Contributing Guidelines](wiki/Contributing.md)
+- Check our [FAQ](https://github.com/edmund-alexander/Sudoku-Labs/wiki/FAQ) 
+- Review our [Contributing Guidelines](https://github.com/edmund-alexander/Sudoku-Labs/wiki/Contributing)
 - Open a discussion on GitHub (for non-sensitive questions)
 
 Thank you for helping keep Sudoku Logic Lab secure! 🔒
