@@ -346,8 +346,30 @@ function registerUser(data) {
     const userId = 'user_' + new Date().getTime() + '_' + Math.floor(Math.random() * 1000);
     const createdAt = new Date().toISOString();
     
-    // Save user: UserID | Username | PasswordHash | CreatedAt | DisplayName | TotalGames | TotalWins | EasyWins | MediumWins | HardWins | PerfectWins | FastWins
-    sheet.appendRow([userId, username, passwordHash, createdAt, username, 0, 0, 0, 0, 0, 0, 0, '', 'default', '', 'classic', '{}']);
+    // Create new user row with all columns in order:
+    // UserID | Username | PasswordHash | CreatedAt | DisplayName | TotalGames | TotalWins | 
+    // EasyWins | MediumWins | HardWins | PerfectWins | FastWins |
+    // UnlockedThemes | ActiveTheme | UnlockedSoundPacks | ActiveSoundPack | GameStats
+    const newUserRow = [
+      userId,           // UserID
+      username,         // Username  
+      passwordHash,     // PasswordHash
+      createdAt,        // CreatedAt
+      username,         // DisplayName (defaults to username)
+      0,                // TotalGames
+      0,                // TotalWins
+      0,                // EasyWins
+      0,                // MediumWins
+      0,                // HardWins
+      0,                // PerfectWins
+      0,                // FastWins
+      '',               // UnlockedThemes (empty array as string)
+      'default',        // ActiveTheme
+      '',               // UnlockedSoundPacks (empty array as string)
+      'classic',        // ActiveSoundPack
+      '{}'              // GameStats (empty object as JSON string)
+    ];
+    sheet.appendRow(newUserRow);
     
     return {
       success: true,
