@@ -12,8 +12,13 @@ Sudoku Logic Lab uses a decoupled frontend-backend architecture:
 │   (Frontend)        │◄────────►│    (Backend)        │
 │                     │   HTTP   │                     │
 │  - index.html       │   GET    │  - Code.gs          │
-│  - src/app.jsx      │          │  - doGet() router   │
-│  - React UI         │          │  - API endpoints    │
+│  - src/             │          │  - doGet() router   │
+│    ├ constants.js   │          │  - API endpoints    │
+│    ├ utils.js       │          │                     │
+│    ├ sound.js       │          │                     │
+│    ├ services.js    │          │                     │
+│    └ app.jsx        │          │                     │
+│  - React UI         │          │                     │
 │  - Client logic     │          │                     │
 └─────────────────────┘          └──────────┬──────────┘
                                             │
@@ -25,6 +30,7 @@ Sudoku Logic Lab uses a decoupled frontend-backend architecture:
                                  │  - Leaderboard      │
                                  │  - Chat             │
                                  │  - Logs             │
+                                 │  - Users            │
                                  └─────────────────────┘
 ```
 
@@ -37,11 +43,20 @@ Sudoku Logic Lab uses a decoupled frontend-backend architecture:
 - Tailwind CSS (via CDN)
 - Babel Standalone (in-browser JSX compilation)
 
+**Modular Architecture (5 files):**
+1. **constants.js** - Game constants, themes, sound packs, campaign data
+2. **utils.js** - Validation, formatting, Sudoku helpers
+3. **sound.js** - WebAudio SoundManager with 8 procedural sound packs
+4. **services.js** - API service layer, storage, data management
+5. **app.jsx** - React UI components and game state
+
 **Key Features:**
 - Sudoku puzzle generation (client-side algorithm)
 - Interactive game board
 - Timer and move counter
-- Campaign mode
+- Campaign mode with 8 levels
+- Theme system (8 themes with unlock criteria)
+- Sound system (8 sound packs with procedural audio)
 - UI/UX and animations
 
 **Hosting:** GitHub Pages (free static hosting)
@@ -175,9 +190,13 @@ Displays new messages
 
 ```
 Sudoku-Labs/
-├── index.html              # HTML shell, loads React
+├── index.html              # HTML shell, module loader
 ├── src/
-│   └── app.jsx            # React application
+│   ├── constants.js       # Game constants (themes, sounds, campaign)
+│   ├── utils.js           # Utility functions (validation, formatting)
+│   ├── sound.js           # SoundManager + 8 procedural sound packs
+│   ├── services.js        # API layer (storage, leaderboard, chat)
+│   └── app.jsx            # React UI components
 ├── apps_script/
 │   └── Code.gs            # Backend API
 ├── config/

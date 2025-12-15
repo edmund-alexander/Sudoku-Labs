@@ -139,7 +139,11 @@ The frontend consists of:
 Sudoku-Labs/
 ├── index.html           # Main HTML file (entry point)
 ├── src/
-│   └── app.jsx         # React application code
+│   ├── constants.js    # Game constants (themes, sounds, campaign)
+│   ├── utils.js        # Utility functions
+│   ├── sound.js        # Sound system
+│   ├── services.js     # API service layer
+│   └── app.jsx         # React UI components
 ├── config/
 │   ├── config.example.js    # Template (public)
 │   └── config.local.js      # Your config (gitignored)
@@ -151,11 +155,17 @@ Sudoku-Labs/
 
 ### In-Browser Compilation
 
-The app uses **Babel Standalone** for in-browser JSX compilation:
+The app uses **Babel Standalone** for in-browser JSX compilation with a **modular architecture**:
 
 ```html
 <!-- index.html -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<!-- Load modules in order (plain JS first, then JSX) -->
+<script src="src/constants.js"></script>
+<script src="src/utils.js"></script>
+<script src="src/sound.js"></script>
+<script src="src/services.js"></script>
 <script type="text/babel" src="src/app.jsx"></script>
 ```
 
@@ -163,7 +173,15 @@ This means:
 - ✅ No build step required
 - ✅ Easy to modify and deploy
 - ✅ Source code visible (it's open source anyway)
+- ✅ Modular design (each file has single responsibility)
 - ⚠️ Slightly slower initial load (usually negligible)
+
+**Module Loading Order:**
+1. **constants.js** - Constants first (no dependencies)
+2. **utils.js** - Uses constants
+3. **sound.js** - Self-contained sound system
+4. **services.js** - Uses utils
+5. **app.jsx** - Uses all modules (React components)
 
 ### Configuration Loading
 
@@ -173,7 +191,11 @@ The frontend loads configuration at runtime:
 <!-- Load config before app -->
 <script src="config/config.local.js"></script>
 
-<!-- Then app.jsx uses CONFIG global -->
+<!-- Then app.jsx and modules use CONFIG global -->
+<script src="src/constants.js"></script>
+<script src="src/utils.js"></script>
+<script src="src/sound.js"></script>
+<script src="src/services.js"></script>
 <script type="text/babel" src="src/app.jsx"></script>
 ```
 
@@ -191,6 +213,10 @@ The frontend loads configuration at runtime:
    ```bash
    vim index.html
    # or
+   vim src/constants.js
+   vim src/utils.js
+   vim src/sound.js
+   vim src/services.js
    vim src/app.jsx
    ```
 

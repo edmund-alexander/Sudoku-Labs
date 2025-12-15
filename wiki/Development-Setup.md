@@ -119,7 +119,11 @@ Install these extensions:
 Sudoku-Labs/
 ├── index.html              # Entry point
 ├── src/
-│   └── app.jsx            # React application
+│   ├── constants.js       # Game constants
+│   ├── utils.js           # Utility functions
+│   ├── sound.js           # Sound system
+│   ├── services.js        # API service layer
+│   └── app.jsx            # React UI components
 ├── apps_script/
 │   └── Code.gs            # Backend code
 ├── config/
@@ -147,7 +151,12 @@ git checkout -b fix/bug-description
 
 Edit files in your editor:
 - **Frontend UI**: `index.html`
-- **React Components**: `src/app.jsx`
+- **Frontend Modules**:
+  - `src/constants.js` - Game constants
+  - `src/utils.js` - Utility functions
+  - `src/sound.js` - Sound system
+  - `src/services.js` - API layer
+  - `src/app.jsx` - React UI components
 - **Backend API**: `apps_script/Code.gs`
 - **Documentation**: `docs/` and `wiki/`
 

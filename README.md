@@ -61,13 +61,16 @@ Just visit the live game: **[Play Now](https://edmund-alexander.github.io/Sudoku
 ## 🏗️ Architecture
 
 ```
-GitHub Pages (Frontend)  ←→  Google Apps Script (Backend)
-     ↓                              ↓
-  index.html                    Code.gs
-  src/app.jsx                   (REST API)
-  (React UI)                        ↓
-                              Google Sheets
-                        (Leaderboard, Chat, Logs)
+GitHub Pages (Frontend)           Google Apps Script (Backend)
+     ↓                                    ↓
+  index.html                           Code.gs
+     ↓                                (REST API)
+  src/                                    ↓
+  ├── constants.js                  Google Sheets
+  ├── utils.js              (Leaderboard, Chat, Logs, Users)
+  ├── sound.js
+  ├── services.js
+  └── app.jsx (React UI)
 ```
 
 **Tech Stack:**
@@ -89,9 +92,13 @@ Sudoku-Labs/
 │   └── config.local.js      # Your config (gitignored)
 ├── docs/                    # Documentation
 ├── src/
-│   └── app.jsx             # React application
-├── index.html              # Main HTML file
-└── diagnostic.sh           # API health check script
+│   ├── constants.js         # Game constants (themes, sound packs, campaign)
+│   ├── utils.js             # Utility functions (validation, formatting, helpers)
+│   ├── sound.js             # SoundManager and sound pack handlers
+│   ├── services.js          # API service layer (storage, leaderboard, chat)
+│   └── app.jsx              # React UI components
+├── index.html               # Main HTML file
+└── diagnostic.sh            # API health check script
 ```
 
 ### Running Locally

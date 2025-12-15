@@ -148,7 +148,12 @@ fetch(CONFIG.GAS_URL + '?action=ping')
 ### Issue: Blank page
 **Solution**: 
 1. Check browser console (F12) for errors
-2. Ensure `src/app.jsx` exists
+2. Ensure all source files exist in `src/`:
+   - `src/constants.js`
+   - `src/utils.js`
+   - `src/sound.js`
+   - `src/services.js`
+   - `src/app.jsx`
 3. Try clearing browser cache
 
 ## File Structure Overview
@@ -157,7 +162,11 @@ fetch(CONFIG.GAS_URL + '?action=ping')
 Sudoku-Labs/
 ├── index.html              # Main entry point (open this)
 ├── src/
-│   └── app.jsx            # React application code
+│   ├── constants.js       # Game constants
+│   ├── utils.js           # Utility functions
+│   ├── sound.js           # Sound system
+│   ├── services.js        # API service layer
+│   └── app.jsx            # React UI components
 ├── config/
 │   ├── config.example.js  # Template (committed to git)
 │   └── config.local.js    # Your config (NOT committed)
