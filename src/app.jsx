@@ -445,7 +445,7 @@ const UserPanel = ({ soundEnabled, onClose }) => {
   };
 
   const handleLogout = () => {
-    clearUserSession();
+    StorageService.clearUserSession();
     setLocalUserSession(null);
     if (soundEnabled) SoundManager.play('uiTap');
     onClose(null);
@@ -1293,7 +1293,7 @@ const App = () => {
         setChatMessages(prev => {
           if (prev.length > 0 && msgs.length > prev.length) {
             const lastMsg = msgs[msgs.length - 1];
-            if (!isChatOpen && lastMsg.sender !== getCurrentUserId()) {
+            if (!isChatOpen && lastMsg.sender !== StorageService.getCurrentUserId()) {
               setChatNotification(lastMsg);
               if (soundEnabled) SoundManager.play('chat');
               setTimeout(() => setChatNotification(null), 4000);
@@ -1369,7 +1369,7 @@ const App = () => {
         setMistakes(newMistakes);
 
         if (newMistakes >= 3) {
-          setBoard(newBoard); setStatus('lost'); clearSavedGame(); return;
+          setBoard(newBoard); setStatus('lost'); StorageService.clearSavedGame(); return;
         }
         setTimeout(() => {
           setBoard(prev => {
@@ -1394,13 +1394,13 @@ const App = () => {
     if (mode === 'pen' && newBoard.every((c) => c.value === c.solution)) {
       if (soundEnabled) SoundManager.play('success');
       setStatus('won');
-      clearSavedGame();
+      StorageService.clearSavedGame();
       handleWin(newBoard, mistakes, timer);
     }
   }, [board, selectedCell, status, mode, mistakes, soundEnabled, timer]);
 
   const handleWin = async (finalBoard, finalMistakes, finalTime) => {
-    const currentUserId = getCurrentUserId();
+    const currentUserId = StorageService.getCurrentUserId();
     saveScore({ name: currentUserId, time: finalTime, difficulty, date: new Date().toLocaleDateString() });
 
     // Update game stats for theme unlocking
@@ -1498,7 +1498,7 @@ const App = () => {
     const txt = text.trim(); if (!txt) return;
     if (soundEnabled) SoundManager.play('uiTap');
     setChatInput('');
-    const currentUserId = getCurrentUserId();
+    const currentUserId = StorageService.getCurrentUserId();
     const msg = { id: Date.now().toString(), sender: currentUserId, text: txt, timestamp: Date.now(), status: (userStatus || '').slice(0, 50) };
     setChatMessages(prev => [...prev, msg]);
     isSendingRef.current = true;
@@ -1684,7 +1684,7 @@ const App = () => {
   };
 
   const remaining = getRemainingNumbers();
-  const userId = getCurrentUserId();
+  const userId = StorageService.getCurrentUserId();
 
   // --- RENDER LOGIC ---
 
