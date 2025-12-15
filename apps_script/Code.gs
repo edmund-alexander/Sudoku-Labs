@@ -309,10 +309,10 @@ function registerUser(data) {
       return { success: false, error: 'Users sheet not found' };
     }
     
-    // Check if username already exists
+    // Check if username already exists (case-insensitive)
     const sheetData = sheet.getDataRange().getValues();
     for (let i = 1; i < sheetData.length; i++) {
-      if (sheetData[i][1] === username) {
+      if (sheetData[i][1].toLowerCase() === username.toLowerCase()) {
         return { success: false, error: 'Username already exists' };
       }
     }
