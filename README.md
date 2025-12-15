@@ -54,9 +54,6 @@ Just visit the live game: **[Play Now](https://edmund-alexander.github.io/Sudoku
 - **[Architecture](docs/ARCHITECTURE.md)** - System design and component overview
 - **[Configuration](docs/CONFIGURATION.md)** - How to configure the application
 - **[Deployment Checklist](docs/DEPLOYMENT_CHECKLIST.md)** - Complete deployment guide
-- **[AI Agent Deployment](docs/AI_AGENT_DEPLOYMENT.md)** - Automated deployment for AI agents
-- **[OAuth Setup Guide](docs/OAUTH_SETUP_GUIDE.md)** - Getting credentials for automated deployment
-- **[GAS Connection Testing](docs/GAS_CONNECTION_TESTING.md)** - Test Google Apps Script backend connection
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Wiki](../../wiki)** - Additional guides and resources
 
@@ -93,8 +90,6 @@ Sudoku-Labs/
 ├── src/
 │   └── app.jsx             # React application
 ├── index.html              # Main HTML file
-├── test-gas-connection.sh  # Backend connection test (shell)
-├── test-gas-connection.html # Backend connection test (browser)
 └── diagnostic.sh           # API health check script
 ```
 
@@ -110,17 +105,8 @@ The app runs entirely in the browser with in-browser Babel compilation. Simply o
 - All features enabled
 - Requires Google Apps Script deployment
 
-### Testing Backend Connection
+### API Health Check
 
-**Quick Test:**
-```bash
-# Test GAS connection with shell script
-./test-gas-connection.sh
-
-# Or open test-gas-connection.html in browser for visual testing
-```
-
-**API Health Check:**
 ```bash
 # Set your GAS URL
 export GAS_URL="https://script.google.com/macros/s/YOUR_ID/exec"
@@ -128,8 +114,6 @@ export GAS_URL="https://script.google.com/macros/s/YOUR_ID/exec"
 # Run diagnostics
 ./diagnostic.sh
 ```
-
-See [GAS Connection Testing Guide](docs/GAS_CONNECTION_TESTING.md) for detailed testing instructions.
 
 ## 📝 Configuration
 
@@ -153,20 +137,12 @@ See [Configuration Guide](docs/CONFIGURATION.md) for details.
 
 ### Backend (Google Apps Script)
 
-**Manual Deployment:**
 1. Create a new Apps Script project at [script.google.com](https://script.google.com)
 2. Copy code from `apps_script/Code.gs`
 3. Deploy as Web App with "Anyone" access
 4. Copy deployment URL to `config/config.local.js`
 
-**Automated Deployment (for AI agents & CI/CD):**
-1. Install clasp: `npm install -g @google/clasp`
-2. Configure OAuth credentials (see [OAUTH_SETUP_GUIDE.md](docs/OAUTH_SETUP_GUIDE.md))
-3. Deploy: `npm run deploy:gas`
-4. Or commit with `[deploy-gas]` in message for GitHub Actions
-
-**Full deployment guide:** [DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md)  
-**Automated deployment:** [AI_AGENT_DEPLOYMENT.md](docs/AI_AGENT_DEPLOYMENT.md)
+**Full deployment guide:** [DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md)
 
 ## 🎮 How to Play
 

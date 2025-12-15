@@ -2,8 +2,6 @@
 config/config.local.js
 .env
 .env.local
-.clasp.json
-.clasprc.json
 
 # Debug & Diagnostic Scripts
 *.debug
