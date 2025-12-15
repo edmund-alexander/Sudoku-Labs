@@ -119,9 +119,77 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         }
       };
 
+      // --- SOUND PACK SYSTEM ---
+      const SOUND_PACKS = {
+        default: {
+          id: 'default',
+          name: 'Classic',
+          description: 'The original sound experience',
+          icon: '🔊',
+          unlocked: true
+        },
+        zen: {
+          id: 'zen',
+          name: 'Zen Garden',
+          description: 'Peaceful, meditative tones',
+          icon: '🧘',
+          unlocked: false,
+          unlockCriteria: 'Win 5 games'
+        },
+        funfair: {
+          id: 'funfair',
+          name: 'Funfair',
+          description: 'Playful carnival sounds',
+          icon: '🎪',
+          unlocked: false,
+          unlockCriteria: 'Win 10 games'
+        },
+        retro: {
+          id: 'retro',
+          name: 'Retro Arcade',
+          description: 'Classic 8-bit sounds',
+          icon: '🕹️',
+          unlocked: false,
+          unlockCriteria: 'Complete a Hard puzzle'
+        },
+        space: {
+          id: 'space',
+          name: 'Space Odyssey',
+          description: 'Futuristic sci-fi sounds',
+          icon: '🚀',
+          unlocked: false,
+          unlockCriteria: 'Win a puzzle with 0 mistakes'
+        },
+        nature: {
+          id: 'nature',
+          name: 'Nature\'s Call',
+          description: 'Organic, natural tones',
+          icon: '🌿',
+          unlocked: false,
+          unlockCriteria: 'Win 3 Easy puzzles'
+        },
+        crystal: {
+          id: 'crystal',
+          name: 'Crystal Chimes',
+          description: 'Pure crystalline sounds',
+          icon: '💎',
+          unlocked: false,
+          unlockCriteria: 'Win 3 Medium puzzles'
+        },
+        minimal: {
+          id: 'minimal',
+          name: 'Minimalist',
+          description: 'Subtle, understated tones',
+          icon: '⚪',
+          unlocked: false,
+          unlockCriteria: 'Win a puzzle in under 3 minutes'
+        }
+      };
+
       // --- SOUND MANAGER ---
       const SoundManager = {
         ctx: null,
+        currentPack: 'default',
         init: () => {
           if (!SoundManager.ctx) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -131,11 +199,45 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
             SoundManager.ctx.resume();
           }
         },
+        setPack: (packId) => {
+          SoundManager.currentPack = packId;
+        },
         play: (type) => {
           if (!SoundManager.ctx) SoundManager.init();
           if (!SoundManager.ctx) return;
           
           const t = SoundManager.ctx.currentTime;
+          const pack = SoundManager.currentPack;
+          
+          // Get sound definition based on pack
+          switch (pack) {
+            case 'zen':
+              SoundManager.playZen(type, t);
+              break;
+            case 'funfair':
+              SoundManager.playFunfair(type, t);
+              break;
+            case 'retro':
+              SoundManager.playRetro(type, t);
+              break;
+            case 'space':
+              SoundManager.playSpace(type, t);
+              break;
+            case 'nature':
+              SoundManager.playNature(type, t);
+              break;
+            case 'crystal':
+              SoundManager.playCrystal(type, t);
+              break;
+            case 'minimal':
+              SoundManager.playMinimal(type, t);
+              break;
+            default:
+              SoundManager.playDefault(type, t);
+              break;
+          }
+        },
+        playDefault: (type, t) => {
           const osc = SoundManager.ctx.createOscillator();
           const gain = SoundManager.ctx.createGain();
           
@@ -220,6 +322,238 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                break;
              default: break;
           }
+        },
+        playZen: (type, t) => {
+          // Zen: lower frequencies, longer sustain, sine waves for smoothness
+          const osc = SoundManager.ctx.createOscillator();
+          const gain = SoundManager.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(SoundManager.ctx.destination);
+          
+          switch (type) {
+            case 'select':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(400, t);
+              gain.gain.setValueAtTime(0.015, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+              osc.start(t); osc.stop(t + 0.3); break;
+            case 'uiTap':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(300, t);
+              gain.gain.setValueAtTime(0.03, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+              osc.start(t); osc.stop(t + 0.4); break;
+            case 'write':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(350, t);
+              gain.gain.setValueAtTime(0.05, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+              osc.start(t); osc.stop(t + 0.2); break;
+            case 'success':
+              [220, 293.66, 349.23, 440].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'sine'; o.frequency.value = freq;
+                g.gain.setValueAtTime(0.03, t + i*0.2); g.gain.exponentialRampToValueAtTime(0.001, t + i*0.2 + 1.5);
+                o.start(t + i*0.2); o.stop(t + i*0.2 + 1.5);
+              }); break;
+            default: SoundManager.playDefault(type, t); break;
+          }
+        },
+        playFunfair: (type, t) => {
+          // Funfair: brighter, bouncy, triangle waves, major chords
+          const osc = SoundManager.ctx.createOscillator();
+          const gain = SoundManager.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(SoundManager.ctx.destination);
+          
+          switch (type) {
+            case 'select':
+              osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, t); osc.frequency.linearRampToValueAtTime(1600, t + 0.05);
+              gain.gain.setValueAtTime(0.04, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+              osc.start(t); osc.stop(t + 0.05); break;
+            case 'uiTap':
+              [523.25, 659.25, 783.99].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'triangle'; o.frequency.value = freq;
+                g.gain.setValueAtTime(0.03, t + i*0.02); g.gain.exponentialRampToValueAtTime(0.001, t + i*0.02 + 0.15);
+                o.start(t + i*0.02); o.stop(t + i*0.02 + 0.15);
+              }); break;
+            case 'write':
+              osc.type = 'triangle'; osc.frequency.setValueAtTime(1046.50, t);
+              gain.gain.setValueAtTime(0.08, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+              osc.start(t); osc.stop(t + 0.08); break;
+            case 'success':
+              [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77, 1046.50].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'triangle'; o.frequency.value = freq;
+                g.gain.setValueAtTime(0.04, t + i*0.05); g.gain.exponentialRampToValueAtTime(0.001, t + i*0.05 + 0.3);
+                o.start(t + i*0.05); o.stop(t + i*0.05 + 0.3);
+              }); break;
+            default: SoundManager.playDefault(type, t); break;
+          }
+        },
+        playRetro: (type, t) => {
+          // Retro: square waves, simple frequencies, shorter durations
+          const osc = SoundManager.ctx.createOscillator();
+          const gain = SoundManager.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(SoundManager.ctx.destination);
+          
+          switch (type) {
+            case 'select':
+              osc.type = 'square'; osc.frequency.setValueAtTime(1047, t);
+              gain.gain.setValueAtTime(0.03, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+              osc.start(t); osc.stop(t + 0.04); break;
+            case 'uiTap':
+              osc.type = 'square'; osc.frequency.setValueAtTime(523, t); osc.frequency.exponentialRampToValueAtTime(130, t + 0.1);
+              gain.gain.setValueAtTime(0.05, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+              osc.start(t); osc.stop(t + 0.1); break;
+            case 'write':
+              osc.type = 'square'; osc.frequency.setValueAtTime(784, t);
+              gain.gain.setValueAtTime(0.06, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+              osc.start(t); osc.stop(t + 0.08); break;
+            case 'success':
+              [523, 659, 784, 1047].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'square'; o.frequency.value = freq;
+                g.gain.setValueAtTime(0.04, t + i*0.08); g.gain.exponentialRampToValueAtTime(0.001, t + i*0.08 + 0.2);
+                o.start(t + i*0.08); o.stop(t + i*0.08 + 0.2);
+              }); break;
+            default: SoundManager.playDefault(type, t); break;
+          }
+        },
+        playSpace: (type, t) => {
+          // Space: sweeping frequencies, echoes, sawtooth for sci-fi feel
+          const osc = SoundManager.ctx.createOscillator();
+          const gain = SoundManager.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(SoundManager.ctx.destination);
+          
+          switch (type) {
+            case 'select':
+              osc.type = 'sawtooth'; osc.frequency.setValueAtTime(2000, t); osc.frequency.exponentialRampToValueAtTime(400, t + 0.15);
+              gain.gain.setValueAtTime(0.02, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+              osc.start(t); osc.stop(t + 0.15); break;
+            case 'uiTap':
+              osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(200, t + 0.2);
+              gain.gain.setValueAtTime(0.04, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+              osc.start(t); osc.stop(t + 0.2); break;
+            case 'write':
+              osc.type = 'sawtooth'; osc.frequency.setValueAtTime(1500, t); osc.frequency.exponentialRampToValueAtTime(500, t + 0.1);
+              gain.gain.setValueAtTime(0.06, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+              osc.start(t); osc.stop(t + 0.1); break;
+            case 'success':
+              [200, 400, 800, 1600].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'sawtooth'; o.frequency.setValueAtTime(freq, t + i*0.1);
+                o.frequency.exponentialRampToValueAtTime(freq * 2, t + i*0.1 + 0.4);
+                g.gain.setValueAtTime(0.03, t + i*0.1); g.gain.exponentialRampToValueAtTime(0.001, t + i*0.1 + 0.4);
+                o.start(t + i*0.1); o.stop(t + i*0.1 + 0.4);
+              }); break;
+            default: SoundManager.playDefault(type, t); break;
+          }
+        },
+        playNature: (type, t) => {
+          // Nature: organic, varied frequencies, soft attack
+          const osc = SoundManager.ctx.createOscillator();
+          const gain = SoundManager.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(SoundManager.ctx.destination);
+          
+          switch (type) {
+            case 'select':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(600, t); osc.frequency.linearRampToValueAtTime(550, t + 0.08);
+              gain.gain.setValueAtTime(0.02, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+              osc.start(t); osc.stop(t + 0.08); break;
+            case 'uiTap':
+              [400, 450, 500].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'sine'; o.frequency.value = freq;
+                g.gain.setValueAtTime(0, t + i*0.04); g.gain.linearRampToValueAtTime(0.02, t + i*0.04 + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.001, t + i*0.04 + 0.15);
+                o.start(t + i*0.04); o.stop(t + i*0.04 + 0.15);
+              }); break;
+            case 'write':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(500, t);
+              gain.gain.setValueAtTime(0.06, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+              osc.start(t); osc.stop(t + 0.12); break;
+            case 'success':
+              [293.66, 329.63, 392, 440, 493.88, 587.33].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'sine'; o.frequency.value = freq;
+                g.gain.setValueAtTime(0, t + i*0.1); g.gain.linearRampToValueAtTime(0.04, t + i*0.1 + 0.05);
+                g.gain.exponentialRampToValueAtTime(0.001, t + i*0.1 + 0.7);
+                o.start(t + i*0.1); o.stop(t + i*0.1 + 0.7);
+              }); break;
+            default: SoundManager.playDefault(type, t); break;
+          }
+        },
+        playCrystal: (type, t) => {
+          // Crystal: high frequencies, pure sine, bell-like
+          const osc = SoundManager.ctx.createOscillator();
+          const gain = SoundManager.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(SoundManager.ctx.destination);
+          
+          switch (type) {
+            case 'select':
+              [2000, 3000].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'sine'; o.frequency.value = freq;
+                g.gain.setValueAtTime(0.015, t + i*0.01); g.gain.exponentialRampToValueAtTime(0.001, t + i*0.01 + 0.3);
+                o.start(t + i*0.01); o.stop(t + i*0.01 + 0.3);
+              }); break;
+            case 'uiTap':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(2500, t);
+              gain.gain.setValueAtTime(0.03, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+              osc.start(t); osc.stop(t + 0.2); break;
+            case 'write':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(1800, t);
+              gain.gain.setValueAtTime(0.05, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+              osc.start(t); osc.stop(t + 0.15); break;
+            case 'success':
+              [1046.50, 1318.51, 1567.98, 2093, 2637.02].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'sine'; o.frequency.value = freq;
+                g.gain.setValueAtTime(0.03, t + i*0.06); g.gain.exponentialRampToValueAtTime(0.001, t + i*0.06 + 0.8);
+                o.start(t + i*0.06); o.stop(t + i*0.06 + 0.8);
+              }); break;
+            default: SoundManager.playDefault(type, t); break;
+          }
+        },
+        playMinimal: (type, t) => {
+          // Minimal: very short, quiet, subtle
+          const osc = SoundManager.ctx.createOscillator();
+          const gain = SoundManager.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(SoundManager.ctx.destination);
+          
+          switch (type) {
+            case 'select':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(1000, t);
+              gain.gain.setValueAtTime(0.01, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+              osc.start(t); osc.stop(t + 0.03); break;
+            case 'uiTap':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(600, t);
+              gain.gain.setValueAtTime(0.02, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+              osc.start(t); osc.stop(t + 0.05); break;
+            case 'write':
+              osc.type = 'sine'; osc.frequency.setValueAtTime(800, t);
+              gain.gain.setValueAtTime(0.03, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+              osc.start(t); osc.stop(t + 0.04); break;
+            case 'success':
+              [523.25, 659.25, 783.99].forEach((freq, i) => {
+                const o = SoundManager.ctx.createOscillator(); const g = SoundManager.ctx.createGain();
+                o.connect(g); g.connect(SoundManager.ctx.destination);
+                o.type = 'sine'; o.frequency.value = freq;
+                g.gain.setValueAtTime(0.02, t + i*0.04); g.gain.exponentialRampToValueAtTime(0.001, t + i*0.04 + 0.15);
+                o.start(t + i*0.04); o.stop(t + i*0.04 + 0.15);
+              }); break;
+            default: SoundManager.playDefault(type, t); break;
+          }
         }
       };
 
@@ -234,7 +568,9 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         USER_SESSION: 'sudoku_v2_user_session',
         UNLOCKED_THEMES: 'sudoku_v2_unlocked_themes',
         ACTIVE_THEME: 'sudoku_v2_active_theme',
-        GAME_STATS: 'sudoku_v2_game_stats'
+        GAME_STATS: 'sudoku_v2_game_stats',
+        UNLOCKED_SOUND_PACKS: 'sudoku_v2_unlocked_sound_packs',
+        ACTIVE_SOUND_PACK: 'sudoku_v2_active_sound_pack'
       };
 
       // GAS Backend API URL - Configure this with your deployment URL
@@ -528,6 +864,85 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         return newlyUnlocked;
       };
 
+      // --- SOUND PACK SYSTEM HELPERS ---
+      const getUnlockedSoundPacks = () => {
+        try {
+          const stored = localStorage.getItem(KEYS.UNLOCKED_SOUND_PACKS);
+          return stored ? JSON.parse(stored) : ['default'];
+        } catch(e) {
+          return ['default'];
+        }
+      };
+
+      const saveUnlockedSoundPacks = (packs) => {
+        try {
+          localStorage.setItem(KEYS.UNLOCKED_SOUND_PACKS, JSON.stringify(packs));
+        } catch(e) {}
+      };
+
+      const getActiveSoundPack = () => {
+        try {
+          const stored = localStorage.getItem(KEYS.ACTIVE_SOUND_PACK);
+          return stored || 'default';
+        } catch(e) {
+          return 'default';
+        }
+      };
+
+      const saveActiveSoundPack = (packId) => {
+        try {
+          localStorage.setItem(KEYS.ACTIVE_SOUND_PACK, packId);
+          SoundManager.setPack(packId);
+        } catch(e) {}
+      };
+
+      const checkSoundPackUnlocks = (stats) => {
+        const newlyUnlocked = [];
+        const currentUnlocked = getUnlockedSoundPacks();
+        
+        // Zen: Win 5 games
+        if (stats.totalWins >= 5 && !currentUnlocked.includes('zen')) {
+          newlyUnlocked.push('zen');
+        }
+        
+        // Funfair: Win 10 games
+        if (stats.totalWins >= 10 && !currentUnlocked.includes('funfair')) {
+          newlyUnlocked.push('funfair');
+        }
+        
+        // Retro: Complete a Hard puzzle
+        if (stats.hardWins >= 1 && !currentUnlocked.includes('retro')) {
+          newlyUnlocked.push('retro');
+        }
+        
+        // Space: Win with 0 mistakes
+        if (stats.perfectWins >= 1 && !currentUnlocked.includes('space')) {
+          newlyUnlocked.push('space');
+        }
+        
+        // Nature: Win 3 Easy puzzles
+        if (stats.easyWins >= 3 && !currentUnlocked.includes('nature')) {
+          newlyUnlocked.push('nature');
+        }
+        
+        // Crystal: Win 3 Medium puzzles
+        if (stats.mediumWins >= 3 && !currentUnlocked.includes('crystal')) {
+          newlyUnlocked.push('crystal');
+        }
+        
+        // Minimal: Win in under 3 minutes
+        if (stats.fastWins >= 1 && !currentUnlocked.includes('minimal')) {
+          newlyUnlocked.push('minimal');
+        }
+        
+        if (newlyUnlocked.length > 0) {
+          const updatedUnlocked = [...currentUnlocked, ...newlyUnlocked];
+          saveUnlockedSoundPacks(updatedUnlocked);
+        }
+        
+        return newlyUnlocked;
+      };
+
       const getUserId = () => {
           let uid = localStorage.getItem(KEYS.USER_ID);
           if (!uid) {
@@ -697,6 +1112,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         X: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>,
         VolumeUp: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>,
         VolumeOff: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12h-3M3 3l18 18M11.25 5.25L11.25 18.75" /></svg>,
+        Music: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" /></svg>,
         Map: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" /></svg>,
         Lock: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>,
         Star: ({filled}) => <svg xmlns="http://www.w3.org/2000/svg" fill={filled ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.545.044.77.77.326 1.163l-4.304 3.86a.562.562 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.304-3.86c-.444-.393-.219-1.119.326-1.163l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>,
@@ -817,6 +1233,126 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                         </div>
                       </div>
                       <div className={`mt-3 h-12 rounded ${theme.background} border border-gray-300 dark:border-gray-600`}></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // --- SOUND PACK SELECTOR COMPONENT ---
+      const SoundPackSelector = ({ soundEnabled, onClose, activeSoundPackId, unlockedSoundPacks, onSelectSoundPack }) => {
+        const stats = getGameStats();
+        
+        const isSoundPackUnlocked = (packId) => {
+          return unlockedSoundPacks.includes(packId);
+        };
+        
+        const getSoundPackProgress = (packId) => {
+          const pack = SOUND_PACKS[packId];
+          if (!pack || pack.unlocked || isSoundPackUnlocked(packId)) return null;
+          
+          // Return progress towards unlocking this sound pack
+          switch(packId) {
+            case 'zen':
+              return `${Math.min(stats.totalWins, 5)}/5 wins`;
+            case 'funfair':
+              return `${Math.min(stats.totalWins, 10)}/10 wins`;
+            case 'retro':
+              return stats.hardWins >= 1 ? 'Unlocked!' : `${stats.hardWins}/1 Hard win`;
+            case 'space':
+              return stats.perfectWins >= 1 ? 'Unlocked!' : `${stats.perfectWins}/1 perfect win`;
+            case 'nature':
+              return `${Math.min(stats.easyWins, 3)}/3 Easy wins`;
+            case 'crystal':
+              return `${Math.min(stats.mediumWins, 3)}/3 Medium wins`;
+            case 'minimal':
+              return stats.fastWins >= 1 ? 'Unlocked!' : `${stats.fastWins}/1 fast win`;
+            default:
+              return null;
+          }
+        };
+        
+        const handleSoundPackSelect = (packId) => {
+          if (!isSoundPackUnlocked(packId)) return;
+          if (soundEnabled) SoundManager.play('uiTap');
+          onSelectSoundPack(packId);
+          saveActiveSoundPack(packId);
+          // Play a preview of the selected pack
+          setTimeout(() => {
+            if (soundEnabled) SoundManager.play('success');
+          }, 200);
+        };
+        
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-pop relative">
+              <button
+                onClick={() => { if(soundEnabled) SoundManager.play('uiTap'); onClose(); }} 
+                className="absolute top-2 right-2 sm:top-4 sm:right-4 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+                aria-label="Close"
+              >
+                <Icons.X />
+              </button>
+              
+              <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2"><Icons.VolumeUp /> Sound Packs</h2>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
+                Unlock sound packs by completing challenges. Customize your audio experience!
+              </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {Object.values(SOUND_PACKS).map((pack) => {
+                  const unlocked = isSoundPackUnlocked(pack.id);
+                  const isActive = pack.id === activeSoundPackId;
+                  const progress = getSoundPackProgress(pack.id);
+                  
+                  return (
+                    <div
+                      key={pack.id}
+                      onClick={() => handleSoundPackSelect(pack.id)}
+                      className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
+                        isActive 
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
+                          : unlocked 
+                            ? 'border-gray-300 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-700 cursor-pointer' 
+                            : 'border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`text-3xl sm:text-4xl ${unlocked ? '' : 'grayscale opacity-50'}`}>
+                          {pack.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100">
+                              {pack.name}
+                            </h3>
+                            {isActive && (
+                              <span className="text-xs px-2 py-0.5 bg-blue-600 text-white rounded-full">
+                                Active
+                              </span>
+                            )}
+                            {!unlocked && <Icons.Lock />}
+                          </div>
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {pack.description}
+                          </p>
+                          {!unlocked && pack.unlockCriteria && (
+                            <div className="mt-2 text-xs">
+                              <p className="text-gray-500 dark:text-gray-400">
+                                <span className="font-semibold">Unlock:</span> {pack.unlockCriteria}
+                              </p>
+                              {progress && (
+                                <p className="text-blue-600 dark:text-blue-400 font-medium mt-1">
+                                  Progress: {progress}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -1341,7 +1877,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
          )
       };
 
-      const OpeningScreen = ({ onStart, onResume, onCampaign, hasSavedGame, darkMode, toggleDarkMode, loading, soundEnabled, toggleSound, onShowUserPanel, onShowThemes, userSession }) => (
+      const OpeningScreen = ({ onStart, onResume, onCampaign, hasSavedGame, darkMode, toggleDarkMode, loading, soundEnabled, toggleSound, onShowUserPanel, onShowThemes, onShowSoundPacks, userSession }) => (
         <div className="min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 text-gray-900 dark:text-gray-100 animate-fade-in relative z-10">
            <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex gap-1 sm:gap-2">
               <button onClick={onShowUserPanel} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative">
@@ -1350,10 +1886,13 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></span>
                   )}
               </button>
-              <button onClick={onShowThemes} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Themes">
+              <button onClick={onShowThemes} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Visual Themes">
                   <Icons.Palette />
               </button>
-              <button onClick={toggleSound} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+              <button onClick={onShowSoundPacks} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Sound Packs">
+                  <Icons.Music />
+              </button>
+              <button onClick={toggleSound} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Toggle Sound">
                   {soundEnabled ? <Icons.VolumeUp /> : <Icons.VolumeOff />}
               </button>
               <button onClick={toggleDarkMode} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
@@ -1406,7 +1945,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         </div>
       );
 
-      const ClosingScreen = ({ status, time, difficulty, mistakes, onRestart, onMenu, loading, soundEnabled, activeQuest, questCompleted, newlyUnlockedThemes }) => {
+      const ClosingScreen = ({ status, time, difficulty, mistakes, onRestart, onMenu, loading, soundEnabled, activeQuest, questCompleted, newlyUnlockedThemes, newlyUnlockedSoundPacks }) => {
         const isWin = status === 'won';
         
         useEffect(() => {
@@ -1445,6 +1984,20 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                                 <div key={themeId} className="flex items-center gap-1 bg-white dark:bg-gray-800 px-2 py-1 rounded-lg border border-purple-200 dark:border-purple-800">
                                     <span className="text-lg">{THEMES[themeId].icon}</span>
                                     <span className="text-xs sm:text-sm font-medium">{THEMES[themeId].name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {newlyUnlockedSoundPacks && newlyUnlockedSoundPacks.length > 0 && (
+                    <div className="my-3 sm:my-4 p-2.5 sm:p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-lg border-2 border-blue-300 dark:border-blue-700 animate-pulse-glow">
+                        <p className="text-sm sm:text-base font-bold text-blue-700 dark:text-blue-300 mb-2 flex items-center justify-center gap-1.5"><Icons.VolumeUp /> New Sound Pack{newlyUnlockedSoundPacks.length > 1 ? 's' : ''} Unlocked!</p>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                            {newlyUnlockedSoundPacks.map(packId => (
+                                <div key={packId} className="flex items-center gap-1 bg-white dark:bg-gray-800 px-2 py-1 rounded-lg border border-blue-200 dark:border-blue-800">
+                                    <span className="text-lg">{SOUND_PACKS[packId].icon}</span>
+                                    <span className="text-xs sm:text-sm font-medium">{SOUND_PACKS[packId].name}</span>
                                 </div>
                             ))}
                         </div>
@@ -1516,6 +2069,12 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         const [newlyUnlockedThemes, setNewlyUnlockedThemes] = useState([]);
         const [showThemeSelector, setShowThemeSelector] = useState(false);
         
+        // Sound Pack State
+        const [activeSoundPackId, setActiveSoundPackId] = useState(getActiveSoundPack());
+        const [unlockedSoundPacks, setUnlockedSoundPacks] = useState(getUnlockedSoundPacks());
+        const [newlyUnlockedSoundPacks, setNewlyUnlockedSoundPacks] = useState([]);
+        const [showSoundPackSelector, setShowSoundPackSelector] = useState(false);
+        
         const timerRef = useRef(null);
         const chatEndRef = useRef(null);
         const isSendingRef = useRef(false);
@@ -1538,6 +2097,9 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
           }
 
           if (savedSound === 'false') setSoundEnabled(false);
+
+          // Initialize sound pack
+          SoundManager.setPack(activeSoundPackId);
 
           const saved = loadGame();
           if (saved && saved.status === 'playing') {
@@ -1606,7 +2168,10 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
         };
 
         const startNewGame = async (diff, quest = null) => {
-          if(soundEnabled) SoundManager.init();
+          if(soundEnabled) {
+            SoundManager.init();
+            SoundManager.setPack(activeSoundPackId);
+          }
           setLoading(true);
           try {
             let newBoard = null;
@@ -1696,6 +2261,13 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
             if (newThemes.length > 0) {
               setNewlyUnlockedThemes(newThemes);
               setUnlockedThemes(getUnlockedThemes()); // Update state with newly unlocked themes
+            }
+            
+            // Check for sound pack unlocks
+            const newSoundPacks = checkSoundPackUnlocks(stats);
+            if (newSoundPacks.length > 0) {
+              setNewlyUnlockedSoundPacks(newSoundPacks);
+              setUnlockedSoundPacks(getUnlockedSoundPacks()); // Update state with newly unlocked sound packs
             }
             
             // Update user stats if authenticated
@@ -1905,6 +2477,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                     loading={loading} soundEnabled={soundEnabled} toggleSound={toggleSound}
                     onShowUserPanel={() => setShowUserPanel(true)}
                     onShowThemes={() => { if(soundEnabled) SoundManager.play('uiTap'); setShowThemeSelector(true); }}
+                    onShowSoundPacks={() => { if(soundEnabled) SoundManager.play('uiTap'); setShowSoundPackSelector(true); }}
                     userSession={appUserSession}
                 />
                 {showUserPanel && <UserPanel soundEnabled={soundEnabled} onClose={handleUserPanelClose} />}
@@ -1916,6 +2489,17 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                         unlockedThemes={unlockedThemes}
                         onSelectTheme={(themeId) => {
                             setActiveThemeId(themeId);
+                        }}
+                    />
+                )}
+                {showSoundPackSelector && (
+                    <SoundPackSelector 
+                        soundEnabled={soundEnabled}
+                        onClose={() => setShowSoundPackSelector(false)}
+                        activeSoundPackId={activeSoundPackId}
+                        unlockedSoundPacks={unlockedSoundPacks}
+                        onSelectSoundPack={(packId) => {
+                            setActiveSoundPackId(packId);
                         }}
                     />
                 )}
@@ -1936,10 +2520,12 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                     else setView('menu'); 
                     setActiveQuest(null);
                     setNewlyUnlockedThemes([]);
+                    setNewlyUnlockedSoundPacks([]);
                 }} 
                 loading={loading} soundEnabled={soundEnabled}
                 activeQuest={activeQuest} questCompleted={questCompleted}
                 newlyUnlockedThemes={newlyUnlockedThemes}
+                newlyUnlockedSoundPacks={newlyUnlockedSoundPacks}
              />
              {showThemeSelector && (
                  <ThemeSelector 
@@ -1949,6 +2535,17 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                      unlockedThemes={unlockedThemes}
                      onSelectTheme={(themeId) => {
                          setActiveThemeId(themeId);
+                     }}
+                 />
+             )}
+             {showSoundPackSelector && (
+                 <SoundPackSelector 
+                     soundEnabled={soundEnabled}
+                     onClose={() => setShowSoundPackSelector(false)}
+                     activeSoundPackId={activeSoundPackId}
+                     unlockedSoundPacks={unlockedSoundPacks}
+                     onSelectSoundPack={(packId) => {
+                         setActiveSoundPackId(packId);
                      }}
                  />
              )}
@@ -1979,10 +2576,13 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                           <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></span>
                         )}
                     </button>
-                    <button onClick={() => { if(soundEnabled) SoundManager.play('uiTap'); setShowThemeSelector(true); }} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Themes">
+                    <button onClick={() => { if(soundEnabled) SoundManager.play('uiTap'); setShowThemeSelector(true); }} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Visual Themes">
                         <Icons.Palette />
                     </button>
-                    <button onClick={toggleSound} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    <button onClick={() => { if(soundEnabled) SoundManager.play('uiTap'); setShowSoundPackSelector(true); }} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Sound Packs">
+                        <Icons.Music />
+                    </button>
+                    <button onClick={toggleSound} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Toggle Sound">
                         {soundEnabled ? <Icons.VolumeUp /> : <Icons.VolumeOff />}
                     </button>
                     <button onClick={toggleDarkMode} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
@@ -2141,6 +2741,17 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                     unlockedThemes={unlockedThemes}
                     onSelectTheme={(themeId) => {
                         setActiveThemeId(themeId);
+                    }}
+                />
+            )}
+            {showSoundPackSelector && (
+                <SoundPackSelector 
+                    soundEnabled={soundEnabled}
+                    onClose={() => setShowSoundPackSelector(false)}
+                    activeSoundPackId={activeSoundPackId}
+                    unlockedSoundPacks={unlockedSoundPacks}
+                    onSelectSoundPack={(packId) => {
+                        setActiveSoundPackId(packId);
                     }}
                 />
             )}
