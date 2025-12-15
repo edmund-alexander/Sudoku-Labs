@@ -161,7 +161,7 @@ const CHAT_POLL_INTERVAL = 5000;
 
 // --- AWARDS ZONE (Themes + Sound Packs) ---
 const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSelectTheme, activePackId, unlockedPacks, onSelectPack }) => {
-  const stats = getGameStats();
+  const stats = StorageService.getGameStats();
   const [tab, setTab] = useState('themes');
 
   const isThemeUnlocked = (themeId) => unlockedThemes.includes(themeId);
@@ -197,7 +197,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
     if (!isThemeUnlocked(themeId)) return;
     if (soundEnabled) SoundManager.play('uiTap');
     onSelectTheme(themeId);
-    saveActiveTheme(themeId);
+    StorageService.saveActiveTheme(themeId);
   };
 
   const handlePackSelect = (packId) => {
@@ -207,7 +207,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
       SoundManager.play('uiTap');
     }
     onSelectPack(packId);
-    saveActiveSoundPack(packId);
+    StorageService.saveActiveSoundPack(packId);
   };
 
   const renderThemes = () => (
@@ -347,7 +347,7 @@ const UserPanel = ({ soundEnabled, onClose }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [localUserSession, setLocalUserSession] = useState(getUserSession());
+  const [localUserSession, setLocalUserSession] = useState(StorageService.getUserSession());
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -1068,21 +1068,21 @@ const App = () => {
 
   // Campaign State
   const [activeQuest, setActiveQuest] = useState(null);
-  const [campaignProgress, setCampaignProgress] = useState(getCampaignProgress());
+  const [campaignProgress, setCampaignProgress] = useState(StorageService.getCampaignProgress());
   const [questCompleted, setQuestCompleted] = useState(false);
 
   // User Authentication State
   const [showUserPanel, setShowUserPanel] = useState(false);
-  const [appUserSession, setAppUserSession] = useState(getUserSession());
+  const [appUserSession, setAppUserSession] = useState(StorageService.getUserSession());
 
   // Theme State
-  const [activeThemeId, setActiveThemeId] = useState(getActiveTheme());
-  const [unlockedThemes, setUnlockedThemes] = useState(getUnlockedThemes());
+  const [activeThemeId, setActiveThemeId] = useState(StorageService.getActiveTheme());
+  const [unlockedThemes, setUnlockedThemes] = useState(StorageService.getUnlockedThemes());
   const [newlyUnlockedThemes, setNewlyUnlockedThemes] = useState([]);
 
   // Sound Pack State
-  const [activeSoundPackId, setActiveSoundPackId] = useState(getActiveSoundPack());
-  const [unlockedSoundPacks, setUnlockedSoundPacks] = useState(getUnlockedSoundPacks());
+  const [activeSoundPackId, setActiveSoundPackId] = useState(StorageService.getActiveSoundPack());
+  const [unlockedSoundPacks, setUnlockedSoundPacks] = useState(StorageService.getUnlockedSoundPacks());
   const [newlyUnlockedSoundPacks, setNewlyUnlockedSoundPacks] = useState([]);
   const [showAwardsZone, setShowAwardsZone] = useState(false);
   const [pendingActiveThemeId, setPendingActiveThemeId] = useState(null);
@@ -1115,16 +1115,16 @@ const App = () => {
 
   // Persist merged unlock/theme/sound state to backend for authenticated users
   const persistUserStateToBackend = useCallback(async (partial = {}) => {
-    const session = getUserSession();
+    const session = StorageService.getUserSession();
     if (!isGasEnvironment() || !session?.userId) return;
 
     const payload = {
       userId: session.userId,
-      unlockedThemes: partial.unlockedThemes || getUnlockedThemes(),
-      unlockedSoundPacks: partial.unlockedSoundPacks || getUnlockedSoundPacks(),
+      unlockedThemes: partial.unlockedThemes || StorageService.getUnlockedThemes(),
+      unlockedSoundPacks: partial.unlockedSoundPacks || StorageService.getUnlockedSoundPacks(),
       activeTheme: partial.activeTheme ?? activeThemeId,
       activeSoundPack: partial.activeSoundPack ?? activeSoundPackId,
-      gameStats: partial.gameStats || getGameStats()
+      gameStats: partial.gameStats || StorageService.getGameStats()
     };
 
     try {
@@ -1165,29 +1165,29 @@ const App = () => {
       const remote = await runGasFn('getUserState', { userId: user.userId });
       if (!remote || !remote.success || !remote.state) return;
 
-      const localStats = getGameStats();
+      const localStats = StorageService.getGameStats();
       const remoteStats = remote.state.gameStats || {};
       const mergedStats = { ...localStats };
       Object.keys({ ...localStats, ...remoteStats }).forEach((k) => {
         mergedStats[k] = Math.max(Number(localStats[k] || 0), Number(remoteStats[k] || 0));
       });
 
-      const mergedThemes = Array.from(new Set([...(getUnlockedThemes()), ...(remote.state.unlockedThemes || [])]));
-      const mergedPacks = Array.from(new Set([...(getUnlockedSoundPacks()), ...(remote.state.unlockedSoundPacks || [])]));
+      const mergedThemes = Array.from(new Set([...(StorageService.getUnlockedThemes()), ...(remote.state.unlockedThemes || [])]));
+      const mergedPacks = Array.from(new Set([...(StorageService.getUnlockedSoundPacks()), ...(remote.state.unlockedSoundPacks || [])]));
 
-      const currentActiveTheme = themeTouchedRef.current ? activeThemeId : getActiveTheme();
-      const currentActivePack = soundPackTouchedRef.current ? activeSoundPackId : getActiveSoundPack();
+      const currentActiveTheme = themeTouchedRef.current ? activeThemeId : StorageService.getActiveTheme();
+      const currentActivePack = soundPackTouchedRef.current ? activeSoundPackId : StorageService.getActiveSoundPack();
       const remoteActiveTheme = remote.state.activeTheme;
       const remoteActivePack = remote.state.activeSoundPack;
 
       const activeTheme = themeTouchedRef.current ? currentActiveTheme : (remoteActiveTheme || currentActiveTheme);
       const activePack = soundPackTouchedRef.current ? currentActivePack : (remoteActivePack || currentActivePack);
 
-      saveUnlockedThemes(mergedThemes); setUnlockedThemes(mergedThemes);
-      saveUnlockedSoundPacks(mergedPacks); setUnlockedSoundPacks(mergedPacks);
-      if (!themeTouchedRef.current) { saveActiveTheme(activeTheme); setActiveThemeId(activeTheme); }
-      if (!soundPackTouchedRef.current) { saveActiveSoundPack(activePack); setActiveSoundPackId(activePack); }
-      saveGameStats(mergedStats);
+      StorageService.saveUnlockedThemes(mergedThemes); setUnlockedThemes(mergedThemes);
+      StorageService.saveUnlockedSoundPacks(mergedPacks); setUnlockedSoundPacks(mergedPacks);
+      if (!themeTouchedRef.current) { StorageService.saveActiveTheme(activeTheme); setActiveThemeId(activeTheme); }
+      if (!soundPackTouchedRef.current) { StorageService.saveActiveSoundPack(activePack); setActiveSoundPackId(activePack); }
+      StorageService.saveGameStats(mergedStats);
 
       await persistUserStateToBackend({
         unlockedThemes: mergedThemes,
@@ -1262,7 +1262,7 @@ const App = () => {
     }
     if (savedSound === 'false') setSoundEnabled(false);
 
-    const saved = loadGame();
+    const saved = StorageService.loadGame();
     if (saved && saved.status === 'playing') {
       setBoard(saved.board); setTimer(saved.timer); setMistakes(saved.mistakes);
       setDifficulty(saved.difficulty); setStatus('paused'); setHistory(saved.history); setView('game');
@@ -1280,7 +1280,7 @@ const App = () => {
 
   useEffect(() => {
     if (status === 'playing' || status === 'paused') {
-      saveGame({ board, difficulty, status, timer, mistakes, history, historyIndex: history.length - 1, selectedCell, mode });
+      StorageService.saveGame({ board, difficulty, status, timer, mistakes, history, historyIndex: history.length - 1, selectedCell, mode });
     }
   }, [board, timer, status, difficulty, mistakes, history, selectedCell, mode]);
 
@@ -1404,27 +1404,27 @@ const App = () => {
     saveScore({ name: currentUserId, time: finalTime, difficulty, date: new Date().toLocaleDateString() });
 
     // Update game stats for theme unlocking
-    const stats = getGameStats();
+    const stats = StorageService.getGameStats();
     stats.totalWins += 1;
     if (difficulty === 'Easy') stats.easyWins += 1;
     if (difficulty === 'Medium') stats.mediumWins += 1;
     if (difficulty === 'Hard') stats.hardWins += 1;
     if (finalMistakes === 0) stats.perfectWins += 1;
     if (finalTime < 180) stats.fastWins += 1;
-    saveGameStats(stats);
+    StorageService.saveGameStats(stats);
 
     // Check for theme unlocks
     const newThemes = checkThemeUnlocks(stats);
     if (newThemes.length > 0) {
       setNewlyUnlockedThemes(newThemes);
-      setUnlockedThemes(getUnlockedThemes()); // Update state with newly unlocked themes
+      setUnlockedThemes(StorageService.getUnlockedThemes()); // Update state with newly unlocked themes
     }
 
     // Check for sound pack unlocks
     const newPacks = checkSoundPackUnlocks(stats);
     if (newPacks.length > 0) {
       setNewlyUnlockedSoundPacks(newPacks);
-      setUnlockedSoundPacks(getUnlockedSoundPacks());
+      setUnlockedSoundPacks(StorageService.getUnlockedSoundPacks());
       if (soundEnabled) setTimeout(() => SoundManager.play('unlock'), 250);
     }
 
@@ -1432,7 +1432,7 @@ const App = () => {
     // Note: This function is only called when the player wins, so we increment both games and wins
     // Game losses are not tracked in the current implementation
     if (isUserAuthenticated() && isGasEnvironment()) {
-      const session = getUserSession();
+      const session = StorageService.getUserSession();
       if (session && session.userId) {
         try {
           await runGasFn('updateUserProfile', {
@@ -1449,8 +1449,8 @@ const App = () => {
           }
 
           await persistUserStateToBackend({
-            unlockedThemes: getUnlockedThemes(),
-            unlockedSoundPacks: getUnlockedSoundPacks(),
+            unlockedThemes: StorageService.getUnlockedThemes(),
+            unlockedSoundPacks: StorageService.getUnlockedSoundPacks(),
             activeTheme: activeThemeId,
             activeSoundPack: activeSoundPackId,
             gameStats: stats
@@ -1476,7 +1476,7 @@ const App = () => {
           else newProg[nextId].unlocked = true;
         }
         setCampaignProgress(newProg);
-        saveCampaignProgress(newProg);
+        StorageService.saveCampaignProgress(newProg);
       }
     }
   };
@@ -1576,7 +1576,7 @@ const App = () => {
       setAwardsDirty(true);
       return;
     }
-    saveActiveTheme(themeId);
+    StorageService.saveActiveTheme(themeId);
     schedulePersist({ activeTheme: themeId });
   };
 
@@ -1590,7 +1590,7 @@ const App = () => {
       setAwardsDirty(true);
       return;
     }
-    saveActiveSoundPack(packId);
+    StorageService.saveActiveSoundPack(packId);
     schedulePersist({ activeSoundPack: packId });
   };
 
@@ -1601,8 +1601,8 @@ const App = () => {
     const finalTheme = pendingActiveThemeId || activeThemeId;
     const finalPack = pendingActiveSoundPackId || activeSoundPackId;
 
-    saveActiveTheme(finalTheme);
-    saveActiveSoundPack(finalPack);
+    StorageService.saveActiveTheme(finalTheme);
+    StorageService.saveActiveSoundPack(finalPack);
     schedulePersist({ activeTheme: finalTheme, activeSoundPack: finalPack });
     setAwardsDirty(false);
   };
