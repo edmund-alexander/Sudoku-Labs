@@ -365,9 +365,9 @@ function loginUser(data) {
     const sheetData = sheet.getDataRange().getValues();
     const passwordHash = simpleHash_(password);
     
-    // Search for user
+    // Search for user (case-insensitive username match)
     for (let i = 1; i < sheetData.length; i++) {
-      if (sheetData[i][1] === username && sheetData[i][2] === passwordHash) {
+      if (sheetData[i][1].toLowerCase() === username.toLowerCase() && sheetData[i][2] === passwordHash) {
         return {
           success: true,
           user: {
