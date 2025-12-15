@@ -1806,14 +1806,14 @@ const App = () => {
     StorageService.saveGameStats(stats);
 
     // Check for theme unlocks
-    const newThemes = checkThemeUnlocks(stats);
+    const newThemes = UnlockService.checkThemeUnlocks(stats);
     if (newThemes.length > 0) {
       setNewlyUnlockedThemes(newThemes);
       setUnlockedThemes(StorageService.getUnlockedThemes()); // Update state with newly unlocked themes
     }
 
     // Check for sound pack unlocks
-    const newPacks = checkSoundPackUnlocks(stats);
+    const newPacks = UnlockService.checkSoundPackUnlocks(stats);
     if (newPacks.length > 0) {
       setNewlyUnlockedSoundPacks(newPacks);
       setUnlockedSoundPacks(StorageService.getUnlockedSoundPacks());
