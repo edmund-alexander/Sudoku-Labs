@@ -1684,6 +1684,7 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
             const newThemes = checkThemeUnlocks(stats);
             if (newThemes.length > 0) {
               setNewlyUnlockedThemes(newThemes);
+              setUnlockedThemes(getUnlockedThemes()); // Update state with newly unlocked themes
             }
             
             // Update user stats if authenticated
@@ -1904,7 +1905,6 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                         unlockedThemes={unlockedThemes}
                         onSelectTheme={(themeId) => {
                             setActiveThemeId(themeId);
-                            setUnlockedThemes(getUnlockedThemes());
                         }}
                     />
                 )}
@@ -1938,7 +1938,6 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                      unlockedThemes={unlockedThemes}
                      onSelectTheme={(themeId) => {
                          setActiveThemeId(themeId);
-                         setUnlockedThemes(getUnlockedThemes());
                      }}
                  />
              )}
@@ -2131,7 +2130,6 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
                     unlockedThemes={unlockedThemes}
                     onSelectTheme={(themeId) => {
                         setActiveThemeId(themeId);
-                        setUnlockedThemes(getUnlockedThemes());
                     }}
                 />
             )}
