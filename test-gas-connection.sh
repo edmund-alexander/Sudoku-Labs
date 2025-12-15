@@ -55,37 +55,26 @@ echo ""
 # Test 2: Send test log entry
 echo "Test 2: Deploy test log entry"
 echo "=============================="
-TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-TEST_MESSAGE="GAS connection test - ${TIMESTAMP}"
-USER_AGENT="test-gas-connection.sh/1.0"
-
-echo "Sending test log entry..."
-echo "  Type: test"
-echo "  Message: $TEST_MESSAGE"
-echo "  UserAgent: $USER_AGENT"
+echo "Calling deployTestLog endpoint..."
 echo ""
 
-# URL encode the parameters
-TYPE_ENCODED="test"
-MESSAGE_ENCODED=$(echo "$TEST_MESSAGE" | jq -sRr @uri)
-AGENT_ENCODED=$(echo "$USER_AGENT" | jq -sRr @uri)
-
-# Send the log request
-LOG_URL="${GAS_URL}?action=logError&type=${TYPE_ENCODED}&message=${MESSAGE_ENCODED}&userAgent=${AGENT_ENCODED}&count=1"
-echo "Request URL: $LOG_URL"
+# Call the deployTestLog endpoint
+DEPLOY_URL="${GAS_URL}?action=deployTestLog"
+echo "Request URL: $DEPLOY_URL"
 echo ""
 
-LOG_RESPONSE=$(curl -s --max-time 10 "$LOG_URL" 2>&1)
-echo "Response: $LOG_RESPONSE"
+DEPLOY_RESPONSE=$(curl -s --max-time 10 "$DEPLOY_URL" 2>&1)
+echo "Response: $DEPLOY_RESPONSE"
 
-if echo "$LOG_RESPONSE" | grep -q '"logged".*true'; then
+if echo "$DEPLOY_RESPONSE" | grep -q '"success".*true'; then
     echo "✓ Test log successfully deployed to Google Sheets!"
     echo ""
-    echo "SUCCESS: GAS connection is working!"
+    echo "SUCCESS: GAS connection is working and AI agent can update the database!"
     echo "Check the 'Logs' sheet in your Google Sheets database to verify the entry."
+    echo "Look for entry with type 'ai-agent-test' and message starting with 'AI Agent Test Deployment'."
     exit 0
 else
     echo "✗ Test log deployment failed!"
-    echo "Response received: $LOG_RESPONSE"
+    echo "Response received: $DEPLOY_RESPONSE"
     exit 1
 fi

@@ -192,7 +192,7 @@
         <div class="info-box" style="border-left-color: #ff9800; font-size: 13px;">
             <strong>📋 After Testing:</strong>
             Check your Google Sheets <code>Logs</code> tab to verify the test entry was created.
-            The entry will have the type "test" and contain a timestamp.
+            The entry will have the type <code>ai-agent-test</code> and message "AI Agent Test Deployment - [timestamp]".
         </div>
     </div>
     
@@ -225,42 +225,29 @@
                 
                 console.log('✓ Ping successful:', pingData);
                 
-                // Test 2: Send test log
-                console.log('Sending test log entry...');
-                const timestamp = new Date().toISOString();
-                const testMessage = `GAS connection test - ${timestamp}`;
+                // Test 2: Deploy test log using AI agent endpoint
+                console.log('Deploying test log entry via AI agent endpoint...');
                 
-                const logParams = new URLSearchParams({
-                    action: 'logError',
-                    type: 'test',
-                    message: testMessage,
-                    userAgent: navigator.userAgent,
-                    count: '1'
-                });
+                const deployResponse = await fetch(`${GAS_URL}?action=deployTestLog`);
+                const deployData = await deployResponse.json();
                 
-                const logResponse = await fetch(`${GAS_URL}?${logParams}`);
-                const logData = await logResponse.json();
-                
-                if (!logData.logged) {
-                    throw new Error('Log endpoint returned logged: false');
+                if (!deployData.success) {
+                    throw new Error(deployData.error || 'Test log deployment returned success: false');
                 }
                 
-                console.log('✓ Test log deployed:', logData);
+                console.log('✓ Test log deployed:', deployData);
                 
                 // Success!
                 statusIndicator.className = 'status-indicator success';
                 resultDiv.className = 'result success';
                 resultDiv.innerHTML = `
                     <strong>✅ Success!</strong>
-                    <p>GAS connection is working correctly.</p>
+                    <p>GAS connection is working correctly and AI agent can update the database!</p>
                     <p style="margin-top: 10px;">Test log entry created:</p>
-                    <pre>${JSON.stringify({
-                        type: 'test',
-                        message: testMessage,
-                        timestamp: timestamp
-                    }, null, 2)}</pre>
+                    <pre>${JSON.stringify(deployData.logEntry, null, 2)}</pre>
                     <p style="margin-top: 10px; font-size: 13px;">
-                        Check your Google Sheets <code>Logs</code> tab to verify the entry.
+                        Check your Google Sheets <code>Logs</code> tab to verify the entry.<br>
+                        Look for entry with type <code>ai-agent-test</code>.
                     </p>
                 `;
                 
