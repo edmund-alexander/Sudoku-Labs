@@ -684,8 +684,9 @@ const UserPanel = ({ soundEnabled, onClose, appUserSession }) => {
   if (localUserSession) {
     const localStats = StorageService.getGameStats();
     // Merge local stats with session stats (prefer higher values)
+    // Note: localStats only tracks wins, session tracks both games and wins
     const mergedStats = {
-      totalGames: Math.max(localUserSession.totalGames || 0, localStats.totalWins || 0),
+      totalGames: localUserSession.totalGames || 0, // Only from session (games played includes losses)
       totalWins: Math.max(localUserSession.totalWins || 0, localStats.totalWins || 0),
       easyWins: Math.max(localUserSession.easyWins || 0, localStats.easyWins || 0),
       mediumWins: Math.max(localUserSession.mediumWins || 0, localStats.mediumWins || 0),
