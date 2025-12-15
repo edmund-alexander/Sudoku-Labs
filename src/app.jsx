@@ -598,7 +598,9 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo } = React;
       // Detect whether GAS backend is configured/available
       const isGasEnvironment = () => {
         try {
-          return typeof GAS_URL === 'string' && GAS_URL.indexOf('script.google.com') !== -1;
+          if (typeof GAS_URL !== 'string') return false;
+          const host = (new URL(GAS_URL)).host;
+          return host === 'script.google.com';
         } catch (e) { return false; }
       };
 
