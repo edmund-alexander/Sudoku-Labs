@@ -4,6 +4,7 @@ A modern, browser-based Sudoku game with leaderboard, chat, and campaign feature
 
 [![Live Demo](https://img.shields.io/badge/demo-live-success)](https://edmund-alexander.github.io/Sudoku-Labs/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Security Policy](https://img.shields.io/badge/security-policy-blue.svg)](SECURITY.md)
 
 ## ✨ Features
 
@@ -229,6 +230,8 @@ const puzzle = await response.json();
 - GAS deployment URL can be public (it's just an API endpoint)
 - No personal data is collected
 - Chat messages are sanitized
+
+For detailed security information, see our [Security Policy](SECURITY.md).
 
 ## 📄 License
 
