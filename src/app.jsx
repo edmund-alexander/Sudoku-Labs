@@ -708,7 +708,7 @@ const CampaignMap = ({ progress, onPlayLevel, soundEnabled, onBack, onOpenAwards
 
   useEffect(() => {
     if (scrollContainerRef.current) {
-      const scrollPos = (highestUnlockedId * 100) - 200;
+      const scrollPos = (highestUnlockedId * 150) - 250;
       scrollContainerRef.current.scrollTo({ top: scrollPos, behavior: 'smooth' });
     }
   }, [highestUnlockedId]);
@@ -716,27 +716,72 @@ const CampaignMap = ({ progress, onPlayLevel, soundEnabled, onBack, onOpenAwards
   const getPoints = () => {
     const points = [];
     for (let i = 1; i <= CAMPAIGN_LEVELS.length; i++) {
-      const x = 50 + Math.sin(i * 1.5) * 35;
-      const y = i * 100;
+      const x = 50 + Math.sin(i * 0.8) * 30;
+      const y = i * 150;
       points.push(`${x},${y}`);
     }
     return points;
+  };
+
+  const getBiomeGradient = (biome) => {
+    if (biome === 'grass') return 'from-green-900/40 via-emerald-900/30 to-green-800/40';
+    if (biome === 'desert') return 'from-yellow-900/40 via-orange-900/30 to-amber-900/40';
+    if (biome === 'space') return 'from-indigo-900/40 via-purple-900/30 to-blue-900/40';
+    return 'from-gray-900/40 via-gray-800/30 to-gray-900/40';
   };
 
   const points = getPoints();
 
   return (
     <div className="h-screen w-full bg-gray-900 text-gray-100 flex flex-col relative overflow-hidden animate-fade-in">
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-900 via-purple-900 to-gray-900 z-0 pointer-events-none"></div>
+      {/* Dynamic background layers */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-950"></div>
+        
+        {/* Animated stars */}
+        <div className="absolute inset-0 opacity-30">
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                opacity: Math.random() * 0.7 + 0.3
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* Floating particles */}
+        <div className="absolute inset-0 opacity-20">
+          {[...Array(15)].map((_, i) => (
+            <div
+              key={`particle-${i}`}
+              className="absolute w-2 h-2 bg-purple-400 rounded-full blur-sm animate-float-slow"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${10 + Math.random() * 10}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
 
-      <div className="relative z-20 flex justify-between items-center p-2 sm:p-3 md:p-4 bg-gray-900/50 backdrop-blur-sm border-b border-gray-700">
-        <button onClick={onBack} className="p-1.5 sm:p-2 rounded-full hover:bg-gray-800 transition-colors"><Icons.Undo /></button>
-        <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Campaign Saga</h1>
+      <div className="relative z-20 flex justify-between items-center p-2 sm:p-3 md:p-4 bg-gray-900/60 backdrop-blur-md border-b border-purple-500/20 shadow-lg">
+        <button onClick={onBack} className="p-1.5 sm:p-2 rounded-full hover:bg-purple-700/30 transition-all hover:scale-110"><Icons.Undo /></button>
+        <div className="flex flex-col items-center">
+          <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 drop-shadow-lg">Campaign Saga</h1>
+          <p className="text-[10px] sm:text-xs text-gray-400 font-medium">Your Quest Awaits</p>
+        </div>
         <button
           aria-label="Rewards"
           title="Rewards"
           onClick={() => { if (soundEnabled) SoundManager.play('uiTap'); onOpenAwards?.(); }}
-          className="p-1.5 sm:p-2 rounded-full hover:bg-gray-800 transition-colors flex items-center gap-1 text-gray-100"
+          className="p-1.5 sm:p-2 rounded-full hover:bg-purple-700/30 transition-all hover:scale-110 flex items-center gap-1 text-gray-100"
         >
           <Icons.Awards />
           <span className="hidden sm:inline text-[11px] font-semibold">Rewards</span>
@@ -744,33 +789,110 @@ const CampaignMap = ({ progress, onPlayLevel, soundEnabled, onBack, onOpenAwards
       </div>
 
       <div ref={scrollContainerRef} className="flex-1 w-full overflow-y-auto relative z-10 scrollbar-hide pb-20">
-        <div className="w-full max-w-md mx-auto relative" style={{ height: `${(CAMPAIGN_LEVELS.length + 2) * 100}px` }}>
-          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-30">
+        <div className="w-full max-w-md mx-auto relative" style={{ height: `${(CAMPAIGN_LEVELS.length + 2) * 150}px` }}>
+          
+          {/* Biome sections background */}
+          {CAMPAIGN_LEVELS.map((lvl, i) => {
+            const y = i * 150;
+            return (
+              <div
+                key={`biome-${i}`}
+                className={`absolute inset-x-0 h-[200px] bg-gradient-to-b ${getBiomeGradient(lvl.biome)} transition-opacity duration-1000`}
+                style={{ top: `${y}px` }}
+              />
+            );
+          })}
+
+          {/* Decorative biome elements */}
+          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-40">
             {CAMPAIGN_LEVELS.map((lvl, i) => {
-              const y = i * 100 + 50;
-              if (lvl.biome === 'grass') return <circle key={'d' + i} cx={i % 2 === 0 ? '20%' : '80%'} cy={y} r="15" fill="#4ade80" />;
-              if (lvl.biome === 'desert') return <path key={'d' + i} d={`M ${i % 2 === 0 ? 10 : 80} ${y} l 20 -20 l 20 20 z`} fill="#fbbf24" />;
-              if (lvl.biome === 'space') return <circle key={'d' + i} cx={i % 2 === 0 ? '15%' : '85%'} cy={y} r="2" fill="white" className="animate-pulse" />;
+              const y = i * 150 + 75;
+              const leftSide = i % 2 === 0;
+              
+              if (lvl.biome === 'grass') {
+                return (
+                  <g key={`deco-${i}`}>
+                    <circle cx={leftSide ? '15%' : '85%'} cy={y} r="20" fill="#4ade80" opacity="0.3" />
+                    <circle cx={leftSide ? '10%' : '90%'} cy={y + 20} r="15" fill="#22c55e" opacity="0.3" />
+                    <path d={`M ${leftSide ? 10 : 320} ${y + 30} Q ${leftSide ? 15 : 315} ${y + 35} ${leftSide ? 20 : 310} ${y + 30}`} stroke="#16a34a" strokeWidth="3" fill="none" opacity="0.3" />
+                  </g>
+                );
+              }
+              
+              if (lvl.biome === 'desert') {
+                return (
+                  <g key={`deco-${i}`}>
+                    <path d={`M ${leftSide ? 15 : 310} ${y} l 15 -25 l 15 25 z`} fill="#fbbf24" opacity="0.3" />
+                    <circle cx={leftSide ? '12%' : '88%'} cy={y - 35} r="25" fill="#fde047" opacity="0.2" />
+                    <ellipse cx={leftSide ? '8%' : '92%'} cy={y + 25} rx="30" ry="10" fill="#d97706" opacity="0.2" />
+                  </g>
+                );
+              }
+              
+              if (lvl.biome === 'space') {
+                return (
+                  <g key={`deco-${i}`}>
+                    <circle cx={leftSide ? '12%' : '88%'} cy={y - 20} r="3" fill="white" className="animate-pulse" opacity="0.8" />
+                    <circle cx={leftSide ? '18%' : '82%'} cy={y + 10} r="2" fill="#93c5fd" className="animate-pulse" opacity="0.6" style={{ animationDelay: '0.5s' }} />
+                    <circle cx={leftSide ? '8%' : '92%'} cy={y + 5} r="2.5" fill="#c084fc" className="animate-pulse" opacity="0.7" style={{ animationDelay: '1s' }} />
+                    <path d={`M ${leftSide ? 40 : 290} ${y - 30} l 5 5 l -5 -2 l -2 5 z`} fill="#fde047" opacity="0.6" />
+                  </g>
+                );
+              }
+              
               return null;
             })}
           </svg>
 
+          {/* Main path line (unfilled) */}
           <svg className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-visible">
-            <polyline points={points.map(p => { const [x, y] = p.split(','); return `${x}%,${y}`; }).join(' ')} fill="none" stroke="#374151" strokeWidth="8" strokeLinecap="round" />
+            <defs>
+              <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#ec4899" stopOpacity="0.8" />
+              </linearGradient>
+              <filter id="pathGlow">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            
+            {/* Shadow/outline path */}
+            <polyline 
+              points={points.map(p => { const [x, y] = p.split(','); return `${x}%,${y}`; }).join(' ')} 
+              fill="none" 
+              stroke="#1e293b" 
+              strokeWidth="12" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              opacity="0.6"
+            />
+            
+            {/* Main unfilled path */}
+            <polyline 
+              points={points.map(p => { const [x, y] = p.split(','); return `${x}%,${y}`; }).join(' ')} 
+              fill="none" 
+              stroke="#374151" 
+              strokeWidth="8" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+            
+            {/* Completed path with gradient */}
             <polyline
               points={points.slice(0, highestUnlockedId).map(p => { const [x, y] = p.split(','); return `${x}%,${y}`; }).join(' ')}
               fill="none"
-              stroke="url(#gradientPath)"
+              stroke="url(#pathGradient)"
               strokeWidth="8"
               strokeLinecap="round"
-              className="path-dash"
+              strokeLinejoin="round"
+              filter="url(#pathGlow)"
+              className="animate-dash"
             />
-            <defs>
-              <linearGradient id="gradientPath" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#60a5fa" />
-                <stop offset="100%" stopColor="#c084fc" />
-              </linearGradient>
-            </defs>
           </svg>
 
           {CAMPAIGN_LEVELS.map((level, i) => {
@@ -779,8 +901,8 @@ const CampaignMap = ({ progress, onPlayLevel, soundEnabled, onBack, onOpenAwards
             const isCompleted = p.stars > 0;
             const isCurrent = highestUnlockedId === level.id;
 
-            const leftPos = 50 + Math.sin((i + 1) * 1.5) * 35;
-            const topPos = (i + 1) * 100;
+            const leftPos = 50 + Math.sin((i + 1) * 0.8) * 30;
+            const topPos = (i + 1) * 150;
 
             return (
               <div
@@ -788,11 +910,23 @@ const CampaignMap = ({ progress, onPlayLevel, soundEnabled, onBack, onOpenAwards
                 className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20"
                 style={{ left: `${leftPos}%`, top: `${topPos}px` }}
               >
+                {/* Player avatar on current level */}
                 {isCurrent && (
-                  <div className="absolute -top-10 sm:-top-12 animate-float z-30 pointer-events-none scale-75 sm:scale-100">
-                    <Icons.Avatar />
-                    <div className="w-6 sm:w-8 h-2 bg-black/30 rounded-full blur-sm mt-1 mx-auto"></div>
+                  <div className="absolute -top-16 sm:-top-20 z-30 pointer-events-none">
+                    <div className="relative animate-float">
+                      <div className="scale-110 sm:scale-125 drop-shadow-2xl">
+                        <Icons.Avatar />
+                      </div>
+                      <div className="w-8 sm:w-10 h-2 bg-black/30 rounded-full blur-md mt-2 mx-auto"></div>
+                    </div>
+                    {/* Glow effect */}
+                    <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
                   </div>
+                )}
+
+                {/* Connection line indicator for next level */}
+                {!isLocked && i < CAMPAIGN_LEVELS.length - 1 && (
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0.5 h-8 bg-gradient-to-b from-purple-400 to-transparent animate-pulse"></div>
                 )}
 
                 <div
@@ -805,27 +939,64 @@ const CampaignMap = ({ progress, onPlayLevel, soundEnabled, onBack, onOpenAwards
                     }
                   }}
                   className={`
-                                            relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-2xl rotate-45 flex items-center justify-center shadow-2xl transition-all duration-300 cursor-pointer
-                                            ${isLocked ? 'bg-gray-800 border-2 border-gray-600 grayscale opacity-60' : 'hover:scale-110 active:scale-95'}
-                                            ${isCompleted ? 'bg-green-900 border-2 border-green-500' : ''}
-                                            ${!isLocked && !isCompleted ? 'bg-blue-600 border-2 border-blue-400 animate-pulse-glow' : ''}
-                                            ${level.isChest ? 'rounded-full rotate-0' : ''} 
-                                        `}
+                    relative w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-300 cursor-pointer
+                    ${isLocked 
+                      ? 'bg-gray-800/80 border-2 border-gray-600 backdrop-blur-sm grayscale opacity-50' 
+                      : 'hover:scale-110 active:scale-95 backdrop-blur-md'
+                    }
+                    ${isCompleted 
+                      ? 'bg-gradient-to-br from-green-600 to-emerald-700 border-2 border-green-400 shadow-green-500/50' 
+                      : ''
+                    }
+                    ${!isLocked && !isCompleted 
+                      ? 'bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 border-2 border-blue-300 shadow-blue-500/50 animate-pulse-glow' 
+                      : ''
+                    }
+                    ${level.isChest 
+                      ? 'rounded-full' 
+                      : 'rotate-45'
+                    } 
+                  `}
                 >
-                  <div className={`-rotate-45 ${level.isChest ? 'rotate-0' : ''} scale-75 sm:scale-90 md:scale-100`}>
+                  {/* Inner glow for active levels */}
+                  {!isLocked && !isCompleted && (
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent animate-pulse"></div>
+                  )}
+                  
+                  {/* Level content */}
+                  <div className={`${level.isChest ? '' : '-rotate-45'} scale-75 sm:scale-90 md:scale-100 relative z-10`}>
                     {isLocked
-                      ? <Icons.Lock />
+                      ? <div className="text-gray-500"><Icons.Lock /></div>
                       : level.isChest
-                        ? <div className="text-yellow-400 animate-bounce-slow"><Icons.Chest /></div>
-                        : <span className="font-bold text-lg sm:text-xl text-white">{level.id}</span>
+                        ? <div className="text-yellow-400 animate-bounce-slow drop-shadow-lg"><Icons.Chest /></div>
+                        : <span className="font-bold text-xl sm:text-2xl text-white drop-shadow-lg">{level.id}</span>
                     }
                   </div>
+
+                  {/* Completion sparkle effect */}
+                  {isCompleted && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
+                  )}
                 </div>
 
+                {/* Level title badge */}
                 {!isLocked && (
-                  <div className="absolute -bottom-6 sm:-bottom-8 flex gap-0.5 sm:gap-1 bg-gray-900/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border border-gray-700 backdrop-blur-md">
+                  <div className="absolute -bottom-10 sm:-bottom-12 text-center px-2 py-1 bg-gray-900/90 backdrop-blur-md rounded-lg border border-purple-500/30 shadow-xl min-w-max">
+                    <p className="text-[10px] sm:text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                      {level.title}
+                    </p>
+                  </div>
+                )}
+
+                {/* Star rating */}
+                {!isLocked && (
+                  <div className="absolute -bottom-20 sm:-bottom-24 flex gap-0.5 sm:gap-1 bg-gray-900/90 px-2 sm:px-3 py-1 rounded-full border border-yellow-500/30 backdrop-blur-md shadow-lg">
                     {[1, 2, 3].map(s => (
-                      <div key={s} className={`${s <= p.stars ? "text-yellow-400" : "text-gray-600"} scale-75 sm:scale-100`}>
+                      <div 
+                        key={s} 
+                        className={`${s <= p.stars ? "text-yellow-400 drop-shadow-lg" : "text-gray-600"} scale-75 sm:scale-90 transition-all duration-300 ${s <= p.stars ? 'animate-bounce-in' : ''}`}
+                        style={{ animationDelay: `${s * 0.1}s` }}
+                      >
                         <Icons.Star filled={true} />
                       </div>
                     ))}
@@ -838,38 +1009,93 @@ const CampaignMap = ({ progress, onPlayLevel, soundEnabled, onBack, onOpenAwards
       </div>
 
       {selectedLevel && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-md animate-fade-in">
-          <div className="bg-gray-800 text-white p-1 rounded-2xl shadow-2xl max-w-sm w-full relative border border-gray-600 animate-pop overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
-            <div className="p-4 sm:p-6">
-              <button onClick={() => setSelectedLevel(null)} className="absolute top-3 sm:top-4 right-3 sm:right-4 text-gray-400 hover:text-white"><Icons.X /></button>
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-lg animate-fade-in">
+          <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 text-white p-1 rounded-3xl shadow-2xl max-w-sm w-full relative border-2 border-purple-500/30 animate-pop overflow-hidden">
+            {/* Animated background effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/10 to-pink-600/10 animate-gradient-shift"></div>
+            
+            {/* Top accent bar */}
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-gradient-x"></div>
+            
+            <div className="relative p-4 sm:p-6">
+              <button 
+                onClick={() => setSelectedLevel(null)} 
+                className="absolute top-3 sm:top-4 right-3 sm:right-4 text-gray-400 hover:text-white transition-all hover:rotate-90 hover:scale-110 z-10"
+              >
+                <Icons.X />
+              </button>
 
               <div className="text-center mb-4 sm:mb-6">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 bg-gray-700 rounded-full flex items-center justify-center text-2xl sm:text-3xl shadow-inner">
-                  {selectedLevel.biome === 'grass' ? '🌿' : selectedLevel.biome === 'desert' ? '🌵' : '🌌'}
+                {/* Biome icon with glow */}
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-5">
+                  <div className={`absolute inset-0 rounded-full blur-xl animate-pulse ${
+                    selectedLevel.biome === 'grass' ? 'bg-green-500/50' :
+                    selectedLevel.biome === 'desert' ? 'bg-yellow-500/50' :
+                    'bg-purple-500/50'
+                  }`}></div>
+                  <div className="relative w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded-full flex items-center justify-center text-3xl sm:text-4xl shadow-2xl border-2 border-gray-600">
+                    {selectedLevel.biome === 'grass' ? '🌿' : 
+                     selectedLevel.biome === 'desert' ? '🌵' : 
+                     '🌌'}
+                  </div>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold mb-1">{selectedLevel.title}</h2>
-                <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded border ${selectedLevel.difficulty === 'Hard' ? 'border-red-500 text-red-400 bg-red-900/30' :
-                    selectedLevel.difficulty === 'Medium' ? 'border-yellow-500 text-yellow-400 bg-yellow-900/30' :
-                      'border-green-500 text-green-400 bg-green-900/30'
+                
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 drop-shadow-lg">
+                  {selectedLevel.title}
+                </h2>
+                
+                {/* Difficulty badge */}
+                <div className="inline-flex items-center gap-2 mb-3">
+                  <span className={`text-xs sm:text-sm px-3 py-1.5 rounded-full font-bold shadow-lg border-2 transition-all ${
+                    selectedLevel.difficulty === 'Hard' 
+                      ? 'border-red-500 text-red-300 bg-red-900/40 shadow-red-500/50' :
+                    selectedLevel.difficulty === 'Medium' 
+                      ? 'border-yellow-500 text-yellow-300 bg-yellow-900/40 shadow-yellow-500/50' :
+                      'border-green-500 text-green-300 bg-green-900/40 shadow-green-500/50'
                   }`}>
-                  {selectedLevel.difficulty}
-                </span>
+                    {selectedLevel.difficulty}
+                  </span>
+                  {selectedLevel.isChest && (
+                    <span className="text-xs sm:text-sm px-3 py-1.5 rounded-full font-bold bg-yellow-900/40 border-2 border-yellow-500 text-yellow-300 shadow-lg shadow-yellow-500/50 animate-pulse">
+                      🎁 Bonus
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="bg-gray-900/50 p-3 sm:p-4 rounded-xl mb-4 sm:mb-6 border border-gray-700/50">
-                <h3 className="text-[10px] sm:text-xs font-bold uppercase text-gray-500 mb-2">Mission Objective</h3>
-                <p className="text-base sm:text-lg font-medium text-blue-100">{selectedLevel.desc}</p>
+              {/* Mission objective card */}
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 p-4 sm:p-5 rounded-2xl mb-5 sm:mb-6 border border-purple-500/20 backdrop-blur-sm shadow-xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1.5 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <h3 className="text-xs sm:text-sm font-bold uppercase text-gray-400 tracking-wider">Mission Objective</h3>
+                </div>
+                <p className="text-base sm:text-lg font-medium text-blue-100 leading-relaxed">{selectedLevel.desc}</p>
               </div>
 
+              {/* Star rewards preview */}
+              <div className="flex justify-center gap-2 mb-5 sm:mb-6">
+                {[1, 2, 3].map(s => (
+                  <div key={s} className="flex items-center gap-1 bg-gray-800/60 px-3 py-2 rounded-lg border border-gray-700/50">
+                    <div className="text-yellow-400 scale-90">
+                      <Icons.Star filled={true} />
+                    </div>
+                    <span className="text-xs text-gray-400">×{s}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Play button */}
               <button
                 onClick={() => {
                   if (soundEnabled) SoundManager.play('questStart');
                   onPlayLevel(selectedLevel);
                 }}
-                className="w-full py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold shadow-lg transform transition hover:scale-[1.02] flex items-center justify-center gap-2 text-sm sm:text-base"
+                className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 text-white rounded-xl font-bold shadow-2xl transform transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-base sm:text-lg border border-white/10"
               >
-                <span>Play Level</span> <Icons.Play />
+                <span>Begin Quest</span> 
+                <div className="animate-pulse">
+                  <Icons.Play />
+                </div>
               </button>
             </div>
           </div>
