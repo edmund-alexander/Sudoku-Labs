@@ -423,30 +423,29 @@ function getUserProfile(data) {
   const userId = sanitizeInput_(data.userId, 50);
   
   try {
-    const sheet = getSpreadsheet_().getSheetByName('Users');
-    if (!sheet) {
-      return { success: false, error: 'Users sheet not found' };
+    const rowInfo = getUserRowById_(userId);
+    if (!rowInfo) {
+      return { success: false, error: 'User not found' };
     }
     
-    const sheetData = sheet.getDataRange().getValues();
+    const { row, map } = rowInfo;
     
-    for (let i = 1; i < sheetData.length; i++) {
-      if (sheetData[i][0] === userId) {
-        return {
-          success: true,
-          user: {
-            userId: sheetData[i][0],
-            username: sheetData[i][1],
-            displayName: sheetData[i][4] || sheetData[i][1],
-            totalGames: Number(sheetData[i][5]) || 0,
-            totalWins: Number(sheetData[i][6]) || 0,
-            createdAt: sheetData[i][3]
-          }
-        };
+    return {
+      success: true,
+      user: {
+        userId: row[map['UserID']],
+        username: row[map['Username']],
+        displayName: row[map['DisplayName']] || row[map['Username']],
+        totalGames: Number(row[map['TotalGames']]) || 0,
+        totalWins: Number(row[map['TotalWins']]) || 0,
+        easyWins: Number(row[map['EasyWins']]) || 0,
+        mediumWins: Number(row[map['MediumWins']]) || 0,
+        hardWins: Number(row[map['HardWins']]) || 0,
+        perfectWins: Number(row[map['PerfectWins']]) || 0,
+        fastWins: Number(row[map['FastWins']]) || 0,
+        createdAt: row[map['CreatedAt']]
       }
-    }
-    
-    return { success: false, error: 'User not found' };
+    };
   } catch (err) {
     Logger.log('getUserProfile error: ' + err);
     return { success: false, error: 'Failed to get profile' };
