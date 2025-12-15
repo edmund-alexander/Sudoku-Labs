@@ -425,7 +425,9 @@ const runGasFn = async (fnName, ...args) => {
       registerUser: { action: 'register', method: 'GET' },
       loginUser: { action: 'login', method: 'GET' },
       getUserProfile: { action: 'getUserProfile', method: 'GET' },
-      updateUserProfile: { action: 'updateUserProfile', method: 'GET' }
+      updateUserProfile: { action: 'updateUserProfile', method: 'GET' },
+      getUserState: { action: 'getUserState', method: 'GET' },
+      saveUserState: { action: 'saveUserState', method: 'GET' }
     };
 
     const mapping = actionMap[fnName];
@@ -442,7 +444,8 @@ const runGasFn = async (fnName, ...args) => {
     if (args[0] !== undefined) {
       if (typeof args[0] === 'object') {
         Object.entries(args[0]).forEach(([k, v]) => {
-          url.searchParams.set(k, v);
+          const value = (v !== null && typeof v === 'object') ? JSON.stringify(v) : v;
+          if (value !== undefined) url.searchParams.set(k, value);
         });
       } else {
         url.searchParams.set('data', args[0]);
@@ -1855,6 +1858,65 @@ const App = () => {
   const chatEndRef = useRef(null);
   const isSendingRef = useRef(false);
 
+  // Persist merged unlock/theme/sound state to backend for authenticated users
+  const persistUserStateToBackend = useCallback(async (partial = {}) => {
+    const session = getUserSession();
+    if (!isGasEnvironment() || !session?.userId) return;
+
+    const payload = {
+      userId: session.userId,
+      unlockedThemes: partial.unlockedThemes || getUnlockedThemes(),
+      unlockedSoundPacks: partial.unlockedSoundPacks || getUnlockedSoundPacks(),
+      activeTheme: partial.activeTheme ?? activeThemeId,
+      activeSoundPack: partial.activeSoundPack ?? activeSoundPackId,
+      gameStats: partial.gameStats || getGameStats()
+    };
+
+    try {
+      await runGasFn('saveUserState', payload);
+    } catch (err) {
+      console.error('Failed to persist user state:', err);
+    }
+  }, [activeThemeId, activeSoundPackId]);
+
+  // Hydrate local unlocks and selections from backend, merging with local progress
+  const hydrateUserState = useCallback(async (user) => {
+    if (!user?.userId || !isGasEnvironment()) return;
+    try {
+      const remote = await runGasFn('getUserState', { userId: user.userId });
+      if (!remote || !remote.success || !remote.state) return;
+
+      const localStats = getGameStats();
+      const remoteStats = remote.state.gameStats || {};
+      const mergedStats = { ...localStats };
+      Object.keys({ ...localStats, ...remoteStats }).forEach((k) => {
+        mergedStats[k] = Math.max(Number(localStats[k] || 0), Number(remoteStats[k] || 0));
+      });
+
+      const mergedThemes = Array.from(new Set([...(getUnlockedThemes()), ...(remote.state.unlockedThemes || [])]));
+      const mergedPacks = Array.from(new Set([...(getUnlockedSoundPacks()), ...(remote.state.unlockedSoundPacks || [])]));
+
+      const activeTheme = remote.state.activeTheme || getActiveTheme();
+      const activePack = remote.state.activeSoundPack || getActiveSoundPack();
+
+      saveUnlockedThemes(mergedThemes); setUnlockedThemes(mergedThemes);
+      saveUnlockedSoundPacks(mergedPacks); setUnlockedSoundPacks(mergedPacks);
+      saveActiveTheme(activeTheme); setActiveThemeId(activeTheme);
+      saveActiveSoundPack(activePack); setActiveSoundPackId(activePack);
+      saveGameStats(mergedStats);
+
+      await persistUserStateToBackend({
+        unlockedThemes: mergedThemes,
+        unlockedSoundPacks: mergedPacks,
+        activeTheme,
+        activeSoundPack: activePack,
+        gameStats: mergedStats
+      });
+    } catch (err) {
+      console.error('Failed to hydrate user state:', err);
+    }
+  }, [persistUserStateToBackend]);
+
   useEffect(() => {
     const handleError = (event) => logError(event.message, event.error);
     window.addEventListener('error', handleError);
@@ -1872,6 +1934,12 @@ const App = () => {
       SoundManager.setPack(fallback);
     }
   }, [unlockedSoundPacks, activeSoundPackId]);
+
+  useEffect(() => {
+    if (appUserSession) {
+      hydrateUserState(appUserSession);
+    }
+  }, [appUserSession, hydrateUserState]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -2072,6 +2140,14 @@ const App = () => {
             setUserSession(updatedProfile.user);
             setAppUserSession(updatedProfile.user);
           }
+
+          await persistUserStateToBackend({
+            unlockedThemes: getUnlockedThemes(),
+            unlockedSoundPacks: getUnlockedSoundPacks(),
+            activeTheme: activeThemeId,
+            activeSoundPack: activeSoundPackId,
+            gameStats: stats
+          });
         } catch (err) {
           console.error('Failed to update user stats:', err);
         }
@@ -2179,6 +2255,21 @@ const App = () => {
     setLeaderboard(await getLeaderboard()); setShowModal('leaderboard');
   };
 
+  const handleThemeChange = (themeId) => {
+    setActiveThemeId(themeId);
+    if (isUserAuthenticated() && isGasEnvironment()) {
+      persistUserStateToBackend({ activeTheme: themeId });
+    }
+  };
+
+  const handleSoundPackChange = (packId) => {
+    setActiveSoundPackId(packId);
+    SoundManager.setPack(packId);
+    if (isUserAuthenticated() && isGasEnvironment()) {
+      persistUserStateToBackend({ activeSoundPack: packId });
+    }
+  };
+
   const toggleChat = () => {
     if (soundEnabled) SoundManager.play('uiTap');
     setChatNotification(null); setIsChatOpen(prev => !prev);
@@ -2250,10 +2341,10 @@ const App = () => {
             onClose={() => setShowAwardsZone(false)}
             activeThemeId={activeThemeId}
             unlockedThemes={unlockedThemes}
-            onSelectTheme={(themeId) => { setActiveThemeId(themeId); }}
+            onSelectTheme={handleThemeChange}
             activePackId={activeSoundPackId}
             unlockedPacks={unlockedSoundPacks}
-            onSelectPack={(packId) => { setActiveSoundPackId(packId); SoundManager.setPack(packId); }}
+            onSelectPack={handleSoundPackChange}
           />
         )}
       </>
@@ -2282,10 +2373,10 @@ const App = () => {
             onClose={() => setShowAwardsZone(false)}
             activeThemeId={activeThemeId}
             unlockedThemes={unlockedThemes}
-            onSelectTheme={(themeId) => { setActiveThemeId(themeId); }}
+            onSelectTheme={handleThemeChange}
             activePackId={activeSoundPackId}
             unlockedPacks={unlockedSoundPacks}
-            onSelectPack={(packId) => { setActiveSoundPackId(packId); SoundManager.setPack(packId); }}
+            onSelectPack={handleSoundPackChange}
           />
         )}
       </>
@@ -2318,10 +2409,10 @@ const App = () => {
             onClose={() => setShowAwardsZone(false)}
             activeThemeId={activeThemeId}
             unlockedThemes={unlockedThemes}
-            onSelectTheme={(themeId) => { setActiveThemeId(themeId); }}
+            onSelectTheme={handleThemeChange}
             activePackId={activeSoundPackId}
             unlockedPacks={unlockedSoundPacks}
-            onSelectPack={(packId) => { setActiveSoundPackId(packId); SoundManager.setPack(packId); }}
+            onSelectPack={handleSoundPackChange}
           />
         )}
       </>
@@ -2511,10 +2602,10 @@ const App = () => {
           onClose={() => setShowAwardsZone(false)}
           activeThemeId={activeThemeId}
           unlockedThemes={unlockedThemes}
-          onSelectTheme={(themeId) => { setActiveThemeId(themeId); }}
+          onSelectTheme={handleThemeChange}
           activePackId={activeSoundPackId}
           unlockedPacks={unlockedSoundPacks}
-          onSelectPack={(packId) => { setActiveSoundPackId(packId); SoundManager.setPack(packId); }}
+          onSelectPack={handleSoundPackChange}
         />
       )}
 
