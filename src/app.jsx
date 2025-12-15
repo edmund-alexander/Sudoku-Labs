@@ -1058,7 +1058,7 @@ const App = () => {
   const [showModal, setShowModal] = useState('none');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [userStatus, setUserStatus] = useState(getUserStatus());
+  const [userStatus, setUserStatus] = useState(StorageService.getUserStatus());
   const [chatMessages, setChatMessages] = useState([]);
   const [chatNotification, setChatNotification] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -1208,7 +1208,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    saveUserStatus(userStatus);
+    StorageService.saveUserStatus(userStatus);
   }, [userStatus]);
 
   useEffect(() => {
