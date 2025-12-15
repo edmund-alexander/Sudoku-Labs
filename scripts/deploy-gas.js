@@ -11,6 +11,7 @@
  *    - CLASP_SCRIPT_ID: The GAS project script ID
  *    - CLASP_ACCESS_TOKEN: OAuth access token for clasp
  *    - CLASP_REFRESH_TOKEN: OAuth refresh token
+ *    - CLASP_ID_TOKEN: OAuth ID token for clasp
  *    - CLASP_CLIENT_ID: OAuth client ID
  *    - CLASP_CLIENT_SECRET: OAuth client secret
  *    - GAS_SHEET_ID: Google Sheets ID for database
@@ -66,6 +67,7 @@ Environment Variables:
   CLASP_SCRIPT_ID       GAS project script ID
   CLASP_ACCESS_TOKEN    OAuth access token
   CLASP_REFRESH_TOKEN   OAuth refresh token
+  CLASP_ID_TOKEN        OAuth ID token
   CLASP_CLIENT_ID       OAuth client ID
   CLASP_CLIENT_SECRET   OAuth client secret
   GAS_SHEET_ID          Google Sheets database ID
@@ -124,6 +126,7 @@ function checkPrerequisites() {
     'CLASP_SCRIPT_ID',
     'CLASP_ACCESS_TOKEN',
     'CLASP_REFRESH_TOKEN',
+    'CLASP_ID_TOKEN',
     'CLASP_CLIENT_ID',
     'CLASP_CLIENT_SECRET'
   ];
@@ -164,6 +167,7 @@ function setupClaspConfig() {
       refresh_token: process.env.CLASP_REFRESH_TOKEN,
       scope: 'https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/script.webapp.deploy https://www.googleapis.com/auth/drive.file',
       token_type: 'Bearer',
+      id_token: process.env.CLASP_ID_TOKEN,
       expiry_date: Date.now() + 3600000 // 1 hour from now
     },
     oauth2ClientSettings: {

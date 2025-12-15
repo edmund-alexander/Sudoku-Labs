@@ -28,7 +28,8 @@ GAS_SHEET_ID="your-sheet-id-here"              # Google Sheets ID for database
 
 # OAuth Credentials (from Google Cloud Console)
 CLASP_ACCESS_TOKEN="access-token"              # OAuth access token
-CLASP_REFRESH_TOKEN="refresh-token"            # OAuth refresh token  
+CLASP_REFRESH_TOKEN="refresh-token"            # OAuth refresh token
+CLASP_ID_TOKEN="id-token"                      # OAuth ID token
 CLASP_CLIENT_ID="client-id"                    # OAuth client ID
 CLASP_CLIENT_SECRET="client-secret"            # OAuth client secret
 ```
@@ -81,6 +82,7 @@ export CLASP_SCRIPT_ID="your-script-id"
 export GAS_SHEET_ID="your-sheet-id"
 export CLASP_ACCESS_TOKEN="token"
 export CLASP_REFRESH_TOKEN="refresh"
+export CLASP_ID_TOKEN="id-token"
 export CLASP_CLIENT_ID="client-id"
 export CLASP_CLIENT_SECRET="secret"
 
@@ -140,6 +142,7 @@ Go to **Settings** > **Secrets and variables** > **Actions** and add:
 - `GAS_SHEET_ID`
 - `CLASP_ACCESS_TOKEN`
 - `CLASP_REFRESH_TOKEN`
+- `CLASP_ID_TOKEN`
 - `CLASP_CLIENT_ID`
 - `CLASP_CLIENT_SECRET`
 
@@ -168,6 +171,7 @@ deploy-gas:
         GAS_SHEET_ID: ${{ secrets.GAS_SHEET_ID }}
         CLASP_ACCESS_TOKEN: ${{ secrets.CLASP_ACCESS_TOKEN }}
         CLASP_REFRESH_TOKEN: ${{ secrets.CLASP_REFRESH_TOKEN }}
+        CLASP_ID_TOKEN: ${{ secrets.CLASP_ID_TOKEN }}
         CLASP_CLIENT_ID: ${{ secrets.CLASP_CLIENT_ID }}
         CLASP_CLIENT_SECRET: ${{ secrets.CLASP_CLIENT_SECRET }}
       run: npm run deploy:gas

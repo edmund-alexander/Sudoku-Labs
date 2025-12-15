@@ -63,6 +63,7 @@ jobs:
           GAS_SHEET_ID: ${{ secrets.GAS_SHEET_ID }}
           CLASP_ACCESS_TOKEN: ${{ secrets.CLASP_ACCESS_TOKEN }}
           CLASP_REFRESH_TOKEN: ${{ secrets.CLASP_REFRESH_TOKEN }}
+          CLASP_ID_TOKEN: ${{ secrets.CLASP_ID_TOKEN }}
           CLASP_CLIENT_ID: ${{ secrets.CLASP_CLIENT_ID }}
           CLASP_CLIENT_SECRET: ${{ secrets.CLASP_CLIENT_SECRET }}
         run: |
