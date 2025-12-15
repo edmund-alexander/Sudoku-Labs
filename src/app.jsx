@@ -1400,7 +1400,7 @@ const OpeningScreen = ({ onStart, onResume, onCampaign, hasSavedGame, darkMode, 
       </div>
     </div>
 
-    <footer className="mt-6 sm:mt-8 text-xs md:text-sm lg:text-base text-gray-400">v2.1 &bull; Logic Lab Series</footer>
+    <footer className="mt-6 sm:mt-8 text-[10px] sm:text-xs md:text-sm text-gray-400">v2.1 &bull; Logic Lab Series</footer>
   </div>
 );
 
@@ -2144,13 +2144,8 @@ const App = () => {
       )}
 
       {/* Footer - positioned with reduced spacing */}
-      <footer className="mt-6 sm:mt-8 pt-4 pb-4 text-[10px] sm:text-xs md:text-sm lg:text-base text-gray-400 text-center max-w-md px-2 w-full">
-        <p>Sudoku Logic Lab v2.1</p>
-        <p className="mt-1">
-          Lovingly created by Edmund
-          (<a href="https://github.com/edmund-alexander" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">GitHub</a> | <a href="https://www.paypal.com/paypalme/edmundalexanders" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Buy me a green tea</a>)
-        </p>
-        {!isGasEnvironment() && <p className="mt-1">Persistence simulates Google Apps Script using LocalStorage (Dev) / Sheets (Prod).</p>}
+      <footer className="mt-6 sm:mt-8 pt-4 pb-4 text-[10px] sm:text-xs md:text-sm text-gray-400 text-center px-2 w-full">
+        Sudoku Logic Lab v2.1 • Created by Edmund (<a href="https://github.com/edmund-alexander" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">GitHub</a> | <a href="https://www.paypal.com/paypalme/edmundalexanders" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Buy me a green tea</a>)
       </footer>
     </div>
   );
