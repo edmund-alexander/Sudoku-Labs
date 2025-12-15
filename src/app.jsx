@@ -1925,6 +1925,20 @@ const App = () => {
   const chatTouchStartRef = useRef(null);
   const chatTouchLastRef = useRef(null);
 
+  const closeChat = useCallback((playSound = true) => {
+    if (playSound && soundEnabled) SoundManager.play('uiTap');
+    setChatNotification(null);
+    setShowEmojiPicker(false);
+    setIsChatOpen(false);
+  }, [soundEnabled]);
+
+  const openChat = useCallback(() => {
+    if (soundEnabled) SoundManager.play('uiTap');
+    setChatNotification(null);
+    setShowEmojiPicker(false);
+    setIsChatOpen(true);
+  }, [soundEnabled]);
+
   // Persist merged unlock/theme/sound state to backend for authenticated users
   const persistUserStateToBackend = useCallback(async (partial = {}) => {
     const session = getUserSession();
@@ -2418,20 +2432,6 @@ const App = () => {
     schedulePersist({ activeTheme: finalTheme, activeSoundPack: finalPack });
     setAwardsDirty(false);
   };
-
-  const closeChat = useCallback((playSound = true) => {
-    if (playSound && soundEnabled) SoundManager.play('uiTap');
-    setChatNotification(null);
-    setShowEmojiPicker(false);
-    setIsChatOpen(false);
-  }, [soundEnabled]);
-
-  const openChat = useCallback(() => {
-    if (soundEnabled) SoundManager.play('uiTap');
-    setChatNotification(null);
-    setShowEmojiPicker(false);
-    setIsChatOpen(true);
-  }, [soundEnabled]);
 
   const handleChatTouchStart = (e) => {
     const touch = e.touches[0];
