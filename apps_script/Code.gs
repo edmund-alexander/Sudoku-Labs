@@ -465,6 +465,9 @@ function updateUserProfile(data) {
   // Handle both boolean true and string "true" (GET params come as strings)
   const incrementGames = data.incrementGames === true || data.incrementGames === 'true';
   const incrementWins = data.incrementWins === true || data.incrementWins === 'true';
+  const difficulty = data.difficulty ? sanitizeInput_(data.difficulty, 10) : null;
+  const perfectWin = data.perfectWin === true || data.perfectWin === 'true';
+  const fastWin = data.fastWin === true || data.fastWin === 'true';
   
   try {
     const sheet = getSpreadsheet_().getSheetByName('Users');
@@ -472,33 +475,55 @@ function updateUserProfile(data) {
       return { success: false, error: 'Users sheet not found' };
     }
     
-    const values = sheet.getDataRange().getValues();
+    const rowInfo = getUserRowById_(userId);
+    if (!rowInfo) return { success: false, error: 'User not found' };
     
-    for (let i = 1; i < values.length; i++) {
-      if (values[i][0] === userId) {
-        const row = i + 1; // Sheet rows are 1-indexed
-        
-        // Update display name if provided
-        if (displayName) {
-          sheet.getRange(row, 5).setValue(displayName);
-        }
-        
-        // Increment counters if requested
-        if (incrementGames) {
-          const currentGames = Number(values[i][5]) || 0;
-          sheet.getRange(row, 6).setValue(currentGames + 1);
-        }
-        
-        if (incrementWins) {
-          const currentWins = Number(values[i][6]) || 0;
-          sheet.getRange(row, 7).setValue(currentWins + 1);
-        }
-        
-        return { success: true };
+    const { row, map } = rowInfo;
+    const sheetRow = row.__index__ || (sheet.getDataRange().getValues().findIndex(r => r[0] === userId) + 1);
+    
+    // Update display name if provided
+    if (displayName) {
+      sheet.getRange(sheetRow, map['DisplayName'] + 1).setValue(displayName);
+    }
+    
+    // Increment game counter if requested
+    if (incrementGames) {
+      const currentGames = Number(row[map['TotalGames']]) || 0;
+      sheet.getRange(sheetRow, map['TotalGames'] + 1).setValue(currentGames + 1);
+    }
+    
+    // Increment win counters
+    if (incrementWins) {
+      // Increment total wins
+      const currentWins = Number(row[map['TotalWins']]) || 0;
+      sheet.getRange(sheetRow, map['TotalWins'] + 1).setValue(currentWins + 1);
+      
+      // Increment difficulty-specific wins
+      if (difficulty === 'Easy') {
+        const easyWins = Number(row[map['EasyWins']]) || 0;
+        sheet.getRange(sheetRow, map['EasyWins'] + 1).setValue(easyWins + 1);
+      } else if (difficulty === 'Medium') {
+        const mediumWins = Number(row[map['MediumWins']]) || 0;
+        sheet.getRange(sheetRow, map['MediumWins'] + 1).setValue(mediumWins + 1);
+      } else if (difficulty === 'Hard') {
+        const hardWins = Number(row[map['HardWins']]) || 0;
+        sheet.getRange(sheetRow, map['HardWins'] + 1).setValue(hardWins + 1);
+      }
+      
+      // Increment perfect wins if applicable
+      if (perfectWin) {
+        const perfectWins = Number(row[map['PerfectWins']]) || 0;
+        sheet.getRange(sheetRow, map['PerfectWins'] + 1).setValue(perfectWins + 1);
+      }
+      
+      // Increment fast wins if applicable
+      if (fastWin) {
+        const fastWins = Number(row[map['FastWins']]) || 0;
+        sheet.getRange(sheetRow, map['FastWins'] + 1).setValue(fastWins + 1);
       }
     }
     
-    return { success: false, error: 'User not found' };
+    return { success: true };
   } catch (err) {
     Logger.log('updateUserProfile error: ' + err);
     return { success: false, error: 'Failed to update profile' };
