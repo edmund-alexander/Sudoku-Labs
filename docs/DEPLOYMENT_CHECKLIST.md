@@ -105,12 +105,21 @@ git push
 
 - [ ] GAS backend test returns `{"ok":true,...}`
 - [ ] GitHub Pages site loads without errors
+- [ ] All 5 source files load in correct order (check browser DevTools → Network tab):
+  - [ ] constants.js (game configuration)
+  - [ ] utils.js (helper functions)
+  - [ ] sound.js (audio system)
+  - [ ] services.js (API layer)
+  - [ ] app.jsx (React components)
 - [ ] Game board generates correctly
 - [ ] Score saves to leaderboard
 - [ ] Chat messages post and display
 - [ ] No 404 or CORS errors in console
 - [ ] Difficulty selection works
 - [ ] Timer and move counter work
+- [ ] Sound effects work (if enabled)
+- [ ] Theme switching works
+- [ ] Campaign mode loads
 
 ## If Something Goes Wrong
 
