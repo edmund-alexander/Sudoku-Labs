@@ -2,6 +2,20 @@
 
 This guide explains how to test and verify that all systems are working correctly.
 
+## Expected Development Warnings
+
+When running the app in development mode, you may see the following **informational warnings** in the browser console. These are expected and do not indicate errors:
+
+1. **Tailwind CDN Warning**: "cdn.tailwindcss.com should not be used in production"
+   - This is informational only. The app uses Tailwind CDN for development convenience.
+   - For production deployment, consider using Tailwind CLI or PostCSS integration.
+
+2. **Babel In-Browser Transformer Warning**: "You are using the in-browser Babel transformer"
+   - This is informational only. The app uses in-browser Babel for JSX compilation.
+   - For production deployment, consider precompiling JSX files.
+
+These warnings do not affect functionality and can be safely ignored during development.
+
 ## Quick Start
 
 ### Browser Console Debug (Recommended)
