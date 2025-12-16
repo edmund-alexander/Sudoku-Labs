@@ -584,41 +584,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
               {currentAssetSet.description}
             </p>
             
-            {/* Decor preview - Procedural theme-aware shapes */}
-            {currentAssetSet.icons && currentAssetSet.icons.length > 0 && (
-              <div className="flex justify-center gap-4 mb-3">
-                {currentAssetSet.icons.slice(0, 3).map((_, i) => {
-                  const element = getThemeVisualElement(activeThemeId, activePackId, i);
-                  return (
-                    <div 
-                      key={i}
-                      className={`${element.shape} animate-float`}
-                      style={{
-                        width: `${element.size * 0.7}px`,
-                        height: `${element.size * 0.7}px`,
-                        background: element.background,
-                        opacity: element.opacity,
-                        animationDelay: `${i * 0.2}s`,
-                        filter: `${element.blur}${element.filter ? ' ' + element.filter : ''}`,
-                        boxShadow: `0 4px 12px ${element.color}40`,
-                        transition: 'all 0.3s ease'
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            )}
-            
-            {/* Fallback emoji decor preview */}
-            {(!currentAssetSet.icons || currentAssetSet.icons.length === 0) && currentAssetSet.decor.length > 0 && (
-              <div className="flex justify-center gap-2 mb-3">
-                {currentAssetSet.decor.map((emoji, i) => (
-                  <span key={i} className="text-2xl animate-float" style={{ animationDelay: `${i * 0.2}s` }}>
-                    {emoji}
-                  </span>
-                ))}
-              </div>
-            )}
+
             
             {/* Texture badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/50 dark:bg-black/30 rounded-full text-xs font-medium">
