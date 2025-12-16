@@ -27,8 +27,12 @@ python3 scripts/generate_backgrounds.py --dry-run
 Generate PNG backgrounds with Gemini:
 
 ```bash
-python3 scripts/generate_backgrounds.py --format png --model "imagen-3.0"
+python3 scripts/generate_backgrounds.py --format png --model "imagen-3.0-generate-001"
 ```
+
+Note: Model name may vary. Check [Google AI Studio](https://ai.google.dev) for available Imagen models. Common options:
+- `imagen-3.0-generate-001`
+- `imagegeneration@006`
 
 Outputs:
 - `assets/themes/<visual>/<audio>/background.png` (or `.jpg`)

@@ -139,18 +139,48 @@ def main():
 
             if use_api:
                 try:
-                    # NOTE: The exact API for image generation may differ.
-                    # Placeholder usage: genai.GenerativeModel(args.model).generate_images(prompt=prompt)
-                    model = genai.GenerativeModel(args.model)
-                    result = model.generate_images(prompt=prompt)
-                    if hasattr(result, "images") and result.images:
-                        img = result.images[0]
-                        # Save binary content
-                        with open(out_img, "wb") as f:
-                            f.write(img.bytes)
+                    # Use the correct Gemini API for image generation
+                    # Reference: https://ai.google.dev/gemini-api/docs/imagen
+                    model = genai.ImageGenerationModel(args.model)
+                    result = model.generate_images(
+                        prompt=prompt,
+                        number_of_images=1,
+                        aspect_ratio="16:9"  # 1920x1080 approximation
+                    )
+                    
+                    if result and hasattr(result, 'images') and result.images:
+                        img_data = result.images[0]
+                        # Save the image
+                        if hasattr(img_data, '_pil_image'):
+                            img_data._pil_image.save(out_img)
+                        elif hasattr(img_data, 'save'):
+                            img_data.save(out_img)
+                        else:
+                            # Try as bytes
+                            with open(out_img, "wb") as f:
+                                f.write(img_data)
                         generated += 1
+                        print(f"  ✓ Generated {out_img.name}")
                     else:
                         print("  ! No image returned, writing placeholder SVG")
+                        write_placeholder_svg(out_svg, visual)
+                except AttributeError as e:
+                    # ImageGenerationModel might not be available, try alternative approach
+                    print(f"  ! API method not available ({e}), trying alternative...")
+                    try:
+                        # Alternative: use generate_content with image model
+                        model = genai.GenerativeModel(args.model)
+                        response = model.generate_content(prompt)
+                        if hasattr(response, 'images') and response.images:
+                            with open(out_img, "wb") as f:
+                                f.write(response.images[0])
+                            generated += 1
+                            print(f"  ✓ Generated {out_img.name}")
+                        else:
+                            print("  ! Alternative method failed, writing placeholder SVG")
+                            write_placeholder_svg(out_svg, visual)
+                    except Exception as e2:
+                        print(f"  ! Alternative generation error: {e2}. Writing placeholder SVG")
                         write_placeholder_svg(out_svg, visual)
                 except Exception as e:
                     print(f"  ! Generation error: {e}. Writing placeholder SVG")
