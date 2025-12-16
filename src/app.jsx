@@ -379,7 +379,6 @@ const CHAT_POLL_INTERVAL = 5000;
 
 // --- AWARDS ZONE (Themes + Sound Packs) ---
 const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSelectTheme, activePackId, unlockedPacks, onSelectPack }) => {
-  const [tab, setTab] = useState('themes');
   const [stats, setStats] = useState(StorageService.getGameStats());
   
   // Refresh stats from StorageService when component mounts
@@ -390,6 +389,17 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
 
   const isThemeUnlocked = (themeId) => unlockedThemes.includes(themeId);
   const isPackUnlocked = (packId) => unlockedPacks.includes(packId) || SOUND_PACKS[packId]?.unlocked;
+  const combos = useMemo(() => [
+    { id: 'classic-classic', name: 'Classic Lab', description: 'Original look with the classic cues.', themeId: 'default', packId: 'classic', icon: '🎛️' },
+    { id: 'classic-zen', name: 'Calm Focus', description: 'Classic visuals paired with zen tones.', themeId: 'default', packId: 'zen', icon: '🧘' },
+    { id: 'ocean-funfair', name: 'Ocean Arcade', description: 'Ocean hues plus playful funfair sounds.', themeId: 'ocean', packId: 'funfair', icon: '🌊' },
+    { id: 'forest-nature', name: 'Forest Chill', description: 'Emerald forest palette with nature chimes.', themeId: 'forest', packId: 'nature', icon: '🌲' },
+    { id: 'sunset-space', name: 'Cosmic Sunset', description: 'Sunset warmth with cosmic arps.', themeId: 'sunset', packId: 'space', icon: '🌅' },
+    { id: 'midnight-crystal', name: 'Midnight Crystal', description: 'Starry midnight tones with crystal sparkles.', themeId: 'midnight', packId: 'crystal', icon: '🌙' },
+    { id: 'sakura-retro', name: 'Retro Bloom', description: 'Sakura blossom visuals with retro pulses.', themeId: 'sakura', packId: 'retro', icon: '🌸' },
+    { id: 'volcano-minimal', name: 'Magma Minimal', description: 'Volcanic heat paired with crisp minimal clicks.', themeId: 'volcano', packId: 'minimal', icon: '🌋' },
+    { id: 'arctic-zen', name: 'Arctic Stillness', description: 'Cool arctic palette with calm zen pack.', themeId: 'arctic', packId: 'zen', icon: '❄️' }
+  ], []);
 
   // Get current combinatorial theme asset set
   const currentAssetSet = useMemo(() => {
@@ -422,23 +432,19 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
     }
   };
 
-  const handleThemeSelect = (themeId) => {
-    if (!isThemeUnlocked(themeId)) return;
-    if (soundEnabled) SoundManager.play('uiTap');
-    onSelectTheme(themeId);
-    StorageService.saveActiveTheme(themeId);
-  };
-
-  const handlePackSelect = (packId) => {
-    if (!isPackUnlocked(packId)) return;
-    if (soundEnabled) {
-      SoundManager.setPack(packId);
-      SoundManager.play('uiTap');
+  const getProgressPercent = (progress) => {
+    if (!progress) return 0;
+    if (typeof progress === 'string' && progress.toLowerCase() === 'unlocked!') return 100;
+    if (progress.includes('/')) {
+      const [num, denom] = progress.split('/');
+      const numVal = parseFloat(num) || 0;
+      const denomVal = parseFloat(denom) || 1;
+      return Math.min((numVal / denomVal) * 100, 100);
     }
-    onSelectPack(packId);
-    StorageService.saveActiveSoundPack(packId);
+    return 0;
   };
 
+<<<<<<< Updated upstream
   // Render the Themes tab showing current combination
   const renderThemes = () => {
     const activeVisualTheme = THEMES[activeThemeId] || THEMES.default;
@@ -572,53 +578,96 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
         
         // Get preview of what combining with current audio would look like
         const previewAsset = getThemeAssetSet(theme.id, activePackId);
+=======
+  const isComboUnlocked = (combo) => isThemeUnlocked(combo.themeId) && isPackUnlocked(combo.packId);
+
+  const handleComboSelect = (combo) => {
+    if (!isComboUnlocked(combo)) return;
+    if (soundEnabled) SoundManager.play('uiTap');
+    onSelectTheme(combo.themeId);
+    onSelectPack(combo.packId);
+    StorageService.saveActiveTheme(combo.themeId);
+    StorageService.saveActiveSoundPack(combo.packId);
+  };
+
+  const renderCombos = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      {combos.map((combo) => {
+        const theme = THEMES[combo.themeId];
+        const pack = SOUND_PACKS[combo.packId];
+        const unlocked = isComboUnlocked(combo);
+        const isActive = combo.themeId === activeThemeId && combo.packId === activePackId;
+        const themeLocked = !isThemeUnlocked(combo.themeId);
+        const packLocked = !isPackUnlocked(combo.packId);
+        const progress = themeLocked ? getThemeProgress(combo.themeId) : (packLocked ? getPackProgress(combo.packId) : null);
+        const progressWidth = getProgressPercent(progress);
+        const lockedRequirements = [];
+        if (themeLocked && theme?.unlockCriteria) lockedRequirements.push(`Theme: ${theme.unlockCriteria}`);
+        if (packLocked && pack?.unlockCriteria) lockedRequirements.push(`Sound: ${pack.unlockCriteria}`);
+>>>>>>> Stashed changes
 
         return (
           <div
-            key={theme.id}
-            onClick={() => handleThemeSelect(theme.id)}
+            key={combo.id}
+            onClick={() => handleComboSelect(combo)}
             className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${isActive
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
                 : unlocked
                   ? 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 cursor-pointer'
-                  : 'border-gray-200 dark:border-gray-700 opacity-60'
+                  : 'border-gray-200 dark:border-gray-700 opacity-70'
               }`}
           >
             <div className="flex items-start gap-3">
               <div className={`text-3xl sm:text-4xl ${unlocked ? '' : 'grayscale opacity-50'}`}>
-                {theme.icon}
+                {combo.icon || theme?.icon}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100">
-                    {theme.name}
-                  </h3>
+                  <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100">{combo.name}</h3>
                   {isActive && (
                     <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">Active</span>
                   )}
                   {!unlocked && <span className="text-xs text-gray-500">🔒</span>}
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">{theme.description}</p>
-                {!unlocked && theme.unlockCriteria && (
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">{combo.description}</p>
+                <div className="flex flex-wrap gap-2 text-[11px] sm:text-xs mt-2">
+                  <span className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-600">
+                    Theme: {theme?.name}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-600">
+                    Sound: {pack?.name}
+                  </span>
+                </div>
+                {!unlocked && lockedRequirements.length > 0 && (
                   <div className="mt-2 text-xs space-y-1.5">
+<<<<<<< Updated upstream
                     <p className="text-gray-500 dark:text-gray-400"><span className="font-semibold">Unlock:</span> {theme.unlockCriteria}</p>
                     {progress && progress.includes('/') && (
+=======
+                    <p className="text-gray-500 dark:text-gray-400"><span className="font-semibold">Unlock:</span> {lockedRequirements.join(' • ')}</p>
+                    {progress && (
+>>>>>>> Stashed changes
                       <div>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-blue-600 dark:text-blue-400 font-medium">Progress: {progress}</span>
                         </div>
                         <div className="w-full bg-gray-300 dark:bg-gray-700 rounded-full h-1.5">
-                          <div 
+                          <div
                             className="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 rounded-full transition-all duration-300"
+<<<<<<< Updated upstream
                             style={{
                               width: `${Math.min(parseFloat(progress) / parseInt(progress.split('/')[1]) * 100, 100)}%`
                             }}
+=======
+                            style={{ width: `${progressWidth}%` }}
+>>>>>>> Stashed changes
                           ></div>
                         </div>
                       </div>
                     )}
                   </div>
                 )}
+<<<<<<< Updated upstream
               </div>
             </div>
             {/* Current combination preview */}
@@ -633,6 +682,11 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
                 </div>
               </div>
             )}
+=======
+              </div>
+            </div>
+            <div className={`mt-3 h-12 rounded ${theme?.background || 'bg-gray-100 dark:bg-gray-700'} border border-gray-300 dark:border-gray-600`}></div>
+>>>>>>> Stashed changes
           </div>
         );
       })}
@@ -726,6 +780,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
         </button>
 
         <div className="flex items-center gap-2 mb-2 sm:mb-3">
+<<<<<<< Updated upstream
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2"><Icons.Awards /> Themes</h2>
         </div>
         <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
@@ -750,6 +805,14 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
         {tab === 'themes' && renderThemes()}
         {tab === 'visual' && renderVisualThemes()}
         {tab === 'audio' && renderAudioThemes()}
+=======
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2"><Icons.Awards /> Style Lab</h2>
+          <span className="text-[10px] sm:text-xs text-gray-500">Pick a visual + sound combo</span>
+        </div>
+        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">Swap both theme and sound from one place. Unlock combos by clearing quests and wins.</p>
+
+        {renderCombos()}
+>>>>>>> Stashed changes
       </div>
     </div>
   );
@@ -2173,23 +2236,25 @@ const App = () => {
   };
 
   const startNewGame = async (diff, quest = null) => {
+    const targetDifficulty = diff || 'Easy';
     if (soundEnabled) SoundManager.init();
     setLoading(true);
     try {
       let newBoard = null;
       try {
-        newBoard = await runGasFn('generateSudoku', diff);
+        newBoard = await runGasFn('generateSudoku', { difficulty: targetDifficulty });
       } catch (err) {
         console.warn('GAS generation failed, falling back to local generator', err);
         newBoard = null;
       }
 
-      if (!newBoard) {
-        // Fallback to local generator for dev when GAS isn't configured
-        newBoard = generateLocalBoard(diff);
+      const isValidBoard = Array.isArray(newBoard) && newBoard.length === 81 && newBoard.every((cell) => cell && typeof cell === 'object' && 'row' in cell && 'col' in cell);
+      if (!isValidBoard) {
+        // Fallback to local generator for dev when GAS isn't configured or response is malformed
+        newBoard = generateLocalBoard(targetDifficulty);
       }
 
-      setBoard(newBoard); setDifficulty(diff); setStatus('playing');
+      setBoard(newBoard); setDifficulty(targetDifficulty); setStatus('playing');
       setTimer(0); setMistakes(0); setHistory([newBoard]); setSelectedCell(null);
       setShowModal('none'); setActiveQuest(quest); setQuestCompleted(false);
       setView('game');
