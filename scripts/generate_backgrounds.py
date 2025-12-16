@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+"""
+Generate themed background images for Sudoku-Labs using Google Gemini.
+- Iterates over assets/themes/<visual>/<audio>/
+- Builds a prompt from the combo (visual + audio) with tailored style hints
+- Saves output to background.png (or background.jpg) inside each folder
+- Graceful fallback: if GEMINI_API_KEY is missing or API fails, writes a procedural SVG placeholder (background.svg)
+
+Prereqs:
+- pip install google-generativeai
+- export GEMINI_API_KEY=... (Google AI Studio key)
+
+Run:
+- python3 scripts/generate_backgrounds.py --format png --model "imagen-3.0" --dry-run
+- python3 scripts/generate_backgrounds.py --format png --model "imagen-3.0"
+
+"""
+import os
+import sys
+import argparse
+from pathlib import Path
+
+# Optional: try to import the Gemini client
+GEN_AI_AVAILABLE = False
+try:
+    import google.generativeai as genai
+    GEN_AI_AVAILABLE = True
+except Exception:
+    GEN_AI_AVAILABLE = False
+
+VISUALS = [
+    "default","ocean","forest","sunset","midnight","sakura","volcano","arctic"
+]
+AUDIOS = [
+    "classic","zen","funfair","retro","space","nature","crystal","minimal"
+]
+
+STYLE_HINTS = {
+    "ocean": "Underwater ambience with soft cyan-blue gradients, gentle waves, light caustics",
+    "forest": "Organic greens, leaf textures, dappled light, soft bokeh",
+    "sunset": "Warm orange-pink gradients, twilight glow, subtle rays",
+    "midnight": "Deep indigo-purple space ambience, stars, faint nebula",
+    "sakura": "Delicate pink hues, blossom petals, airy spring atmosphere",
+    "volcano": "Fiery reds and oranges, molten glow, dramatic contrast",
+    "arctic": "Cool blue crystalline textures, frosty shimmer, ice facets",
+    "default": "Clean soft blue gradients, minimal abstract shapes"
+}
+
+AUDIO_HINTS = {
+    "classic": "balanced, minimal UI-friendly",
+    "zen": "calming, soft blur and gentle flow",
+    "funfair": "playful, vibrant, festive",
+    "retro": "8-bit inspired, pixel motif subtle",
+    "space": "cosmic, starfield or nebulous accents",
+    "nature": "organic, natural textures",
+    "crystal": "crisp, faceted, luminous",
+    "minimal": "high simplicity, low-detail"
+}
+
+def build_prompt(visual: str, audio: str) -> str:
+    visual_hint = STYLE_HINTS.get(visual, STYLE_HINTS["default"])
+    audio_hint = AUDIO_HINTS.get(audio, AUDIO_HINTS["classic"])
+    return (
+        f"Generate a seamless, abstract background for a Sudoku UI. "
+        f"Theme: {visual} + {audio}. "
+        f"Visual style: {visual_hint}. "
+        f"Audio feel: {audio_hint}. "
+        f"Constraints: seamless, non-distracting, soft gradients and shapes, high readability, 1920x1080, PNG. "
+        f"Avoid text, faces, and high detail."
+    )
+
+def write_placeholder_svg(out_path: Path, visual: str):
+    # Minimal gradient SVG placeholder
+    base_colors = {
+        "ocean": ("#06b6d4","#67e8f9"),
+        "forest": ("#10b981","#6ee7b7"),
+        "sunset": ("#f97316","#fbbf24"),
+        "midnight": ("#6366f1","#a5b4fc"),
+        "sakura": ("#ec4899","#f472b6"),
+        "volcano": ("#dc2626","#f97316"),
+        "arctic": ("#0ea5e9","#7dd3fc"),
+        "default": ("#3b82f6","#60a5fa")
+    }
+    c1, c2 = base_colors.get(visual, base_colors["default"])
+    svg = f"""
+<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'>
+  <defs>
+    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='{c1}'/>
+      <stop offset='100%' stop-color='{c2}'/>
+    </linearGradient>
+  </defs>
+  <rect x='0' y='0' width='1920' height='1080' fill='url(#g)'/>
+  <circle cx='30%' cy='40%' r='220' fill='#ffffff20' />
+  <circle cx='70%' cy='65%' r='180' fill='#ffffff10' />
+</svg>
+"""
+    out_path.write_text(svg)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", default="assets/themes", help="Root assets directory")
+    parser.add_argument("--format", default="png", choices=["png","jpg"], help="Output image format")
+    parser.add_argument("--model", default="imagen-3.0", help="Gemini image model name")
+    parser.add_argument("--dry-run", action="store_true", help="Do not call API, only print actions or write placeholders")
+    args = parser.parse_args()
+
+    root = Path(args.root)
+    if not root.exists():
+        print(f"Error: root path {root} not found", file=sys.stderr)
+        sys.exit(1)
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    use_api = GEN_AI_AVAILABLE and api_key and not args.dry_run
+
+    if use_api:
+        genai.configure(api_key=api_key)
+        print("Using Gemini for image generation")
+    else:
+        if not GEN_AI_AVAILABLE:
+            print("google-generativeai not installed; falling back to placeholders")
+        elif not api_key:
+            print("GEMINI_API_KEY missing; falling back to placeholders")
+        elif args.dry_run:
+            print("Dry run enabled; writing placeholders")
+
+    generated = 0
+    for visual in VISUALS:
+        for audio in AUDIOS:
+            combo_dir = root / visual / audio
+            if not combo_dir.exists():
+                combo_dir.mkdir(parents=True, exist_ok=True)
+            prompt = build_prompt(visual, audio)
+            out_img = combo_dir / ("background." + args.format)
+            out_svg = combo_dir / "background.svg"
+
+            print(f"-> {visual}/{audio}: {out_img.name}")
+
+            if use_api:
+                try:
+                    # NOTE: The exact API for image generation may differ.
+                    # Placeholder usage: genai.GenerativeModel(args.model).generate_images(prompt=prompt)
+                    model = genai.GenerativeModel(args.model)
+                    result = model.generate_images(prompt=prompt)
+                    if hasattr(result, "images") and result.images:
+                        img = result.images[0]
+                        # Save binary content
+                        with open(out_img, "wb") as f:
+                            f.write(img.bytes)
+                        generated += 1
+                    else:
+                        print("  ! No image returned, writing placeholder SVG")
+                        write_placeholder_svg(out_svg, visual)
+                except Exception as e:
+                    print(f"  ! Generation error: {e}. Writing placeholder SVG")
+                    write_placeholder_svg(out_svg, visual)
+            else:
+                # Placeholder fallbacks
+                write_placeholder_svg(out_svg, visual)
+                generated += 1
+
+    print(f"Done. Generated {generated} assets (including placeholders).")
+
+if __name__ == "__main__":
+    main()
