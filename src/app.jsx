@@ -440,7 +440,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
                 {!unlocked && theme.unlockCriteria && (
                   <div className="mt-2 text-xs space-y-1.5">
                     <p className="text-gray-500 dark:text-gray-400"><span className="font-semibold">Unlock:</span> {theme.unlockCriteria}</p>
-                    {progress && (
+                    {progress && progress.includes('/') && (
                       <div>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-blue-600 dark:text-blue-400 font-medium">Progress: {progress}</span>
@@ -464,7 +464,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
               <div className="flex items-center justify-center gap-2">
                 <span className="text-xl">{theme.icon}</span>
                 <span className="text-gray-500 dark:text-gray-400 text-xs">+</span>
-                <span className="text-xl">{pairedPack?.icon || '🎛️'}</span>
+                <span className="text-xl">{pairedPack?.icon || SOUND_PACKS.classic.icon}</span>
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-200 ml-1">{theme.pairingName}</span>
               </div>
             </div>
@@ -526,7 +526,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
                   {!unlocked && pack.unlockCriteria && (
                     <div className="mt-2 text-xs space-y-1.5">
                       <p className="text-gray-500 dark:text-gray-400"><span className="font-semibold">Unlock:</span> {pack.unlockCriteria}</p>
-                      {progress && (
+                      {progress && progress.includes('/') && (
                         <div>
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-blue-600 dark:text-blue-400 font-medium">Progress: {progress}</span>
