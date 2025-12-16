@@ -379,7 +379,7 @@ const CHAT_POLL_INTERVAL = 5000;
 
 // --- AWARDS ZONE (Themes + Sound Packs) ---
 const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSelectTheme, activePackId, unlockedPacks, onSelectPack }) => {
-  const [tab, setTab] = useState('mix');
+  const [tab, setTab] = useState('themes');
   const [stats, setStats] = useState(StorageService.getGameStats());
   
   // Refresh stats from StorageService when component mounts
@@ -439,15 +439,15 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
     StorageService.saveActiveSoundPack(packId);
   };
 
-  // Render the Mix & Match tab showing current combination
-  const renderMixMatch = () => {
+  // Render the Themes tab showing current combination
+  const renderThemes = () => {
     const activeVisualTheme = THEMES[activeThemeId] || THEMES.default;
     const activeAudioTheme = SOUND_PACKS[activePackId] || SOUND_PACKS.classic;
     
     return (
       <div className="space-y-4">
         {/* Current Combination Preview */}
-        <div className={`p-4 rounded-xl ${activeVisualTheme.background} border-2 border-gray-300 dark:border-gray-600 relative overflow-hidden`}>
+        <div className={`p-4 rounded-xl ${activeVisualTheme.background} border-2 border-gray-300 dark:border-gray-600 relative overflow-hidden transition-all duration-500`}>
           {/* Texture overlay visualization */}
           {currentAssetSet.texture.pattern !== 'none' && (
             <div 
@@ -563,7 +563,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
     );
   };
 
-  const renderThemes = () => (
+  const renderVisualThemes = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
       {Object.values(THEMES).map((theme) => {
         const unlocked = isThemeUnlocked(theme.id);
@@ -639,7 +639,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
     </div>
   );
 
-  const renderPacks = () => {
+  const renderAudioThemes = () => {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {Object.values(SOUND_PACKS).map((pack) => {
@@ -726,8 +726,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
         </button>
 
         <div className="flex items-center gap-2 mb-2 sm:mb-3">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2"><Icons.Awards /> Theme Lab</h2>
-          <span className="text-[10px] sm:text-xs text-gray-500">Mix & Match</span>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2"><Icons.Awards /> Themes</h2>
         </div>
         <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
           Combine any visual theme with any audio theme to create your perfect experience.
@@ -735,22 +734,22 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
 
         <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
           <button
-            onClick={() => { if (soundEnabled) SoundManager.play('uiTap'); setTab('mix'); }}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold border whitespace-nowrap ${tab === 'mix' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-          >🎨 Mix & Match</button>
-          <button
             onClick={() => { if (soundEnabled) SoundManager.play('uiTap'); setTab('themes'); }}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold border whitespace-nowrap ${tab === 'themes' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-          >👁️ Visual Themes</button>
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border whitespace-nowrap ${tab === 'themes' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+          >🎨 Themes</button>
           <button
-            onClick={() => { if (soundEnabled) SoundManager.play('uiTap'); setTab('sounds'); }}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold border whitespace-nowrap ${tab === 'sounds' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-          >🔊 Audio Themes</button>
+            onClick={() => { if (soundEnabled) SoundManager.play('uiTap'); setTab('visual'); }}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border whitespace-nowrap ${tab === 'visual' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+          >👁️ Visual</button>
+          <button
+            onClick={() => { if (soundEnabled) SoundManager.play('uiTap'); setTab('audio'); }}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border whitespace-nowrap ${tab === 'audio' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+          >🔊 Audio</button>
         </div>
 
-        {tab === 'mix' && renderMixMatch()}
         {tab === 'themes' && renderThemes()}
-        {tab === 'sounds' && renderPacks()}
+        {tab === 'visual' && renderVisualThemes()}
+        {tab === 'audio' && renderAudioThemes()}
       </div>
     </div>
   );
