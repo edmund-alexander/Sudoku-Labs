@@ -413,6 +413,40 @@ const VISUAL_BASES = Object.freeze({
   }
 });
 
+// ============================================================================
+// SVG PATTERN LIBRARY - Theme-specific visual assets
+// ============================================================================
+
+/**
+ * SVG pattern generators for each theme
+ * Each pattern is encoded as a data URI for direct use in backgroundImage
+ */
+const SVG_PATTERNS = Object.freeze({
+  // Default theme - clean, minimal lines
+  default_bg: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3ClinearGradient id='grad'%3E%3Cstop offset='0%25' stop-color='%234f46e5' stop-opacity='0.05'/%3E%3Cstop offset='100%25' stop-color='%232563eb' stop-opacity='0.02'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='200' height='200' fill='url(%23grad)'/%3E%3Cline x1='0' y1='0' x2='200' y2='200' stroke='%234f46e5' stroke-width='0.5' opacity='0.08'/%3E%3Cline x1='200' y1='0' x2='0' y2='200' stroke='%232563eb' stroke-width='0.5' opacity='0.08'/%3E%3C/svg%3E")`,
+  
+  // Ocean theme - wave-like flowing patterns
+  ocean_bg: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='150'%3E%3Cdefs%3E%3ClinearGradient id='oceanGrad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2306b6d4' stop-opacity='0.08'/%3E%3Cstop offset='100%25' stop-color='%230369a1' stop-opacity='0.04'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='300' height='150' fill='url(%23oceanGrad)'/%3E%3Cpath d='M0,50 Q75,30 150,50 T300,50' stroke='%230ea5e9' stroke-width='1' fill='none' opacity='0.15'/%3E%3Cpath d='M0,80 Q75,60 150,80 T300,80' stroke='%230284c7' stroke-width='0.8' fill='none' opacity='0.12'/%3E%3Cpath d='M0,110 Q75,90 150,110 T300,110' stroke='%230369a1' stroke-width='0.8' fill='none' opacity='0.1'/%3E%3C/svg%3E")`,
+  
+  // Forest theme - organic leaves and branches
+  forest_bg: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3ClinearGradient id='forestGrad'%3E%3Cstop offset='0%25' stop-color='%2310b981' stop-opacity='0.06'/%3E%3Cstop offset='100%25' stop-color='%23047857' stop-opacity='0.04'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='200' height='200' fill='url(%23forestGrad)'/%3E%3Cpath d='M50,30 Q40,60 50,90 Q60,60 50,30' fill='%2310b981' opacity='0.1'/%3E%3Cpath d='M150,50 Q140,80 150,110 Q160,80 150,50' fill='%2334d399' opacity='0.08'/%3E%3Ccircle cx='40' cy='50' r='8' fill='%236ee7b7' opacity='0.12'/%3E%3Ccircle cx='160' cy='160' r='6' fill='%2310b981' opacity='0.1'/%3E%3C/svg%3E")`,
+  
+  // Sunset theme - gradient waves and warmth
+  sunset_bg: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Cdefs%3E%3ClinearGradient id='sunsetGrad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23f97316' stop-opacity='0.08'/%3E%3Cstop offset='100%25' stop-color='%23ec4899' stop-opacity='0.06'/%3E%3C/linearGradient%3E%3CradialGradient id='sunGlow'%3E%3Cstop offset='0%25' stop-color='%23fbbf24' stop-opacity='0.15'/%3E%3Cstop offset='100%25' stop-color='%23f97316' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='300' height='200' fill='url(%23sunsetGrad)'/%3E%3Ccircle cx='250' cy='80' r='40' fill='url(%23sunGlow)'/%3E%3Cpath d='M0,150 Q75,140 150,150 T300,150' stroke='%23f97316' stroke-width='1.5' fill='none' opacity='0.1'/%3E%3C/svg%3E")`,
+  
+  // Midnight theme - stars and cosmic
+  midnight_bg: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3CradialGradient id='starGlow' r='50%25'%3E%3Cstop offset='0%25' stop-color='white' stop-opacity='0.8'/%3E%3Cstop offset='100%25' stop-color='white' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='200' height='200' fill='%23111827' opacity='0.04'/%3E%3Ccircle cx='30' cy='40' r='1.5' fill='url(%23starGlow)'/%3E%3Ccircle cx='170' cy='50' r='1' fill='url(%23starGlow)'/%3E%3Ccircle cx='100' cy='30' r='0.8' fill='url(%23starGlow)'/%3E%3Ccircle cx='180' cy='150' r='1.2' fill='url(%23starGlow)'/%3E%3Ccircle cx='40' cy='170' r='0.9' fill='url(%23starGlow)'/%3E%3C/svg%3E")`,
+  
+  // Sakura theme - floating petals and circles
+  sakura_bg: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3ClinearGradient id='sakuraGrad'%3E%3Cstop offset='0%25' stop-color='%23ec4899' stop-opacity='0.06'/%3E%3Cstop offset='100%25' stop-color='%23be185d' stop-opacity='0.03'/%3E%3C/linearGradient%3E%3CradialGradient id='petalGlow'%3E%3Cstop offset='0%25' stop-color='%23f472b6' stop-opacity='0.2'/%3E%3Cstop offset='100%25' stop-color='%23ec4899' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='200' height='200' fill='url(%23sakuraGrad)'/%3E%3Ccircle cx='50' cy='60' r='15' fill='url(%23petalGlow)'/%3E%3Ccircle cx='150' cy='100' r='18' fill='url(%23petalGlow)'/%3E%3Ccircle cx='100' cy='160' r='12' fill='url(%23petalGlow)'/%3E%3C/svg%3E")`,
+  
+  // Volcano theme - heat waves and intensity
+  volcano_bg: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='200'%3E%3Cdefs%3E%3ClinearGradient id='volcanoGrad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23dc2626' stop-opacity='0.08'/%3E%3Cstop offset='100%25' stop-color='%23991b1b' stop-opacity='0.05'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='250' height='200' fill='url(%23volcanoGrad)'/%3E%3Cpath d='M50,80 L100,20 L150,80 Z' fill='%23ef4444' opacity='0.08'/%3E%3Cpath d='M60,100 Q125,30 190,100' stroke='%23f97316' stroke-width='1.5' fill='none' opacity='0.12'/%3E%3Cpath d='M40,120 Q125,50 210,120' stroke='%23ea580c' stroke-width='1' fill='none' opacity='0.1'/%3E%3C/svg%3E")`,
+  
+  // Arctic theme - crystalline and geometric
+  arctic_bg: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cdefs%3E%3ClinearGradient id='arcticGrad'%3E%3Cstop offset='0%25' stop-color='%230ea5e9' stop-opacity='0.08'/%3E%3Cstop offset='100%25' stop-color='%230369a1' stop-opacity='0.04'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' fill='url(%23arcticGrad)'/%3E%3Cpath d='M90,10 L130,60 L90,90 L50,60 Z' fill='%2399ccff' opacity='0.12'/%3E%3Cpath d='M30,50 L50,80 L30,110 L10,80 Z' fill='%237dd3fc' opacity='0.1'/%3E%3Cpath d='M140,120 L160,150 L140,170 L120,150 Z' fill='%2399ccff' opacity='0.08'/%3E%3C/svg%3E")`
+});
+
 // Audio theme modifiers (how audio themes influence the visual rendering)
 const AUDIO_MODIFIERS = Object.freeze({
   classic: { style: 'clean', textureHint: 'smooth' },
@@ -872,6 +906,10 @@ const getThemeAssetSet = (visualId, audioId) => {
   const texture = BOARD_TEXTURES[combo.boardTexture] || BOARD_TEXTURES.smooth;
   const decorSet = DECOR_SETS[combo.decor] || DECOR_SETS.none;
   
+  // Get theme-specific SVG background pattern
+  const svgBgKey = `${visualId}_bg`;
+  const svgBg = SVG_PATTERNS[svgBgKey] || '';
+  
   return {
     // Combination metadata
     name: combo.name,
@@ -884,6 +922,9 @@ const getThemeAssetSet = (visualId, audioId) => {
     cellBg: visualBase.cellBg,
     fixedCellBg: visualBase.fixedCellBg,
     selectedCellBg: visualBase.selectedCellBg,
+    
+    // SVG background pattern (theme-specific)
+    svgBackground: svgBg,
     
     // Texture overlay
     texture: {
@@ -950,5 +991,6 @@ window.AUDIO_MODIFIERS = AUDIO_MODIFIERS;
 window.BOARD_TEXTURES = BOARD_TEXTURES;
 window.DECOR_SETS = DECOR_SETS;
 window.THEME_COMBINATIONS = THEME_COMBINATIONS;
+window.SVG_PATTERNS = SVG_PATTERNS;
 window.getComboKey = getComboKey;
 window.getThemeAssetSet = getThemeAssetSet;
