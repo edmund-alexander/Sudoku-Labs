@@ -2798,7 +2798,7 @@ const App = () => {
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-7 lg:gap-8 justify-center items-start">
+        <div className="flex flex-col lg:flex-row gap-2 sm:gap-3 md:gap-4 lg:gap-5 justify-center items-start">
 
           {/* Left: Board */}
           <div className="flex-shrink-0 mx-auto lg:mx-0">
@@ -2811,16 +2811,16 @@ const App = () => {
           </div>
 
           {/* Right: Sidebar */}
-          <div className="flex flex-col gap-3 sm:gap-4 w-full max-w-md lg:w-80 mx-auto lg:mx-0">
+          <div className="flex flex-col gap-2 sm:gap-2.5 w-full max-w-xs lg:w-72 mx-auto lg:mx-0">
 
             {/* Number Pad (top of sidebar) */}
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                 <button
                   key={num}
                   onClick={() => { if (soundEnabled) SoundManager.play('select'); handleNumberInput(num); }}
                   disabled={(status !== 'playing') || (remaining[num] === 0)}
-                  className={`h-12 sm:h-14 rounded-lg text-lg sm:text-xl font-bold transition-all transform active:scale-95 ${((status !== 'playing') || (remaining[num] === 0)) ? 'opacity-20 cursor-not-allowed bg-gray-200 dark:bg-gray-800' : 'bg-white dark:bg-gray-700 shadow-sm hover:bg-blue-50 dark:hover:bg-gray-600 text-blue-600 dark:text-blue-400 border border-gray-200 dark:border-gray-600'}`}
+                  className={`h-11 sm:h-12 rounded-lg text-base sm:text-lg font-bold transition-all transform active:scale-95 ${((status !== 'playing') || (remaining[num] === 0)) ? 'opacity-20 cursor-not-allowed bg-gray-200 dark:bg-gray-800' : 'bg-white dark:bg-gray-700 shadow-sm hover:bg-blue-50 dark:hover:bg-gray-600 text-blue-600 dark:text-blue-400 border border-gray-200 dark:border-gray-600'}`}
                 >
                   {num} <span className="block text-[8px] sm:text-[9px] text-gray-400 font-normal -mt-0.5">{remaining[num]} left</span>
                 </button>
@@ -2830,7 +2830,7 @@ const App = () => {
 
 
             {/* Stats */}
-            <div className="w-full flex justify-between items-center bg-white dark:bg-gray-800 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
+            <div className="w-full flex justify-between items-center bg-white dark:bg-gray-800 py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
               <div className="flex flex-col">
                 <span className="text-[9px] sm:text-[10px] text-gray-500 uppercase font-semibold">Difficulty</span>
                 <span className="font-bold text-sm sm:text-base">{difficulty}</span>
@@ -2846,12 +2846,12 @@ const App = () => {
             </div>
 
             {/* Tools */}
-            <div className="flex w-full justify-between gap-1.5 sm:gap-2">
+            <div className="flex w-full justify-between gap-1 sm:gap-1.5">
               <button
                 onClick={() => { handleUndo(); }}
-                className="flex-1 flex flex-col items-center p-1.5 sm:p-2 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700"
+                className="flex-1 flex flex-col items-center p-1 sm:p-1.5 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700"
               >
-                <Icons.Undo /><span className="text-[9px] sm:text-[10px] mt-1">Undo</span>
+                <Icons.Undo /><span className="text-[8px] sm:text-[9px] mt-0.5">Undo</span>
               </button>
               <button
                 onClick={() => {
@@ -2861,37 +2861,37 @@ const App = () => {
                     setBoard(newBoard);
                   }
                 }}
-                className="flex-1 flex flex-col items-center p-1.5 sm:p-2 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700"
+                className="flex-1 flex flex-col items-center p-1 sm:p-1.5 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700"
               >
-                <Icons.Eraser /><span className="text-[9px] sm:text-[10px] mt-1">Erase</span>
+                <Icons.Eraser /><span className="text-[8px] sm:text-[9px] mt-0.5">Erase</span>
               </button>
               <button
                 onClick={() => { if (soundEnabled) SoundManager.play('pencil'); setMode(mode === 'pen' ? 'pencil' : 'pen'); }}
-                className={`flex-1 flex flex-col items-center p-1.5 sm:p-2 rounded-lg transition-colors border border-gray-200 dark:border-gray-700 ${mode === 'pencil' ? 'bg-blue-100 dark:bg-blue-900 border-blue-500' : 'bg-white dark:bg-gray-800'}`}
+                className={`flex-1 flex flex-col items-center p-1 sm:p-1.5 rounded-lg transition-colors border border-gray-200 dark:border-gray-700 ${mode === 'pencil' ? 'bg-blue-100 dark:bg-blue-900 border-blue-500' : 'bg-white dark:bg-gray-800'}`}
               >
                 <div className="relative">
                   <Icons.Pencil />
-                  <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                  <span className="absolute -top-1 -right-1 flex h-1.5 w-1.5">
                     <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75 ${mode === 'pencil' ? '' : 'hidden'}`}></span>
-                    <span className={`relative inline-flex rounded-full h-2 w-2 ${mode === 'pencil' ? 'bg-blue-500' : 'bg-transparent'}`}></span>
+                    <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${mode === 'pencil' ? 'bg-blue-500' : 'bg-transparent'}`}></span>
                   </span>
                 </div>
-                <span className="text-[9px] sm:text-[10px] mt-1">{mode === 'pencil' ? 'Notes' : 'Notes'}</span>
+                <span className="text-[8px] sm:text-[9px] mt-0.5">{mode === 'pencil' ? 'Notes' : 'Notes'}</span>
               </button>
             </div>
 
             {/* New Game */}
-            {!activeQuest && <div className="bg-white dark:bg-gray-800 p-2.5 sm:p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="text-[10px] sm:text-xs font-bold uppercase text-gray-500 mb-2">{loading ? 'Generating...' : 'New Game'}</h3>
-              <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+            {!activeQuest && <div className="bg-white dark:bg-gray-800 p-2 sm:p-2.5 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="text-[9px] sm:text-[10px] font-bold uppercase text-gray-500 mb-1.5">{loading ? 'Generating...' : 'New Game'}</h3>
+              <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
                 {['Easy', 'Medium', 'Hard', 'Daily'].map(d => (
-                  <button key={d} onClick={() => { if (soundEnabled) SoundManager.play('startGame'); startNewGame(d); }} disabled={loading} className={`py-1.5 sm:py-2 px-2 rounded text-xs font-medium transition-colors ${difficulty === d ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'} disabled:opacity-50`}>{d}</button>
+                  <button key={d} onClick={() => { if (soundEnabled) SoundManager.play('startGame'); startNewGame(d); }} disabled={loading} className={`py-1 sm:py-1.5 px-2 rounded text-[11px] font-medium transition-colors ${difficulty === d ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'} disabled:opacity-50`}>{d}</button>
                 ))}
               </div>
             </div>}
 
-            <div className="grid grid-cols-1 gap-2">
-              <button onClick={handleOpenLeaderboard} className="py-2.5 sm:py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded shadow-md text-xs font-bold hover:from-yellow-600 hover:to-orange-600 transition-colors transform hover:-translate-y-0.5">🏆 View Leaderboard</button>
+            <div className="grid grid-cols-1 gap-1.5">
+              <button onClick={handleOpenLeaderboard} className="py-1.5 sm:py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded shadow-md text-xs font-bold hover:from-yellow-600 hover:to-orange-600 transition-colors transform hover:-translate-y-0.5">🏆 Leaderboard</button>
             </div>
           </div>
         </div>
