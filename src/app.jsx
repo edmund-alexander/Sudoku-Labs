@@ -457,6 +457,19 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
       <div className="space-y-4">
         {/* Current Combination Preview */}
         <div className={`p-4 rounded-xl ${activeVisualTheme.background} border-2 border-gray-300 dark:border-gray-600 relative overflow-hidden`}>
+          {/* SVG Background Pattern */}
+          {currentAssetSet.svgBackground && (
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{ 
+                backgroundImage: currentAssetSet.svgBackground,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: 0.5
+              }}
+            />
+          )}
+          
           {/* Texture overlay visualization */}
           {currentAssetSet.texture.pattern !== 'none' && (
             <div 
@@ -2499,6 +2512,19 @@ const App = () => {
   // 4. GAME SCREEN
   return (
     <div className={`min-h-screen flex flex-col items-center p-2 sm:p-4 transition-colors duration-300 text-gray-900 dark:text-gray-100 ${activeAssetSet.background} relative overflow-hidden`}>
+      {/* SVG Background Pattern Layer (theme-specific) */}
+      {activeAssetSet.svgBackground && (
+        <div 
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{ 
+            backgroundImage: activeAssetSet.svgBackground,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.6
+          }}
+        />
+      )}
+      
       {/* Texture overlay layer */}
       {activeAssetSet.texture.pattern !== 'none' && (
         <div 
