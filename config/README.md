@@ -4,7 +4,8 @@ This directory stores sensitive configuration that should NOT be committed to Gi
 
 ## Files
 
-- **`config.example.js`** - Template showing available configuration options (SAFE to commit)
+- **`config.example.js`** - Template for local/root deployments (SAFE to commit)
+- **`config.production.example.js`** - Template for subdirectory deployments like GitHub Pages (SAFE to commit)
 - **`config.local.js`** - Your actual configuration with real API keys and URLs (MUST NOT commit - listed in .gitignore)
 
 ## Setup Instructions
@@ -20,6 +21,7 @@ This directory stores sensitive configuration that should NOT be committed to Gi
    ```javascript
    const CONFIG = {
      GAS_URL: 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec',
+     BASE_PATH: '', // Empty for localhost or root domain
    };
    ```
 
@@ -28,11 +30,33 @@ This directory stores sensitive configuration that should NOT be committed to Gi
    git status  # config.local.js should NOT appear in output
    ```
 
-### For End Users / Deployment
+### For Production Deployment (Subdirectory)
+
+If deploying to a subdirectory (e.g., GitHub Pages at `username.github.io/Sudoku-Labs`):
+
+1. **Use the production template:**
+   ```bash
+   cp config/config.production.example.js config/config.local.js
+   ```
+
+2. **Update `config.local.js` with your subdirectory:**
+   ```javascript
+   const CONFIG = {
+     GAS_URL: 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec',
+     BASE_PATH: '/Sudoku-Labs', // Your subdirectory name
+   };
+   ```
+
+3. **This fixes asset paths for themes and backgrounds**
+   - Without `BASE_PATH`: `/assets/themes/...` → ❌ Broken on subdirectory deployments
+   - With `BASE_PATH`: `/Sudoku-Labs/assets/themes/...` → ✅ Works everywhere
+
+### For End Users / Root Domain Deployment
 
 1. Copy `config.example.js` to `config.local.js`
 2. Update `GAS_URL` with your Google Apps Script deployment URL
-3. The frontend will automatically load your configuration at runtime
+3. Leave `BASE_PATH` empty (`''`) for root domain deployments
+4. The frontend will automatically load your configuration at runtime
 
 ## Security Notes
 
