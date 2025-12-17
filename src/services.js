@@ -147,12 +147,23 @@ const StorageService = {
   handleQuotaExceeded() {
     console.warn('localStorage quota exceeded, attempting cleanup...');
     try {
-      // Clear non-essential data
-      const keysToKeep = [KEYS.GAME_STATE, KEYS.USER_SESSION, KEYS.USER_ID, 
-                          KEYS.UNLOCKED_THEMES, KEYS.UNLOCKED_SOUND_PACKS];
+      // Essential keys to preserve
+      const essentialKeys = [
+        KEYS.GAME_STATE,
+        KEYS.USER_SESSION,
+        KEYS.USER_ID,
+        KEYS.UNLOCKED_THEMES,
+        KEYS.UNLOCKED_SOUND_PACKS,
+        KEYS.ACTIVE_THEME,
+        KEYS.ACTIVE_SOUND_PACK,
+        KEYS.GAME_STATS,
+        'theme', // Dark mode preference
+        'APP_VERSION'
+      ];
+      
       const allKeys = Object.keys(localStorage);
       allKeys.forEach(key => {
-        if (!keysToKeep.includes(key) && !key.startsWith('theme_') && key !== 'APP_VERSION') {
+        if (!essentialKeys.includes(key)) {
           localStorage.removeItem(key);
         }
       });
