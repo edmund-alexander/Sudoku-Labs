@@ -377,7 +377,7 @@ const Cell = memo(({ data, isSelected, onClick, isCompletedBox, isConflicting = 
       role="gridcell"
       aria-label={cellLabel}
       aria-selected={isSelected}
-      aria-readonly={isFixed}
+      aria-readonly={isFixed ? 'true' : 'false'}
       tabIndex={isSelected ? 0 : -1}
     >
       {renderContent()}
@@ -1819,10 +1819,13 @@ const App = () => {
         const errorCellIndex = selectedCell;
         setTimeout(() => {
           setBoard(prev => {
-            const b = JSON.parse(JSON.stringify(prev));
+            const b = [...prev];
             if (b[errorCellIndex]) { 
-              b[errorCellIndex].isError = false; 
-              b[errorCellIndex].value = null; 
+              b[errorCellIndex] = {
+                ...b[errorCellIndex],
+                isError: false,
+                value: null
+              };
             }
             return b;
           });
@@ -1988,9 +1991,12 @@ const App = () => {
       else if (e.key === 'Backspace' || e.key === 'Delete') {
         if (selectedCell !== null && !board[selectedCell].isFixed) {
           if (soundEnabled) SoundManager.play('erase');
-          const newBoard = JSON.parse(JSON.stringify(board));
-          newBoard[selectedCell].value = null;
-          newBoard[selectedCell].notes = [];
+          const newBoard = [...board];
+          newBoard[selectedCell] = {
+            ...newBoard[selectedCell],
+            value: null,
+            notes: []
+          };
           setHistory(prev => [...prev.slice(-10), newBoard]);
           setBoard(newBoard);
         }
@@ -2077,11 +2083,6 @@ const App = () => {
       }
     });
     
-    return completed;
-  }, [board]);
-      const values = cells.map(c => c.value).filter(v => v !== null);
-      if (new Set(values).size === 9) completed.push(b);
-    }
     return completed;
   }, [board]);
 
