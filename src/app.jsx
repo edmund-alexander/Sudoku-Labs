@@ -336,7 +336,7 @@ const Cell = memo(({ data, isSelected, onClick, isCompletedBox, isConflicting = 
   const { row, col, value, isFixed, isError, notes, isHinted } = data;
   const isRightBorder = (col + 1) % 3 === 0 && col !== 8;
   const isBottomBorder = (row + 1) % 3 === 0 && row !== 8;
-  let baseClasses = "relative flex items-center justify-center text-base sm:text-lg md:text-xl font-medium cursor-pointer transition-all duration-200 select-none h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 lg:h-12 lg:w-12";
+  let baseClasses = "relative flex items-center justify-center text-base sm:text-lg md:text-xl font-medium cursor-pointer transition-all duration-200 select-none h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 lg:h-12 lg:w-12 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10";
   if (isRightBorder) baseClasses += " border-r-2 border-gray-400 dark:border-gray-500";
   else baseClasses += " border-r border-gray-200 dark:border-gray-700";
   if (isBottomBorder) baseClasses += " border-b-2 border-gray-400 dark:border-gray-500";
@@ -351,11 +351,15 @@ const Cell = memo(({ data, isSelected, onClick, isCompletedBox, isConflicting = 
   if (isCompletedBox && !isSelected && !isError) {
     bgClass += " transition-colors duration-1000 bg-amber-50 dark:bg-amber-900/30";
   }
+  
+  // Accessibility labels
+  const cellLabel = `Row ${row + 1}, Column ${col + 1}${value ? `, Value ${value}` : ', Empty'}${isFixed ? ', Fixed' : ''}`;
+  
   const renderContent = () => {
     if (value !== null) return <span className={!isFixed ? "animate-pop" : ""}>{value}</span>;
     if (notes.length > 0) {
       return (
-        <div className="grid grid-cols-3 gap-0 w-full h-full p-0.5">
+        <div className="grid grid-cols-3 gap-0 w-full h-full p-0.5" aria-label={`Notes: ${notes.join(', ')}`}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
             <div key={n} className="flex items-center justify-center text-[0.4rem] sm:text-[0.5rem] md:text-xs leading-none text-gray-500 dark:text-gray-400">
               {notes.includes(n) ? n : ''}
@@ -367,10 +371,18 @@ const Cell = memo(({ data, isSelected, onClick, isCompletedBox, isConflicting = 
     return null;
   };
   return (
-    <div className={`${baseClasses} ${bgClass}`} onClick={onClick}>
+    <button
+      className={`${baseClasses} ${bgClass}`}
+      onClick={onClick}
+      role="gridcell"
+      aria-label={cellLabel}
+      aria-selected={isSelected}
+      aria-readonly={isFixed ? 'true' : 'false'}
+      tabIndex={isSelected ? 0 : -1}
+    >
       {renderContent()}
       {isCompletedBox && !isError && <div className="sparkle top-1/2 left-1/2" />}
-    </div>
+    </button>
   );
 });
 
@@ -408,7 +420,11 @@ const SudokuBoard = ({ board, selectedId, onCellClick, completedBoxes, boardText
           }}
         />
       )}
-      <div className="grid grid-cols-9 relative z-0">
+      <div 
+        className="grid grid-cols-9 relative z-0"
+        role="grid"
+        aria-label="Sudoku puzzle grid"
+      >
         {board.map((cell) => {
           const boxIdx = Math.floor(cell.row / 3) * 3 + Math.floor(cell.col / 3);
           const isCompleted = completedBoxes.includes(boxIdx);
@@ -519,7 +535,7 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
       case 'space': return stats.hardWins >= 1 ? 'Unlocked!' : `${stats.hardWins}/1 Hard win`;
       case 'nature': return `${Math.min(stats.mediumWins, 3)}/3 Medium wins`;
       case 'crystal': return stats.perfectWins >= 1 ? 'Unlocked!' : `${stats.perfectWins}/1 perfect win`;
-      case 'minimal': return stats.fastWins >= 1 ? 'Unlocked!' : `${stats.fastWins}/1 under 3 min`;
+      case 'minimal': return stats.fastWins >= 1 ? 'Unlocked!' : `${stats.fastWins}/1 win ≤3min`;
       default: return null;
     }
   };
@@ -902,7 +918,7 @@ const UserPanel = ({ soundEnabled, onClose, appUserSession }) => {
               <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">⚡</span>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Speed (&lt;3m)</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Speed (≤3m)</span>
                 </div>
                 <span className="font-bold text-sm text-gray-800 dark:text-white">{mergedStats.fastWins}</span>
               </div>
@@ -1602,32 +1618,51 @@ const App = () => {
   }, [appUserSession, hydrateUserState]);
 
   useEffect(() => {
+    // Initialize dark mode BEFORE first render to prevent flash
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const savedSound = localStorage.getItem(KEYS.SOUND_ENABLED);
 
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      setDarkMode(true); document.documentElement.classList.add('dark');
+      setDarkMode(true); 
+      document.documentElement.classList.add('dark');
     } else {
-      setDarkMode(false); document.documentElement.classList.remove('dark');
+      setDarkMode(false); 
+      document.documentElement.classList.remove('dark');
     }
     if (savedSound === 'false') setSoundEnabled(false);
 
-    const saved = StorageService.loadGame();
-    if (saved && saved.status === 'playing') {
-      setBoard(saved.board); setTimer(saved.timer); setMistakes(saved.mistakes);
-      setDifficulty(saved.difficulty); setStatus('paused'); setHistory(saved.history); setView('game');
+    // Load saved game
+    try {
+      const saved = StorageService.loadGame();
+      if (saved && saved.status === 'playing') {
+        setBoard(saved.board); 
+        setTimer(saved.timer); 
+        setMistakes(saved.mistakes);
+        setDifficulty(saved.difficulty); 
+        setStatus('paused'); 
+        setHistory(saved.history || [saved.board]); 
+        setMode(saved.mode || 'pen');
+        setView('game');
+      }
+    } catch (err) {
+      console.error('Failed to load saved game:', err);
+      // Clear corrupted save
+      StorageService.clearSavedGame();
     }
   }, []);
 
   useEffect(() => {
-    if (status === 'playing') {
+    // Pause timer when status is not 'playing' OR when modals are open
+    const shouldPause = status !== 'playing' || showModal !== 'none' || showKeyboardHelp || showUserPanel || showAwardsZone;
+    
+    if (status === 'playing' && !shouldPause) {
       timerRef.current = window.setInterval(() => { setTimer(t => t + 1); }, 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status]);
+  }, [status, showModal, showKeyboardHelp, showUserPanel, showAwardsZone]);
 
   useEffect(() => {
     if (status === 'playing' || status === 'paused') {
@@ -1636,6 +1671,9 @@ const App = () => {
   }, [board, timer, status, difficulty, mistakes, history, selectedCell, mode]);
 
   useEffect(() => {
+    // Only poll chat when backend is configured
+    if (!isGasEnvironment()) return;
+    
     let interval;
     const fetchChat = async () => {
       if (isSendingRef.current) return;
@@ -1655,7 +1693,7 @@ const App = () => {
       }
     };
     fetchChat();
-    interval = setInterval(fetchChat, CHAT_POLL_INTERVAL);
+    interval = setInterval(fetchChat, GAME_SETTINGS.CHAT_POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [isChatOpen, soundEnabled]);
 
@@ -1687,6 +1725,9 @@ const App = () => {
     if (selectedCell === null || status !== 'playing' || !board.length) return;
     const currentCell = board[selectedCell];
     if (!currentCell || currentCell.isFixed || currentCell.value !== null) return;
+    
+    // Don't give hint if cell already has correct value
+    if (currentCell.value === currentCell.solution) return;
     
     if (soundEnabled) SoundManager.play('write');
     const newBoard = JSON.parse(JSON.stringify(board));
@@ -1720,6 +1761,7 @@ const App = () => {
       setMistakes(0);
       setHistory([initialBoard]);
       setSelectedCell(null);
+      setMode('pen'); // Reset to pen mode on restart
       setStatus('playing');
     }
     setShowRestartConfirm(false);
@@ -1750,6 +1792,9 @@ const App = () => {
   };
 
   const handleNumberInput = useCallback((num) => {
+    // Validate input is a number between 1-9
+    if (typeof num !== 'number' || num < 1 || num > 9) return;
+    
     if (selectedCell === null || status !== 'playing' || !board.length) return;
     const currentCell = board[selectedCell];
     if (!currentCell || currentCell.isFixed) return;
@@ -1769,10 +1814,19 @@ const App = () => {
         if (newMistakes >= 3) {
           setBoard(newBoard); setStatus('lost'); StorageService.clearSavedGame(); return;
         }
+        
+        // Capture cellIndex to avoid race condition
+        const errorCellIndex = selectedCell;
         setTimeout(() => {
           setBoard(prev => {
             const b = [...prev];
-            if (b[selectedCell]) { b[selectedCell].isError = false; b[selectedCell].value = null; }
+            if (b[errorCellIndex]) { 
+              b[errorCellIndex] = {
+                ...b[errorCellIndex],
+                isError: false,
+                value: null
+              };
+            }
             return b;
           });
         }, 500);
@@ -1808,7 +1862,7 @@ const App = () => {
     if (difficulty === 'Medium') stats.mediumWins += 1;
     if (difficulty === 'Hard') stats.hardWins += 1;
     if (finalMistakes === 0) stats.perfectWins += 1;
-    if (finalTime < 180) stats.fastWins += 1;
+    if (finalTime <= 180) stats.fastWins += 1; // 3 minutes or less = fast win
     StorageService.saveGameStats(stats);
 
     // Check for theme unlocks
@@ -1841,7 +1895,7 @@ const App = () => {
             incrementWins: true,
             difficulty: difficulty,  // Track which difficulty was won
             perfectWin: finalMistakes === 0,  // Perfect win if no mistakes
-            fastWin: finalTime < 180  // Fast win if under 3 minutes
+            fastWin: finalTime <= 180  // Fast win if 3 minutes or less
           };
           
           await runGasFn('updateUserProfile', updateData);
@@ -1881,7 +1935,9 @@ const App = () => {
   };
 
   const handleChatSend = async (text) => {
-    const txt = text.trim(); if (!txt) return;
+    const txt = (text || '').trim(); 
+    if (!txt || txt.length === 0) return; // Don't send empty messages
+    
     if (soundEnabled) SoundManager.play('uiTap');
     setChatInput('');
     const currentUserId = StorageService.getCurrentUserId();
@@ -1935,7 +1991,13 @@ const App = () => {
       else if (e.key === 'Backspace' || e.key === 'Delete') {
         if (selectedCell !== null && !board[selectedCell].isFixed) {
           if (soundEnabled) SoundManager.play('erase');
-          const newBoard = [...board]; newBoard[selectedCell].value = null; newBoard[selectedCell].notes = [];
+          const newBoard = [...board];
+          newBoard[selectedCell] = {
+            ...newBoard[selectedCell],
+            value: null,
+            notes: []
+          };
+          setHistory(prev => [...prev.slice(-10), newBoard]);
           setBoard(newBoard);
         }
       } else if (e.key === 'n' || e.key === 'N') {
@@ -1948,12 +2010,16 @@ const App = () => {
         e.preventDefault();
         if (selectedCell === null) { if (soundEnabled) SoundManager.play('select'); setSelectedCell(0); return; }
         if (soundEnabled) SoundManager.play('select');
-        let next = selectedCell;
-        if (e.key === 'ArrowRight') next = (selectedCell + 1) % 81;
-        if (e.key === 'ArrowLeft') next = (selectedCell - 1 + 81) % 81;
-        if (e.key === 'ArrowDown') next = (selectedCell + 9) % 81;
-        if (e.key === 'ArrowUp') next = (selectedCell - 9 + 81) % 81;
-        setSelectedCell(next);
+        const row = Math.floor(selectedCell / 9);
+        const col = selectedCell % 9;
+        let nextRow = row, nextCol = col;
+        
+        if (e.key === 'ArrowRight') nextCol = Math.min(8, col + 1);
+        if (e.key === 'ArrowLeft') nextCol = Math.max(0, col - 1);
+        if (e.key === 'ArrowDown') nextRow = Math.min(8, row + 1);
+        if (e.key === 'ArrowUp') nextRow = Math.max(0, row - 1);
+        
+        setSelectedCell(nextRow * 9 + nextCol);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -1971,6 +2037,9 @@ const App = () => {
     const cell = board[cellId];
     if (!cell || !cell.value) return new Set();
     
+    // Don't show conflicts for fixed cells (they're always correct)
+    if (cell.isFixed) return new Set();
+    
     const conflicts = new Set();
     const row = cell.row;
     const col = cell.col;
@@ -1979,6 +2048,8 @@ const App = () => {
     
     board.forEach((c, idx) => {
       if (idx === cellId || !c.value || c.value !== cell.value) return;
+      // Only show conflicts with user-entered values, not fixed cells
+      if (c.isFixed) return;
       if (c.row === row || c.col === col || 
           (c.row >= boxRow && c.row < boxRow + 3 && c.col >= boxCol && c.col < boxCol + 3)) {
         conflicts.add(idx);
@@ -1995,12 +2066,23 @@ const App = () => {
 
   const completedBoxes = useMemo(() => {
     const completed = [];
-    for (let b = 0; b < 9; b++) {
-      const cells = board.filter(c => Math.floor(c.row / 3) * 3 + Math.floor(c.col / 3) === b);
-      if (cells.length !== 9) continue;
+    const boxCells = Array.from({ length: 9 }, () => []);
+    
+    // Single pass: group cells by box
+    board.forEach(c => {
+      const boxIndex = Math.floor(c.row / 3) * 3 + Math.floor(c.col / 3);
+      boxCells[boxIndex].push(c);
+    });
+    
+    // Check each box for completion
+    boxCells.forEach((cells, boxIndex) => {
+      if (cells.length !== 9) return;
       const values = cells.map(c => c.value).filter(v => v !== null);
-      if (new Set(values).size === 9) completed.push(b);
-    }
+      if (values.length === 9 && new Set(values).size === 9) {
+        completed.push(boxIndex);
+      }
+    });
+    
     return completed;
   }, [board]);
 
