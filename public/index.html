@@ -207,8 +207,8 @@
           const script = document.createElement("script");
           script.src = fullSrc;
           script.async = false; // preserve execution order for dependent scripts
-          script.onerror = function () {
-            // Silently fail - file is optional
+          script.onerror = function (ev) {
+            console.error('Failed to load script:', fullSrc, ev && ev.type);
           };
           Object.entries(attributes).forEach(([key, value]) => {
             if (value === true) script.setAttribute(key, "");
