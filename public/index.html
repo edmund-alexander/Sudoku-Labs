@@ -37,6 +37,27 @@
       href="./styles-accessibility.css"
       rel="stylesheet"
     />
+
+    <!-- Boot monitor (visible overlay to capture load-time errors) -->
+    <style>
+      #boot-overlay { position:fixed; z-index:999999; right:12px; top:12px; max-width:420px; background:rgba(0,0,0,.75); color:#fff; padding:10px; font-family:monospace; font-size:12px; border-radius:6px; }
+      #boot-overlay h4 { margin:0 0 6px 0; font-weight:700; font-size:13px; }
+      #boot-overlay .msg { margin:0 0 4px 0; }
+    </style>
+    <div id="boot-overlay" aria-hidden="false">
+      <h4>Boot status</h4>
+      <div id="boot-log"></div>
+    </div>
+    <script>
+      (function(){
+        function bootLog(msg){
+          try{ const el = document.getElementById('boot-log'); if(!el) return; const d = document.createElement('div'); d.className='msg'; d.textContent = (new Date()).toLocaleTimeString()+ ' - ' + msg; el.insertBefore(d, el.firstChild); }
+          catch(e){console.warn('bootLog failed',e)}
+        window.bootLog = bootLog;
+        window.addEventListener('error', function(ev){ bootLog('ERROR: '+ (ev.message || ev.error || ev.type)); });
+        window.addEventListener('unhandledrejection', function(ev){ bootLog('UNHANDLED REJECTION: '+ (ev.reason && ev.reason.message) ); });
+      })();
+    </script>
     <script>
       // Fix CSS path for GitHub Pages and local /public/ dev server
       (function () {
@@ -53,6 +74,8 @@
         const cssPrefix = isLocalInPublic ? "./" : basePath;
         if (tail) tail.href = cssPrefix + "styles.css";
         if (acc) acc.href = cssPrefix + "styles-accessibility.css";
+        // Log CSS path fix to boot overlay
+        try { window.bootLog && window.bootLog('CSS paths adjusted: ' + cssPrefix); } catch(e){}
       })();
     </script>
     <!-- React -->
@@ -67,14 +90,34 @@
     <!-- Babel Standalone for in-browser JSX compilation -->
     <script>
       // Load Babel standalone early so `text/babel` scripts can be compiled
-      try {
-        loadScript('https://unpkg.com/@babel/standalone/babel.min.js');
-      } catch (e) {
-        // If loadScript not yet defined, inject a plain script tag
-        var _s = document.createElement('script');
-        _s.src = 'https://unpkg.com/@babel/standalone/babel.min.js';
-        document.currentScript.parentNode.insertBefore(_s, document.currentScript.nextSibling);
-      }
+      (function(){
+        function insertBabel(){
+          try{
+            loadScript('https://unpkg.com/@babel/standalone/babel.min.js');
+            window.bootLog && window.bootLog('Requested Babel via loadScript');
+            return;
+          } catch(e){
+            var _s = document.createElement('script');
+            _s.src = 'https://unpkg.com/@babel/standalone/babel.min.js';
+            _s.onload = function(){ window.bootLog && window.bootLog('Babel loaded'); };
+            _s.onerror = function(){ window.bootLog && window.bootLog('Failed to load Babel'); };
+            document.currentScript.parentNode.insertBefore(_s, document.currentScript.nextSibling);
+            window.bootLog && window.bootLog('Injected Babel script tag');
+          }
+        }
+        insertBabel();
+        // Poll for Babel presence and report
+        (function waitForBabel(){
+          var attempts = 0;
+          function chk(){
+            attempts++;
+            if (window.Babel){ window.bootLog && window.bootLog('Babel detected'); return; }
+            if (attempts > 30){ window.bootLog && window.bootLog('Babel not detected after timeout'); return; }
+            setTimeout(chk,200);
+          }
+          chk();
+        })();
+      })();
     </script>
 
     <!-- Inline shim: define minimal legacy globals if services.js fails to load -->
@@ -218,7 +261,9 @@
           const script = document.createElement("script");
           script.src = fullSrc;
           script.async = false; // preserve execution order for dependent scripts
+          script.onload = function(){ window.bootLog && window.bootLog('Loaded ' + src); };
           script.onerror = function (ev) {
+            window.bootLog && window.bootLog('Failed to load script: ' + src + ' (' + (ev && ev.type) + ')');
             console.error('Failed to load script:', fullSrc, ev && ev.type);
           };
           Object.entries(attributes).forEach(([key, value]) => {
