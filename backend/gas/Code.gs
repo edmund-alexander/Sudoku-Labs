@@ -1053,24 +1053,33 @@ function awardBadge(data) {
 // ============================================================================
 
 // Admin session tokens (in-memory storage, expires with script restart or 30 min timeout)
-const ADMIN_SESSIONS = {};
-const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const ADMIN_SESSION_TIMEOUT = 30 * 60; // 30 minutes (in seconds for CacheService)
 
 /**
  * Verify admin session token
  */
 function verifyAdminToken_(token) {
-  if (!token || !ADMIN_SESSIONS[token]) {
+  if (!token) {
     return false;
   }
   
-  const session = ADMIN_SESSIONS[token];
-  if (Date.now() > session.expiry) {
-    delete ADMIN_SESSIONS[token];
+  const cache = CacheService.getScriptCache();
+  const sessionData = cache.get('admin_session_' + token);
+  
+  if (!sessionData) {
     return false;
   }
   
-  return true;
+  try {
+    const session = JSON.parse(sessionData);
+    if (Date.now() > session.expiry) {
+      cache.remove('admin_session_' + token);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 /**
@@ -1100,11 +1109,15 @@ function adminLogin(params) {
   
   // Generate session token
   const token = Utilities.getUuid();
-  ADMIN_SESSIONS[token] = {
+  const session = {
     username: username,
     createdAt: Date.now(),
-    expiry: Date.now() + ADMIN_SESSION_TIMEOUT
+    expiry: Date.now() + (ADMIN_SESSION_TIMEOUT * 1000)
   };
+  
+  // Store in cache (persists across requests)
+  const cache = CacheService.getScriptCache();
+  cache.put('admin_session_' + token, JSON.stringify(session), ADMIN_SESSION_TIMEOUT);
   
   return { success: true, token: token };
 }
