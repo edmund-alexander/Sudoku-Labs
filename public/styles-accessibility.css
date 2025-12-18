@@ -1,0 +1,45 @@
+/* Accessibility fallbacks: conservative color/contrast overrides */
+:root {
+  --acc-link: #1155cc;
+  --acc-link-hover: #0b3d99;
+}
+
+/* Ensure prominent headings across themes */
+h1,
+.site-title {
+  color: rgb(17 24 39) !important;
+}
+.dark h1,
+.dark .site-title {
+  color: #ffffff !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Improve focus outlines for keyboard users */
+button:focus,
+a:focus,
+input:focus,
+textarea:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.9) !important;
+  outline-offset: 2px !important;
+}
+
+/* More readable links */
+a {
+  color: var(--acc-link) !important;
+}
+a:hover {
+  color: var(--acc-link-hover) !important;
+}
+
+/* Ensure images without alt still visually separated */
+img[alt=""],
+img[alt="missing"] {
+  outline: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Smoother text rendering */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
