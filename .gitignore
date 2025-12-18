@@ -1,7 +1,6 @@
 # Environment & Configuration
 config/config.local.js
 config/admin.local.js
-.clasp.json
 .env
 .env.local
 
