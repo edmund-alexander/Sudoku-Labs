@@ -108,6 +108,9 @@
       function loadScript(src, attributes = {}) {
         const script = document.createElement('script');
         script.src = pathPrefix + src;
+        // Disable async so execution order follows insertion order (critical for globals)
+        script.async = false;
+        script.defer = false;
         script.onerror = function() {
           // Silently fail - file is optional
         };

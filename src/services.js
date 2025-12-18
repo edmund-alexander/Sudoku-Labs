@@ -74,6 +74,8 @@ const runGasFn = async (fnName, ...args) => {
     const { action } = mapping;
     const url = new URL(GAS_URL);
     url.searchParams.set("action", action);
+    // Cache-bust to avoid stale GET responses (especially for auth endpoints)
+    url.searchParams.set("_ts", Date.now().toString());
 
     // Add all arguments as URL parameters
     if (args[0] !== undefined) {
@@ -89,9 +91,11 @@ const runGasFn = async (fnName, ...args) => {
     }
 
     // All requests use GET to avoid GAS POST redirect issues
+    // Keep this a "simple request" (no custom headers) to avoid CORS preflight on GAS
     const response = await fetch(url.toString(), {
       method: "GET",
       redirect: "follow",
+      cache: "no-store",
     });
 
     if (!response.ok) {
@@ -296,9 +300,33 @@ const StorageService = {
    * Clear user session
    */
   clearUserSession() {
-    localStorage.removeItem(KEYS.USER_SESSION);
+    this.clearUserScopedData();
     const guestId = generateGuestId();
     localStorage.setItem(KEYS.USER_ID, guestId);
+  },
+
+  /**
+   * Clear all user-scoped cached data while preserving global prefs
+   */
+  clearUserScopedData() {
+    try {
+      const keysToClear = [
+        KEYS.USER_SESSION,
+        KEYS.USER_STATUS,
+        KEYS.GAME_STATE,
+        KEYS.UNLOCKED_THEMES,
+        KEYS.ACTIVE_THEME,
+        KEYS.UNLOCKED_SOUND_PACKS,
+        KEYS.ACTIVE_SOUND_PACK,
+        KEYS.GAME_STATS,
+        KEYS.CHAT,
+      ];
+      keysToClear.forEach((key) => localStorage.removeItem(key));
+      // Badges use a dedicated key outside KEYS
+      localStorage.removeItem("sudoku_v2_user_badges");
+    } catch (e) {
+      console.warn("Failed to clear user-scoped data:", e);
+    }
   },
 
   /**
