@@ -162,22 +162,13 @@
 
     <!-- Dynamic path resolution for different deployment environments -->
     <script>
-      // Detect environment and correct path prefix
-      // - GitHub Pages (edmund-alexander.github.io/Sudoku-Labs/): files at ./src/, ./config/
-      // - GitHub dev (*.app.github.dev/public/): files at ../src/, ../config/
-      // - Local (localhost:8000/public/): files at ../src/, ../config/
-
+      // Detect environment:
+      // - GitHub Pages: files are in root (./src/, ./config/)
+      // - Local dev served from root: files are also in root (./src/, ./config/)
+      // - Local dev served from public/: files are in parent (../src/, ../config/)
       const isGitHubPages = window.location.hostname.includes("github.io");
-      const isInPublicDir = window.location.pathname.includes("/public");
-
-      // If we're in /public/ directory, go up one level; otherwise use current dir
-      const pathPrefix = isInPublicDir ? "../" : "./";
-
-      console.log("Path detection:", {
-        hostname: window.location.hostname,
-        pathname: window.location.pathname,
-        pathPrefix,
-      });
+      const isLocalInPublic = window.location.pathname.includes("/public/");
+      const pathPrefix = isLocalInPublic ? "../" : "./";
 
       // Helper to load scripts with correct path, with error handling
       function loadScript(src, attributes = {}) {
@@ -187,8 +178,11 @@
 
           script.onload = () => resolve();
           script.onerror = (e) => {
-            // Silently resolve on error - file is optional
-            resolve();
+            // Only log errors for non-optional files
+            if (!src.includes("admin")) {
+              console.warn("Failed to load script:", src, e);
+            }
+            resolve(); // Resolve anyway to not block loading
           };
 
           Object.entries(attributes).forEach(([key, value]) => {
@@ -196,25 +190,25 @@
             else script.setAttribute(key, value);
           });
 
-          // Append to body (required for Babel to process JSX scripts)
-          document.body.appendChild(script);
+          document.currentScript.parentNode.insertBefore(
+            script,
+            document.currentScript.nextSibling
+          );
         });
       }
     </script>
 
     <!-- Configuration files (load conditionally to avoid conflicts) -->
     <script>
-      // Only try to load local config in development environments
-      // In production (GitHub Pages), these files don't exist
+      // Load appropriate config based on environment
       (async function () {
-        const isDev =
-          window.location.hostname === "localhost" ||
-          window.location.hostname === "127.0.0.1" ||
-          window.location.hostname.includes("app.github.dev");
-
-        if (isDev) {
+        try {
+          // Try to load local config first (dev environment)
           await loadScript("config/config.local.js");
           await loadScript("config/admin.local.js");
+        } catch (e) {
+          // If local config fails, it's okay - will fall back to defaults
+          console.log("Using default config (local config not found)");
         }
       })();
     </script>
@@ -225,37 +219,24 @@
     <script>
       (async function loadModules() {
         try {
-          console.log("Loading modules...");
-          
           // Load in strict order - each module depends on the previous
-          console.log("Loading constants...");
           await loadScript("src/constants.js");
-          
-          console.log("Loading utils...");
           await loadScript("src/utils.js");
-          
-          console.log("Loading sound...");
           await loadScript("src/sound.js");
-          
-          console.log("Loading services...");
           await loadScript("src/services.js");
 
-          console.log("Loading React app...");
           // Load React app (JSX, compiled in-browser by Babel)
           await loadScript("src/app.jsx", {
             type: "text/babel",
             "data-presets": "env,react",
           });
 
-          console.log("Loading admin console...");
           // Load admin console (optional - only works if admin.local.js is loaded)
           await loadScript("src/admin.jsx", {
             type: "text/babel",
             "data-presets": "env,react",
           });
           await loadScript("src/admin-access.js");
-          
-          console.log("All modules loaded successfully!");
         } catch (error) {
           console.error("Failed to load application modules:", error);
           // Show error to user
