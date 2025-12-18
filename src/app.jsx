@@ -3802,10 +3802,50 @@ const App = () => {
 
     // If selecting the Midnight visual theme, ensure dark mode is enabled
     if (validThemeId === "midnight") {
+      // Save prior theme to restore it later if needed
+      try {
+        const prev = localStorage.getItem("theme") || "";
+        localStorage.setItem("theme_prev_before_midnight", prev);
+        localStorage.setItem("theme_forced_by_midnight", "1");
+        localStorage.setItem("theme", "dark");
+      } catch (e) {
+        /* ignore localStorage errors */
+      }
       setDarkMode(true);
       document.documentElement.classList.add("dark");
+    } else {
+      // If switching away from midnight and we previously forced dark, restore previous theme
       try {
-        localStorage.setItem("theme", "dark");
+        const forced = localStorage.getItem("theme_forced_by_midnight");
+        if (forced === "1") {
+          const prev = localStorage.getItem("theme_prev_before_midnight");
+          if (prev && prev !== "") {
+            // restore the previous explicit theme value
+            if (prev === "dark") {
+              setDarkMode(true);
+              document.documentElement.classList.add("dark");
+              localStorage.setItem("theme", "dark");
+            } else {
+              setDarkMode(false);
+              document.documentElement.classList.remove("dark");
+              try {
+                localStorage.removeItem("theme");
+              } catch (e) {}
+            }
+          } else {
+            // No previous theme recorded: turn dark mode off
+            setDarkMode(false);
+            document.documentElement.classList.remove("dark");
+            try {
+              localStorage.removeItem("theme");
+            } catch (e) {}
+          }
+          // clear forced flags
+          try {
+            localStorage.removeItem("theme_forced_by_midnight");
+            localStorage.removeItem("theme_prev_before_midnight");
+          } catch (e) {}
+        }
       } catch (e) {
         /* ignore localStorage errors */
       }
