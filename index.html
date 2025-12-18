@@ -162,19 +162,22 @@
 
     <!-- Dynamic path resolution for different deployment environments -->
     <script>
-      // Detect environment:
-      // - GitHub Pages: files are at ./src/, ./config/ (same as production)
-      // - Local dev from root: files are at ./src/, ./config/
-      // - Local dev served from public/: files are at ../src/, ../config/
-      const isGitHubPages = window.location.hostname.includes("github.io");
-      const isLocalhost =
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1" ||
-        window.location.hostname === "";
+      // Detect environment and correct path prefix
+      // - GitHub Pages (edmund-alexander.github.io/Sudoku-Labs/): files at ./src/, ./config/
+      // - GitHub dev (*.app.github.dev/public/): files at ../src/, ../config/
+      // - Local (localhost:8000/public/): files at ../src/, ../config/
 
-      // When serving from public/ directory locally, src/ is one level up
-      // We can detect this by checking if we can access /index.html (we're in public/)
-      const pathPrefix = isLocalhost ? "../" : "./";
+      const isGitHubPages = window.location.hostname.includes("github.io");
+      const isInPublicDir = window.location.pathname.includes("/public");
+
+      // If we're in /public/ directory, go up one level; otherwise use current dir
+      const pathPrefix = isInPublicDir ? "../" : "./";
+
+      console.log("Path detection:", {
+        hostname: window.location.hostname,
+        pathname: window.location.pathname,
+        pathPrefix,
+      });
 
       // Helper to load scripts with correct path, with error handling
       function loadScript(src, attributes = {}) {
@@ -184,11 +187,8 @@
 
           script.onload = () => resolve();
           script.onerror = (e) => {
-            // Only log errors for non-optional files
-            if (!src.includes("admin")) {
-              console.warn("Failed to load script:", src, e);
-            }
-            resolve(); // Resolve anyway to not block loading
+            // Silently resolve on error - file is optional
+            resolve();
           };
 
           Object.entries(attributes).forEach(([key, value]) => {
@@ -196,10 +196,9 @@
             else script.setAttribute(key, value);
           });
 
-          document.currentScript.parentNode.insertBefore(
-            script,
-            document.currentScript.nextSibling
-          );
+          // Append to document head instead of using currentScript
+          // (currentScript is null inside Promise callbacks)
+          document.head.appendChild(script);
         });
       }
     </script>
@@ -207,15 +206,10 @@
     <!-- Configuration files (load conditionally to avoid conflicts) -->
     <script>
       // Load appropriate config based on environment
+      // These files are optional and will fail silently if not found
       (async function () {
-        try {
-          // Try to load local config first (dev environment)
-          await loadScript("config/config.local.js");
-          await loadScript("config/admin.local.js");
-        } catch (e) {
-          // If local config fails, it's okay - will fall back to defaults
-          console.log("Using default config (local config not found)");
-        }
+        await loadScript("config/config.local.js");
+        await loadScript("config/admin.local.js");
       })();
     </script>
 
