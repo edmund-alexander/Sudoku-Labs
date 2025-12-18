@@ -625,22 +625,29 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
               {Object.values(THEMES).map(theme => {
                 const unlocked = isThemeUnlocked(theme.id);
                 const isActive = theme.id === activeThemeId;
+                const progress = getThemeProgress(theme.id);
                 return (
-                  <button
-                    key={theme.id}
-                    onClick={() => handleThemeSelect(theme.id)}
-                    disabled={!unlocked}
-                    className={`p-2 rounded-lg text-xl transition-all ${
-                      isActive 
-                        ? 'bg-blue-500 ring-2 ring-blue-300' 
-                        : unlocked 
-                          ? 'bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500' 
-                          : 'opacity-40 cursor-not-allowed bg-gray-200 dark:bg-gray-800'
-                    }`}
-                    title={unlocked ? theme.name : `🔒 ${theme.unlockCriteria}`}
-                  >
-                    {theme.icon}
-                  </button>
+                  <div key={theme.id} className="relative">
+                    <button
+                      onClick={() => handleThemeSelect(theme.id)}
+                      disabled={!unlocked}
+                      className={`w-full p-2 rounded-lg text-xl transition-all ${
+                        isActive 
+                          ? 'bg-blue-500 ring-2 ring-blue-300' 
+                          : unlocked 
+                            ? 'bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500' 
+                            : 'opacity-40 cursor-not-allowed bg-gray-200 dark:bg-gray-800'
+                      }`}
+                      title={unlocked ? theme.name : `🔒 ${theme.unlockCriteria}`}
+                    >
+                      {theme.icon}
+                    </button>
+                    {!unlocked && progress && (
+                      <div className="absolute -bottom-1 left-0 right-0 text-[8px] text-center bg-red-500 text-white rounded-b px-0.5 py-0.5 font-bold">
+                        {progress}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -655,22 +662,29 @@ const AwardsZone = ({ soundEnabled, onClose, activeThemeId, unlockedThemes, onSe
               {Object.values(SOUND_PACKS).map(pack => {
                 const unlocked = isPackUnlocked(pack.id);
                 const isActive = pack.id === activePackId;
+                const progress = getPackProgress(pack.id);
                 return (
-                  <button
-                    key={pack.id}
-                    onClick={() => handlePackSelect(pack.id)}
-                    disabled={!unlocked}
-                    className={`p-2 rounded-lg text-xl transition-all ${
-                      isActive 
-                        ? 'bg-blue-500 ring-2 ring-blue-300' 
-                        : unlocked 
-                          ? 'bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500' 
-                          : 'opacity-40 cursor-not-allowed bg-gray-200 dark:bg-gray-800'
-                    }`}
-                    title={unlocked ? pack.name : `🔒 ${pack.unlockCriteria}`}
-                  >
-                    {pack.icon}
-                  </button>
+                  <div key={pack.id} className="relative">
+                    <button
+                      onClick={() => handlePackSelect(pack.id)}
+                      disabled={!unlocked}
+                      className={`w-full p-2 rounded-lg text-xl transition-all ${
+                        isActive 
+                          ? 'bg-blue-500 ring-2 ring-blue-300' 
+                          : unlocked 
+                            ? 'bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500' 
+                            : 'opacity-40 cursor-not-allowed bg-gray-200 dark:bg-gray-800'
+                      }`}
+                      title={unlocked ? pack.name : `🔒 ${pack.unlockCriteria}`}
+                    >
+                      {pack.icon}
+                    </button>
+                    {!unlocked && progress && (
+                      <div className="absolute -bottom-1 left-0 right-0 text-[8px] text-center bg-red-500 text-white rounded-b px-0.5 py-0.5 font-bold">
+                        {progress}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -1410,6 +1424,7 @@ const App = () => {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [showConflicts, setShowConflicts] = useState(true);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [showUnlockNotification, setShowUnlockNotification] = useState(false);
 
   const timerRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -1878,6 +1893,7 @@ const App = () => {
     if (newThemes.length > 0) {
       setNewlyUnlockedThemes(newThemes);
       setUnlockedThemes(StorageService.getUnlockedThemes()); // Update state with newly unlocked themes
+      setShowUnlockNotification(true); // Show notification
       if (soundEnabled) setTimeout(() => SoundManager.play('unlock'), 250);
     }
 
@@ -1886,6 +1902,7 @@ const App = () => {
     if (newPacks.length > 0) {
       setNewlyUnlockedSoundPacks(newPacks);
       setUnlockedSoundPacks(StorageService.getUnlockedSoundPacks());
+      setShowUnlockNotification(true); // Show notification
       if (soundEnabled) setTimeout(() => SoundManager.play('unlock'), 250);
     }
 
@@ -3060,6 +3077,44 @@ const App = () => {
           unlockedPacks={unlockedSoundPacks}
           onSelectPack={(id) => handleSoundPackChange(id, { persist: false })}
         />
+      )}
+
+      {/* Unlock Notification - appears during gameplay */}
+      {showUnlockNotification && (newlyUnlockedThemes.length > 0 || newlyUnlockedSoundPacks.length > 0) && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-4 rounded-xl shadow-2xl border-2 border-white dark:border-gray-200 max-w-sm animate-pulse-glow">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl animate-bounce">🎉</div>
+              <div className="flex-1">
+                <h3 className="text-white font-bold text-base mb-1 flex items-center gap-2">
+                  <span>✨ Unlocked!</span>
+                </h3>
+                {newlyUnlockedThemes.length > 0 && (
+                  <div className="text-white text-sm mb-2">
+                    <strong>Theme{newlyUnlockedThemes.length > 1 ? 's' : ''}:</strong> {newlyUnlockedThemes.map(id => THEMES[id]?.name).join(', ')}
+                  </div>
+                )}
+                {newlyUnlockedSoundPacks.length > 0 && (
+                  <div className="text-white text-sm">
+                    <strong>Sound{newlyUnlockedSoundPacks.length > 1 ? 's' : ''}:</strong> {newlyUnlockedSoundPacks.map(id => SOUND_PACKS[id]?.name).join(', ')}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowUnlockNotification(false)}
+                  className="mt-2 text-xs bg-white text-purple-600 px-3 py-1 rounded-full font-semibold hover:bg-gray-100 transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+              <button
+                onClick={() => setShowUnlockNotification(false)}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                <Icons.X />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Footer - legible over all themes */}
