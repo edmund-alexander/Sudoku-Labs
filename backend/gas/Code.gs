@@ -282,6 +282,26 @@ function postChatData(msg) {
   const safeId = sanitizeInput_(msg.id || '', 50);
   const safeStatus = sanitizeInput_(msg.status || '', 50);
   
+  // Check if user is banned or muted
+  const userStatus = checkUserStatus_(safeSender);
+  if (userStatus.banned) {
+    return { 
+      error: 'You have been banned from chat',
+      banned: true,
+      messages: getChatData()
+    };
+  }
+  
+  if (userStatus.muted) {
+    const muteMinutes = Math.ceil((userStatus.muteUntil - Date.now()) / 60000);
+    return { 
+      error: `You are muted for ${muteMinutes} more minute(s)`,
+      muted: true,
+      muteUntil: userStatus.muteUntil,
+      messages: getChatData()
+    };
+  }
+  
   const timestamp = new Date().toISOString();
   
   try {
@@ -1056,6 +1076,32 @@ function awardBadge(data) {
 const ADMIN_SESSION_TIMEOUT = 30 * 60; // 30 minutes (in seconds for CacheService)
 
 /**
+ * Check if a user is banned or muted
+ * @param {string} username - Username to check
+ * @returns {Object} Status object with banned, muted, muteUntil properties
+ */
+function checkUserStatus_(username) {
+  try {
+    ensureUsersSheetHeaders_();
+    const rowInfo = getUserRowByUsername_(username);
+    
+    if (!rowInfo) {
+      return { banned: false, muted: false, muteUntil: 0 };
+    }
+    
+    const { row, map } = rowInfo;
+    const banned = row[map['Banned']] === true || row[map['Banned']] === 'TRUE';
+    const muteUntil = Number(row[map['MuteUntil']]) || 0;
+    const muted = muteUntil > Date.now();
+    
+    return { banned, muted, muteUntil };
+  } catch (e) {
+    Logger.log('checkUserStatus_ error: ' + e);
+    return { banned: false, muted: false, muteUntil: 0 };
+  }
+}
+
+/**
  * Verify admin session token
  */
 function verifyAdminToken_(token) {
@@ -1333,6 +1379,24 @@ function banUser(params) {
       // Check both UserID (col 0) and Username (col 1)
       if (data[i][0] === username || data[i][1] === username) {
         usersSheet.getRange(i + 2, 7).setValue(true); // Set banned flag (column 7)
+        
+        // Post system message to chat
+        try {
+          const chatSheet = ss.getSheetByName('Chat');
+          if (chatSheet) {
+            const timestamp = new Date().toISOString();
+            chatSheet.appendRow([
+              'system_' + Date.now(),
+              'System',
+              `User ${username} has been banned`,
+              timestamp,
+              'system'
+            ]);
+          }
+        } catch (chatErr) {
+          Logger.log('Failed to post ban notification to chat: ' + chatErr);
+        }
+        
         return { success: true };
       }
     }
@@ -1410,6 +1474,25 @@ function muteUser(params) {
       // Check both UserID (col 0) and Username (col 1)
       if (data[i][0] === username || data[i][1] === username) {
         usersSheet.getRange(i + 2, 6).setValue(muteUntil); // Set mute expiry (column 6)
+        
+        // Post system message to chat
+        try {
+          const chatSheet = ss.getSheetByName('Chat');
+          if (chatSheet) {
+            const timestamp = new Date().toISOString();
+            const minutes = Math.ceil(duration / 60000);
+            chatSheet.appendRow([
+              'system_' + Date.now(),
+              'System',
+              `User ${username} has been muted for ${minutes} minute(s)`,
+              timestamp,
+              'system'
+            ]);
+          }
+        } catch (chatErr) {
+          Logger.log('Failed to post mute notification to chat: ' + chatErr);
+        }
+        
         return { success: true, muteUntil: muteUntil };
       }
     }

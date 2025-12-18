@@ -537,8 +537,29 @@ const ChatService = {
     if (isGasEnvironment()) {
       try {
         const data = await runGasFn('postChatData', msg);
+        
+        // Check if user is banned or muted
+        if (data && data.error) {
+          if (data.banned) {
+            throw new Error('BANNED: You have been banned from chat');
+          }
+          if (data.muted) {
+            const minutes = Math.ceil((data.muteUntil - Date.now()) / 60000);
+            throw new Error(`MUTED: You are muted for ${minutes} more minute(s)`);
+          }
+          throw new Error(data.error);
+        }
+        
         if (Array.isArray(data)) return data.map(this.normalizeMessage);
-      } catch (e) { }
+        if (data && data.messages && Array.isArray(data.messages)) {
+          return data.messages.map(this.normalizeMessage);
+        }
+      } catch (e) {
+        // Re-throw ban/mute errors so they can be shown to user
+        if (e.message.startsWith('BANNED:') || e.message.startsWith('MUTED:')) {
+          throw e;
+        }
+      }
     }
     const current = this.getLocal();
     current.push(this.normalizeMessage(msg));
