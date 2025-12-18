@@ -240,19 +240,18 @@ function saveLeaderboardScore(entry) {
     return getLeaderboardData();
   }
 
-  // Validate
+  // Validate (accept numeric strings from GET requests)
   const validDiffs = ["Easy", "Medium", "Hard", "Daily"];
-  if (
-    typeof entry.time !== "number" ||
-    !validDiffs.includes(entry.difficulty)
-  ) {
+  const timeNum = Number(entry.time);
+  const diffStr = entry.difficulty ? String(entry.difficulty) : "";
+  if (isNaN(timeNum) || timeNum <= 0 || !validDiffs.includes(diffStr)) {
     return getLeaderboardData();
   }
 
   // Sanitize
   const safeName = sanitizeInput_(entry.name || "Anonymous", 20);
-  const safeTime = Number(entry.time);
-  const safeDiff = sanitizeInput_(entry.difficulty, 10);
+  const safeTime = timeNum;
+  const safeDiff = sanitizeInput_(diffStr, 10);
   const safeDate = sanitizeInput_(entry.date || new Date().toISOString(), 20);
 
   try {
