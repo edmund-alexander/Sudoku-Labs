@@ -38,7 +38,7 @@
       rel="stylesheet"
     />
     <script>
-      // Fix CSS path for GitHub Pages
+      // Fix CSS path for GitHub Pages and local /public/ dev server
       (function () {
         const basePath =
           window.location.hostname === "edmund-alexander.github.io"
@@ -46,14 +46,13 @@
             : "./";
         const tail = document.getElementById("tailwind-css");
         const acc = document.getElementById("accessibility-css");
-        if (tail) {
-          tail.href = basePath + "styles.css";
-          tail.onerror = function(){ tail.remove(); };
-        }
-        if (acc) {
-          acc.href = basePath + "styles-accessibility.css";
-          acc.onerror = function(){ acc.remove(); };
-        }
+        // When serving from /public/ (local dev), keep CSS paths relative to the
+        // current document (./) so they resolve to /public/styles*. When served
+        // from root or GitHub Pages, use configured basePath.
+        const isLocalInPublic = window.location.pathname.includes("/public/");
+        const cssPrefix = isLocalInPublic ? "./" : basePath;
+        if (tail) tail.href = cssPrefix + "styles.css";
+        if (acc) acc.href = cssPrefix + "styles-accessibility.css";
       })();
     </script>
     <!-- React -->
@@ -193,21 +192,36 @@
       const isLocalInPublic = window.location.pathname.includes("/public/");
       const pathPrefix = isLocalInPublic ? "../" : "./";
 
-      // Helper to load scripts with correct path, silently handling failures
+      // Helper to load scripts with correct path, dedupe and add cache-busting
       function loadScript(src, attributes = {}) {
-        const script = document.createElement("script");
-        script.src = pathPrefix + src;
-        script.onerror = function () {
-          // Silently fail - file is optional
-        };
-        Object.entries(attributes).forEach(([key, value]) => {
-          if (value === true) script.setAttribute(key, "");
-          else script.setAttribute(key, value);
-        });
-        document.currentScript.parentNode.insertBefore(
-          script,
-          document.currentScript.nextSibling
-        );
+        try {
+          const version = window.APP_VERSION || Date.now();
+          const sep = src.includes("?") ? "&" : "?";
+          const fullSrc = pathPrefix + src + sep + "v=" + encodeURIComponent(version);
+
+          // Avoid inserting the same script twice
+          if (document.querySelector('script[src="' + fullSrc + '"]') || document.querySelector('script[src="' + pathPrefix + src + '"]')) {
+            return;
+          }
+
+          const script = document.createElement("script");
+          script.src = fullSrc;
+          script.async = false; // preserve execution order for dependent scripts
+          script.onerror = function () {
+            // Silently fail - file is optional
+          };
+          Object.entries(attributes).forEach(([key, value]) => {
+            if (value === true) script.setAttribute(key, "");
+            else script.setAttribute(key, value);
+          });
+          document.currentScript.parentNode.insertBefore(
+            script,
+            document.currentScript.nextSibling
+          );
+        } catch (e) {
+          // If anything goes wrong, don't block page load
+          console.warn('loadScript failed', e);
+        }
       }
     </script>
 
@@ -241,31 +255,14 @@
 
     <!-- Configuration files (load conditionally to avoid conflicts) -->
     <script>
-      (function () {
-        // Attempt to fetch config files before injecting them as <script>
-        // This prevents loading HTML 404 pages as JS and causing Unexpected '<'
-        async function tryLoad(p) {
-          const url = pathPrefix + p;
-          try {
-            const res = await fetch(url, { method: "GET", cache: "no-cache" });
-            if (!res.ok) return;
-            const ct = (res.headers.get("content-type") || "").toLowerCase();
-            if (ct.includes("text/html")) return; // don't load HTML
-            loadScript(p);
-          } catch (e) {
-            // ignore network errors
-          }
-        }
-
-        (async function loadConfigs() {
-          if (!isGitHubPages) {
-            await tryLoad("config/config.local.js");
-            await tryLoad("config/admin.local.js");
-          } else {
-            await tryLoad("config/config.local.js");
-          }
-        })();
-      })();
+      // Only load production config if we're on GitHub Pages
+      if (!isGitHubPages) {
+        loadScript("config/config.local.js");
+        loadScript("config/admin.local.js");
+      } else {
+        // Production: only load production config
+        loadScript("config/config.local.js");
+      }
     </script>
 
     <!-- Load modular JavaScript files (plain JS, loaded before React components) -->
