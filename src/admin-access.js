@@ -31,33 +31,15 @@
       }
 
       // Prompt for credentials
-      const username = prompt('Admin Username:');
-      if (!username) {
+      const token = prompt('Enter Admin Trigger Token:');
+      if (!token) {
         console.log('❌ Login cancelled');
         return;
-      }
-
-      const password = prompt('Admin Password:');
-      if (!password) {
-        console.log('❌ Login cancelled');
-        return;
-      }
-
-      // Hash password (SHA-256)
-      const passwordHash = await this.sha256(password);
-
-      // Verify locally first (if config loaded)
-      if (window.ADMIN_CONFIG) {
-        if (username !== window.ADMIN_CONFIG.ADMIN_USERNAME || 
-            passwordHash !== window.ADMIN_CONFIG.ADMIN_PASSWORD_HASH) {
-          console.error('❌ Invalid credentials');
-          return;
-        }
       }
 
       // Request session token from backend
       try {
-        const response = await fetch(`${window.CONFIG.GAS_URL}?action=adminLogin&username=${encodeURIComponent(username)}&passwordHash=${passwordHash}`);
+        const response = await fetch(`${window.CONFIG.GAS_URL}?action=adminLogin&token=${encodeURIComponent(token)}`);
         const data = await response.json();
 
         if (data.success && data.token) {
