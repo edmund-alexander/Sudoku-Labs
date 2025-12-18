@@ -214,20 +214,35 @@ const StorageService = {
    * @param {Object} state - Game state to save
    */
   saveGame(state) {
-    if (!this.isAvailable()) return;
+    if (!this.isAvailable()) {
+      console.warn("localStorage not available, cannot save game");
+      return;
+    }
+
+    if (!state || typeof state !== "object") {
+      console.warn("Invalid game state provided");
+      return;
+    }
+
     try {
-      localStorage.setItem(KEYS.GAME_STATE, JSON.stringify(state));
+      const serialized = JSON.stringify(state);
+      localStorage.setItem(KEYS.GAME_STATE, serialized);
     } catch (e) {
+      console.error("Failed to save game:", e);
+
       if (e.name === "QuotaExceededError") {
         this.handleQuotaExceeded();
-        // Try again after cleanup
+        // Retry after cleanup
         try {
-          localStorage.setItem(KEYS.GAME_STATE, JSON.stringify(state));
+          const serialized = JSON.stringify(state);
+          localStorage.setItem(KEYS.GAME_STATE, serialized);
         } catch (retryErr) {
           console.error("Failed to save game even after cleanup:", retryErr);
+          // Last resort: notify user
+          alert(
+            "Unable to save game progress. Storage is full. Please clear browser data."
+          );
         }
-      } else {
-        console.error("Failed to save game:", e);
       }
     }
   },
@@ -238,8 +253,21 @@ const StorageService = {
    */
   loadGame() {
     try {
-      return JSON.parse(localStorage.getItem(KEYS.GAME_STATE));
+      const raw = localStorage.getItem(KEYS.GAME_STATE);
+      if (!raw) return null;
+
+      const state = JSON.parse(raw);
+
+      // Validate game state structure
+      if (!state || typeof state !== "object") return null;
+      if (!Array.isArray(state.board)) return null;
+      if (typeof state.difficulty !== "string") return null;
+
+      return state;
     } catch (e) {
+      console.warn("Failed to load game state, may be corrupted:", e);
+      // Clear corrupted data
+      localStorage.removeItem(KEYS.GAME_STATE);
       return null;
     }
   },
@@ -271,8 +299,20 @@ const StorageService = {
   getUserSession() {
     try {
       const session = localStorage.getItem(KEYS.USER_SESSION);
-      return session ? JSON.parse(session) : null;
+      if (!session) return null;
+
+      const parsed = JSON.parse(session);
+
+      // Validate session structure
+      if (!parsed || typeof parsed !== "object") return null;
+      if (!parsed.userId && !parsed.username) return null;
+
+      // Session is valid
+      return parsed;
     } catch (e) {
+      console.warn("Invalid session data, clearing:", e);
+      // Clear corrupted session
+      localStorage.removeItem(KEYS.USER_SESSION);
       return null;
     }
   },
@@ -283,12 +323,50 @@ const StorageService = {
    */
   setUserSession(user) {
     try {
-      localStorage.setItem(KEYS.USER_SESSION, JSON.stringify(user));
-      if (user && user.username) {
-        localStorage.setItem(KEYS.USER_ID, user.username);
+      if (!user || typeof user !== "object") {
+        console.warn("Invalid user data provided to setUserSession");
+        return;
+      }
+
+      // Validate required fields
+      if (!user.userId && !user.username) {
+        console.warn(
+          "User session missing required fields (userId or username)"
+        );
+        return;
+      }
+
+      // Normalize numeric fields to prevent string/number issues
+      const normalized = {
+        ...user,
+        totalGames: Number(user.totalGames) || 0,
+        totalWins: Number(user.totalWins) || 0,
+        easyWins: Number(user.easyWins) || 0,
+        mediumWins: Number(user.mediumWins) || 0,
+        hardWins: Number(user.hardWins) || 0,
+        perfectWins: Number(user.perfectWins) || 0,
+        fastWins: Number(user.fastWins) || 0,
+      };
+
+      localStorage.setItem(KEYS.USER_SESSION, JSON.stringify(normalized));
+
+      // Update user ID if username is present
+      if (normalized.username) {
+        localStorage.setItem(KEYS.USER_ID, normalized.username);
       }
     } catch (e) {
-      console.warn("Failed to save user session to localStorage:", e);
+      console.error("Failed to save user session to localStorage:", e);
+
+      // If quota exceeded, try to make space
+      if (e.name === "QuotaExceededError") {
+        this.handleQuotaExceeded();
+        try {
+          // Retry after cleanup
+          localStorage.setItem(KEYS.USER_SESSION, JSON.stringify(user));
+        } catch (retryErr) {
+          console.error("Failed to save session even after cleanup:", retryErr);
+        }
+      }
     }
   },
 
@@ -296,9 +374,17 @@ const StorageService = {
    * Clear user session
    */
   clearUserSession() {
-    localStorage.removeItem(KEYS.USER_SESSION);
-    const guestId = generateGuestId();
-    localStorage.setItem(KEYS.USER_ID, guestId);
+    try {
+      localStorage.removeItem(KEYS.USER_SESSION);
+      // Preserve or regenerate guest ID
+      const existingGuestId = localStorage.getItem(KEYS.USER_ID);
+      if (!existingGuestId || existingGuestId.length < 5) {
+        const guestId = generateGuestId();
+        localStorage.setItem(KEYS.USER_ID, guestId);
+      }
+    } catch (e) {
+      console.error("Failed to clear user session:", e);
+    }
   },
 
   /**
@@ -319,7 +405,10 @@ const StorageService = {
    */
   isUserAuthenticated() {
     const session = this.getUserSession();
-    return session !== null && session.userId;
+    if (!session) return false;
+
+    // Check for required authentication fields
+    return Boolean(session.userId && (session.username || session.displayName));
   },
 
   /**

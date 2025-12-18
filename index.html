@@ -5,80 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sudoku Logic Lab</title>
     <!-- Favicon with multiple formats for better browser compatibility -->
-    <link rel="icon" type="image/svg+xml" sizes="any" href="./favicon.svg?v=2">
-    <link rel="alternate icon" type="image/svg+xml" sizes="any" href="/Sudoku-Labs/favicon.svg?v=2">
-    <link rel="shortcut icon" type="image/svg+xml" href="./favicon.svg?v=2">
-    <link rel="apple-touch-icon" sizes="180x180" href="./favicon.svg?v=2">
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      sizes="any"
+      href="./favicon.svg?v=2"
+    />
+    <link
+      rel="alternate icon"
+      type="image/svg+xml"
+      sizes="any"
+      href="/Sudoku-Labs/favicon.svg?v=2"
+    />
+    <link rel="shortcut icon" type="image/svg+xml" href="./favicon.svg?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./favicon.svg?v=2" />
     <!-- Google Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
+      rel="stylesheet"
+    />
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <!-- Tailwind CSS (production build) -->
-    <link id="tailwind-css" href="./styles.css" rel="stylesheet">
+    <link id="tailwind-css" href="./styles.css" rel="stylesheet" />
     <script>
       // Fix CSS path for GitHub Pages
-      (function() {
-        const link = document.getElementById('tailwind-css');
-        const basePath = window.location.hostname === 'edmund-alexander.github.io' ? '/Sudoku-Labs/' : './';
-        link.href = basePath + 'styles.css';
+      (function () {
+        const link = document.getElementById("tailwind-css");
+        const basePath =
+          window.location.hostname === "edmund-alexander.github.io"
+            ? "/Sudoku-Labs/"
+            : "./";
+        link.href = basePath + "styles.css";
       })();
     </script>
     <!-- React -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+    ></script>
     <!-- Babel Standalone for in-browser JSX compilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
     <div id="root"></div>
 
+    <!-- Unregister any existing service workers (we don't use them) -->
+    <script>
+      (function () {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker
+            .getRegistrations()
+            .then(function (registrations) {
+              for (let registration of registrations) {
+                registration.unregister();
+              }
+            });
+        }
+      })();
+    </script>
+
     <!-- Prevent dark mode flash: Check localStorage and apply dark class ASAP -->
     <script>
-      (function() {
-        const savedTheme = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-          document.documentElement.classList.add('dark');
+      (function () {
+        const savedTheme = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+        if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+          document.documentElement.classList.add("dark");
         }
       })();
     </script>
 
     <!-- Cache/version guard: uses deployed ETag (commit) as version so any push forces a fresh load -->
     <script>
-      (function() {
+      (function () {
         const fetchVersion = async () => {
           try {
-            const res = await fetch(window.location.href, { method: 'HEAD', cache: 'no-cache' });
-            const etag = res.headers.get('etag');
-            if (etag) return etag.replace(/"/g, '');
+            const res = await fetch(window.location.href, {
+              method: "HEAD",
+              cache: "no-cache",
+            });
+            const etag = res.headers.get("etag");
+            if (etag) return etag.replace(/"/g, "");
           } catch (e) {
-            console.warn('Version HEAD fetch failed:', e);
+            console.warn("Version HEAD fetch failed:", e);
           }
-          return 'local-dev'; // fallback for offline/local
+          return "local-dev"; // fallback for offline/local
         };
 
         const clearCaches = async () => {
           try {
+            // Preserve essential keys during cache clear
+            const essentialKeys = ["APP_VERSION", "RELOAD_FLAG", "theme"];
+            const preserved = {};
+            essentialKeys.forEach((key) => {
+              const val = localStorage.getItem(key);
+              if (val !== null) preserved[key] = val;
+            });
+
             localStorage.clear();
             sessionStorage.clear();
-            if ('caches' in window) {
+
+            // Restore essential keys
+            Object.entries(preserved).forEach(([key, val]) => {
+              localStorage.setItem(key, val);
+            });
+
+            if ("caches" in window) {
               const keys = await caches.keys();
               await Promise.all(keys.map((key) => caches.delete(key)));
             }
           } catch (e) {
-            console.warn('Cache clear skipped:', e);
+            console.warn("Cache clear skipped:", e);
           }
         };
 
         (async () => {
           const appVersion = await fetchVersion();
-          const stored = localStorage.getItem('APP_VERSION');
-          if (stored !== appVersion) {
+          const stored = localStorage.getItem("APP_VERSION");
+          const reloadFlag = sessionStorage.getItem("RELOAD_FLAG");
+
+          // Prevent reload loops - only reload once per version change
+          if (stored !== appVersion && !reloadFlag) {
+            sessionStorage.setItem("RELOAD_FLAG", "1");
             await clearCaches();
-            localStorage.setItem('APP_VERSION', appVersion);
+            localStorage.setItem("APP_VERSION", appVersion);
             location.reload();
             return;
           }
+
+          // Clear reload flag after successful load
+          sessionStorage.removeItem("RELOAD_FLAG");
           window.APP_VERSION = appVersion;
         })();
       })();
@@ -90,73 +156,104 @@
       // Default config values - will be overwritten by config files if they exist
       window.CONFIG = {
         GAS_URL: null, // Set a default or leave as null
-        BASE_PATH: '',  // Default to root (no subdirectory)
+        BASE_PATH: "", // Default to root (no subdirectory)
       };
     </script>
-    
+
     <!-- Dynamic path resolution for different deployment environments -->
     <script>
       // Detect environment:
       // - GitHub Pages: files are in root (./src/, ./config/)
       // - Local dev served from root: files are also in root (./src/, ./config/)
       // - Local dev served from public/: files are in parent (../src/, ../config/)
-      const isGitHubPages = window.location.hostname.includes('github.io');
-      const isLocalInPublic = window.location.pathname.includes('/public/');
-      const pathPrefix = isLocalInPublic ? '../' : './';
-      
-      // Helper to load scripts with correct path, silently handling failures
+      const isGitHubPages = window.location.hostname.includes("github.io");
+      const isLocalInPublic = window.location.pathname.includes("/public/");
+      const pathPrefix = isLocalInPublic ? "../" : "./";
+
+      // Helper to load scripts with correct path, with error handling
       function loadScript(src, attributes = {}) {
-        const script = document.createElement('script');
-        script.src = pathPrefix + src;
-        script.onerror = function() {
-          // Silently fail - file is optional
-        };
-        Object.entries(attributes).forEach(([key, value]) => {
-          if (value === true) script.setAttribute(key, '');
-          else script.setAttribute(key, value);
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = pathPrefix + src;
+
+          script.onload = () => resolve();
+          script.onerror = (e) => {
+            // Only log errors for non-optional files
+            if (!src.includes("admin")) {
+              console.warn("Failed to load script:", src, e);
+            }
+            resolve(); // Resolve anyway to not block loading
+          };
+
+          Object.entries(attributes).forEach(([key, value]) => {
+            if (value === true) script.setAttribute(key, "");
+            else script.setAttribute(key, value);
+          });
+
+          document.currentScript.parentNode.insertBefore(
+            script,
+            document.currentScript.nextSibling
+          );
         });
-        document.currentScript.parentNode.insertBefore(script, document.currentScript.nextSibling);
       }
     </script>
-    
+
     <!-- Configuration files (load conditionally to avoid conflicts) -->
     <script>
-      // Only load production config if we're on GitHub Pages
-      if (!isGitHubPages) {
-        loadScript('config/config.local.js');
-        loadScript('config/admin.local.js');
-      } else {
-        // Production: only load production config
-        loadScript('config/config.local.js');
-      }
+      // Load appropriate config based on environment
+      (async function () {
+        try {
+          // Try to load local config first (dev environment)
+          await loadScript("config/config.local.js");
+          await loadScript("config/admin.local.js");
+        } catch (e) {
+          // If local config fails, it's okay - will fall back to defaults
+          console.log("Using default config (local config not found)");
+        }
+      })();
     </script>
 
     <!-- Load modular JavaScript files (plain JS, loaded before React components) -->
     <!-- Order matters: constants → utils → sound → services → app -->
+    <!-- Load sequentially to ensure dependencies are available -->
     <script>
-      loadScript('src/constants.js');
-    </script>
-    <script>
-      loadScript('src/utils.js');
-    </script>
-    <script>
-      loadScript('src/sound.js');
-    </script>
-    <script>
-      loadScript('src/services.js');
-    </script>
+      (async function loadModules() {
+        try {
+          // Load in strict order - each module depends on the previous
+          await loadScript("src/constants.js");
+          await loadScript("src/utils.js");
+          await loadScript("src/sound.js");
+          await loadScript("src/services.js");
 
-    <!-- Load React app (JSX, compiled in-browser by Babel) -->
-    <script>
-      loadScript('src/app.jsx', { 'type': 'text/babel', 'data-presets': 'env,react' });
-    </script>
+          // Load React app (JSX, compiled in-browser by Babel)
+          await loadScript("src/app.jsx", {
+            type: "text/babel",
+            "data-presets": "env,react",
+          });
 
-    <!-- Load admin console (JSX, optional - only works if admin.local.js is loaded) -->
-    <script>
-      loadScript('src/admin.jsx', { 'type': 'text/babel', 'data-presets': 'env,react' });
-    </script>
-    <script>
-      loadScript('src/admin-access.js');
+          // Load admin console (optional - only works if admin.local.js is loaded)
+          await loadScript("src/admin.jsx", {
+            type: "text/babel",
+            "data-presets": "env,react",
+          });
+          await loadScript("src/admin-access.js");
+        } catch (error) {
+          console.error("Failed to load application modules:", error);
+          // Show error to user
+          document.getElementById("root").innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; background: #f3f4f6;">
+              <div style="background: white; padding: 32px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; text-align: center;">
+                <div style="font-size: 48px; margin-bottom: 16px;">😕</div>
+                <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">Failed to Load App</h1>
+                <p style="color: #6b7280; margin-bottom: 16px;">The application failed to load. Please try refreshing the page.</p>
+                <button onclick="location.reload()" style="background: #3b82f6; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600;">
+                  Reload Page
+                </button>
+              </div>
+            </div>
+          `;
+        }
+      })();
     </script>
   </body>
 </html>

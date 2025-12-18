@@ -18,19 +18,25 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo, Component } =
 
 // Debug helper - enable by setting window.DEBUG = true in config.local.js or when running locally
 const DEBUG = Boolean(
-  (typeof window !== 'undefined' && window.DEBUG) ||
-  (typeof window !== 'undefined' && window.APP_VERSION === 'local-dev') ||
-  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+  (typeof window !== "undefined" && window.DEBUG) ||
+    (typeof window !== "undefined" && window.APP_VERSION === "local-dev") ||
+    (typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"))
 );
 const dlog = (...args) => {
   if (DEBUG) console.log(...args);
 };
 
 // Silence console.log in production to avoid noisy logs in hot paths
-if (!DEBUG && typeof console !== 'undefined' && typeof console.log === 'function') {
+if (
+  !DEBUG &&
+  typeof console !== "undefined" &&
+  typeof console.log === "function"
+) {
   try {
     console._originalLog = console.log;
-    console.log = function() {};
+    console.log = function () {};
   } catch (e) {}
 }
 
@@ -1341,10 +1347,32 @@ const UserPanel = ({ soundEnabled, onClose, appUserSession }) => {
     try {
       const result = await runGasFn("loginUser", { username, password });
       if (result && result.success) {
-        setLocalUserSession(result.user);
-        StorageService.setUserSession(result.user);
+        // Normalize user data
+        const normalizedUser = {
+          ...result.user,
+          totalGames: Number(result.user.totalGames) || 0,
+          totalWins: Number(result.user.totalWins) || 0,
+          easyWins: Number(result.user.easyWins) || 0,
+          mediumWins: Number(result.user.mediumWins) || 0,
+          hardWins: Number(result.user.hardWins) || 0,
+          perfectWins: Number(result.user.perfectWins) || 0,
+          fastWins: Number(result.user.fastWins) || 0,
+        };
+
+        setLocalUserSession(normalizedUser);
+        StorageService.setUserSession(normalizedUser);
         if (soundEnabled) SoundManager.play("success");
-        onClose(result.user);
+
+        // Clear password field
+        setPassword("");
+
+        // Force parent component update
+        onClose(normalizedUser);
+
+        // Small delay then reload to ensure clean state
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       } else {
         setError(result.error || "Login failed");
         if (soundEnabled) SoundManager.play("error");
@@ -1402,10 +1430,32 @@ const UserPanel = ({ soundEnabled, onClose, appUserSession }) => {
     try {
       const result = await runGasFn("registerUser", { username, password });
       if (result && result.success) {
-        setLocalUserSession(result.user);
-        StorageService.setUserSession(result.user);
+        // Normalize user data
+        const normalizedUser = {
+          ...result.user,
+          totalGames: Number(result.user.totalGames) || 0,
+          totalWins: Number(result.user.totalWins) || 0,
+          easyWins: Number(result.user.easyWins) || 0,
+          mediumWins: Number(result.user.mediumWins) || 0,
+          hardWins: Number(result.user.hardWins) || 0,
+          perfectWins: Number(result.user.perfectWins) || 0,
+          fastWins: Number(result.user.fastWins) || 0,
+        };
+
+        setLocalUserSession(normalizedUser);
+        StorageService.setUserSession(normalizedUser);
         if (soundEnabled) SoundManager.play("success");
-        onClose(result.user);
+
+        // Clear password field
+        setPassword("");
+
+        // Force parent component update
+        onClose(normalizedUser);
+
+        // Small delay then reload to ensure clean state
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       } else {
         setError(result.error || "Registration failed");
         if (soundEnabled) SoundManager.play("error");
@@ -1423,7 +1473,15 @@ const UserPanel = ({ soundEnabled, onClose, appUserSession }) => {
     StorageService.clearUserSession();
     setLocalUserSession(null);
     if (soundEnabled) SoundManager.play("uiTap");
+
+    // Force app state reset - pass null to trigger parent refresh
     onClose(null);
+
+    // Force a page reload after a short delay to ensure clean state
+    // This prevents stale session data from lingering
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   };
 
   const handleContinueAsGuest = () => {
@@ -2677,6 +2735,23 @@ const App = () => {
     setIsChatOpen(true);
   }, [soundEnabled]);
 
+  // Sync session state on mount and periodically check for changes
+  useEffect(() => {
+    const syncSession = () => {
+      const currentSession = StorageService.getUserSession();
+      if (JSON.stringify(currentSession) !== JSON.stringify(appUserSession)) {
+        setAppUserSession(currentSession);
+      }
+    };
+
+    // Initial sync
+    syncSession();
+
+    // Check every 2 seconds for session changes (logout in another tab, etc)
+    const interval = setInterval(syncSession, 2000);
+    return () => clearInterval(interval);
+  }, [appUserSession]);
+
   // Persist merged unlock/theme/sound state to backend for authenticated users
   const persistUserStateToBackend = useCallback(
     async (partial = {}) => {
@@ -2998,6 +3073,18 @@ const App = () => {
     }
     if (savedSound === "false") setSoundEnabled(false);
 
+    // Verify required dependencies are loaded
+    if (typeof KEYS === "undefined" || typeof StorageService === "undefined") {
+      console.error(
+        "Critical dependencies not loaded. Module load order may be incorrect."
+      );
+      // Force reload after a short delay to try again
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+      return;
+    }
+
     // Load saved game
     try {
       const saved = StorageService.loadGame();
@@ -3019,7 +3106,11 @@ const App = () => {
     } catch (err) {
       console.error("Failed to load saved game:", err);
       // Clear corrupted save
-      StorageService.clearSavedGame();
+      try {
+        StorageService.clearSavedGame();
+      } catch (clearErr) {
+        console.error("Failed to clear corrupted save:", clearErr);
+      }
     }
   }, []);
 
@@ -3369,10 +3460,18 @@ const App = () => {
                       difficulty: difficulty,
                     };
                     // Use robust wrapper to handle transient errors
-                    if (typeof window.robustRunGasFn === 'function') {
-                      window.robustRunGasFn("updateUserProfile", updateData, { retries: 2, backoff: 250 }).catch((err) =>
-                        console.error("Failed to update user stats (loss):", err)
-                      );
+                    if (typeof window.robustRunGasFn === "function") {
+                      window
+                        .robustRunGasFn("updateUserProfile", updateData, {
+                          retries: 2,
+                          backoff: 250,
+                        })
+                        .catch((err) =>
+                          console.error(
+                            "Failed to update user stats (loss):",
+                            err
+                          )
+                        );
                     } else {
                       runGasFn && runGasFn("updateUserProfile", updateData);
                     }
@@ -3529,10 +3628,17 @@ const App = () => {
             };
 
             // Use robustRunGasFn to reduce impact of transient failures
-            if (typeof window.robustRunGasFn === 'function') {
-              await window.robustRunGasFn("updateUserProfile", updateData, { retries: 2, backoff: 300 });
+            if (typeof window.robustRunGasFn === "function") {
+              await window.robustRunGasFn("updateUserProfile", updateData, {
+                retries: 2,
+                backoff: 300,
+              });
               // Refresh user profile to get updated stats
-              const updatedProfile = await window.robustRunGasFn("getUserProfile", { userId: session.userId }, { retries: 2, backoff: 300 });
+              const updatedProfile = await window.robustRunGasFn(
+                "getUserProfile",
+                { userId: session.userId },
+                { retries: 2, backoff: 300 }
+              );
               if (updatedProfile && updatedProfile.success) {
                 // Update both global storage and component state for consistency
                 StorageService.setUserSession(updatedProfile.user);
@@ -3540,20 +3646,26 @@ const App = () => {
               }
 
               try {
-                await window.robustRunGasFn("saveUserState", {
-                  userId: session.userId,
-                  unlockedThemes: StorageService.getUnlockedThemes(),
-                  unlockedSoundPacks: StorageService.getUnlockedSoundPacks(),
-                  activeTheme: activeThemeId,
-                  activeSoundPack: activeSoundPackId,
-                  gameStats: stats,
-                }, { retries: 2, backoff: 300 });
+                await window.robustRunGasFn(
+                  "saveUserState",
+                  {
+                    userId: session.userId,
+                    unlockedThemes: StorageService.getUnlockedThemes(),
+                    unlockedSoundPacks: StorageService.getUnlockedSoundPacks(),
+                    activeTheme: activeThemeId,
+                    activeSoundPack: activeSoundPackId,
+                    gameStats: stats,
+                  },
+                  { retries: 2, backoff: 300 }
+                );
               } catch (e) {
                 console.error("Failed to persist user state to backend:", e);
               }
             } else {
               await runGasFn("updateUserProfile", updateData);
-              const updatedProfile = await runGasFn("getUserProfile", { userId: session.userId });
+              const updatedProfile = await runGasFn("getUserProfile", {
+                userId: session.userId,
+              });
               if (updatedProfile && updatedProfile.success) {
                 StorageService.setUserSession(updatedProfile.user);
                 setAppUserSession(updatedProfile.user);
