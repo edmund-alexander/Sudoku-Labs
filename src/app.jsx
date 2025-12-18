@@ -3944,7 +3944,17 @@ const App = () => {
       return;
     }
 
-    const order = [paths.bgPng, paths.bgSvg, paths.bgJpg].filter(Boolean);
+    // Filter out obviously-bad paths (arrays encoded as strings, null/undefined)
+    const rawOrder = [paths.bgPng, paths.bgSvg, paths.bgJpg].filter(Boolean);
+    const order = rawOrder.filter((p) => {
+      if (!p || typeof p !== "string") return false;
+      const lp = p.toLowerCase();
+      // Skip encoded/empty array markers or placeholders
+      if (lp.includes("[]") || lp.includes("%5b") || lp.includes("%5d"))
+        return false;
+      if (lp.includes("undefined") || lp.includes("null")) return false;
+      return true;
+    });
     if (order.length === 0) {
       setBgAssetUrl(null);
       return;
