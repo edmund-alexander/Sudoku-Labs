@@ -1,19 +1,11 @@
-(function () {
-  // Prevent duplicate execution which causes `Identifier 'StorageService' has already been declared`
-  if (typeof window !== 'undefined' && window.__SudokuServicesLoaded) {
-    console.warn('src/services.js already loaded — skipping duplicate execution.');
-    return;
-  }
-  if (typeof window !== 'undefined') window.__SudokuServicesLoaded = true;
-
-  /**
-   * Sudoku Logic Lab - Services (API & Storage)
-   *
-   * API service layer for GAS backend communication and local storage management.
-   * This file uses plain JavaScript (no JSX) and can be loaded before React.
-   *
-   * @version 2.3.0
-   */
+/**
+ * Sudoku Logic Lab - Services (API & Storage)
+ *
+ * API service layer for GAS backend communication and local storage management.
+ * This file uses plain JavaScript (no JSX) and can be loaded before React.
+ *
+ * @version 2.3.0
+ */
 
 // ============================================================================
 // CONFIGURATION
@@ -102,30 +94,11 @@ const runGasFn = async (fnName, ...args) => {
       redirect: "follow",
     });
 
-    const contentType = (response.headers.get("content-type") || "").toLowerCase();
-    const bodyText = await response.text();
-
-    // If the server returned HTML (login/redirect page), log a helpful message
-    if (contentType.includes("text/html") || /<html/i.test(bodyText)) {
-      console.error("GAS returned HTML instead of JSON (redirect or auth required).", {
-        status: response.status,
-        url: response.url,
-        snippet: bodyText.slice(0, 240),
-      });
-      throw new Error("GAS returned non-JSON response (possible redirect/auth)");
-    }
-
     if (!response.ok) {
-      console.error("GAS returned non-OK status:", response.status, bodyText.slice(0, 240));
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    try {
-      return JSON.parse(bodyText);
-    } catch (e) {
-      console.error("Failed to parse GAS JSON response:", e, bodyText.slice(0, 240));
-      throw e;
-    }
+    return await response.json();
   } catch (error) {
     console.error("GAS API Error:", error);
     throw error;
@@ -1058,24 +1031,21 @@ window.getChatMessages = getChatMessages;
 window.postChatMessage = postChatMessage;
 window.isUserAuthenticated = isUserAuthenticated;
 
-// For legacy codepaths, ensure window properties exist. Avoid redeclaring
-// bare identifiers (`var`) which can cause SyntaxError when this script
-// executes in environments that already define those names.
-if (typeof window !== "undefined") {
-  window.StorageService = window.StorageService || StorageService;
-  window.runGasFn = window.runGasFn || runGasFn;
-  window.logError = window.logError || logError;
-  window.LeaderboardService = window.LeaderboardService || LeaderboardService;
-  window.ChatService = window.ChatService || ChatService;
-  window.UnlockService = window.UnlockService || UnlockService;
-  window.BadgeService = window.BadgeService || BadgeService;
-  window.getLeaderboard = window.getLeaderboard || getLeaderboard;
-  window.saveScore = window.saveScore || saveScore;
-  window.getChatMessages = window.getChatMessages || getChatMessages;
-  window.postChatMessage = window.postChatMessage || postChatMessage;
-  window.isUserAuthenticated =
-    window.isUserAuthenticated || isUserAuthenticated;
-}
-
-// End duplicate-execution guard
-})();
+// Legacy global bindings for older codepaths that reference bare identifiers
+// (some build/runtime environments expect `var` globals instead of only
+// properties on `window`). Declaring these with `var` ensures they become
+// actual global variables accessible as plain identifiers.
+/* eslint-disable no-var */
+var StorageService = window.StorageService;
+var runGasFn = window.runGasFn;
+var logError = window.logError;
+var LeaderboardService = window.LeaderboardService;
+var ChatService = window.ChatService;
+var UnlockService = window.UnlockService;
+var BadgeService = window.BadgeService;
+var getLeaderboard = window.getLeaderboard;
+var saveScore = window.saveScore;
+var getChatMessages = window.getChatMessages;
+var postChatMessage = window.postChatMessage;
+var isUserAuthenticated = window.isUserAuthenticated;
+/* eslint-enable no-var */
