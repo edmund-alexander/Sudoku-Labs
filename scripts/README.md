@@ -6,8 +6,7 @@ Utility scripts for development, setup, and maintenance.
 
 ```
 scripts/
-├── setup-admin-full.sh          # 🚀 Automated admin console setup (recommended)
-├── setup-admin.sh               # ⚙️ Manual admin console setup
+├── setup-admin.sh               # 🔧 Admin console setup
 ├── README.md                    # This file
 │
 ├── setup/                       # Setup and configuration scripts
@@ -23,42 +22,31 @@ scripts/
 
 ## 🚀 Quick Reference
 
-### Admin Console Setup (NEW!)
+### Admin Console Setup
 
-#### 🚀 Automated Setup - `setup-admin-full.sh` (Recommended)
-**Fully automated admin console setup with Google Apps Script deployment**
+#### 🔧 Admin Setup - `setup-admin.sh`
+**Simple and reliable admin console setup**
 
-```bash
-bash scripts/setup-admin-full.sh
-```
-
-**Features:**
-- ✅ Complete automation with Google authentication
-- ✅ Deploys code to Google Apps Script
-- ✅ Configures Script Properties automatically
-- ✅ Initializes database structure
-- ✅ Minimal manual steps required
-
-**Requirements:**
-- Node.js and npm installed
-- Google account with GAS access
-- Existing GAS project
-
-**Documentation:** [docs/ADMIN_AUTOMATED_SETUP.md](../docs/ADMIN_AUTOMATED_SETUP.md)
-
----
-
-#### ⚙️ Manual Setup - `setup-admin.sh`
-**Basic admin console setup (frontend only)**
+#### 🔧 Admin Setup - `setup-admin.sh`
+**Simple and reliable admin console setup**
 
 ```bash
 bash scripts/setup-admin.sh
 ```
 
-**Features:**
-- ✅ Frontend configuration
-- ✅ Password hashing
-- ⚠️ Requires manual GAS configuration
+**What it does:**
+- ✅ Configures frontend admin credentials
+- ✅ Generates secure password hash (SHA-256)
+- ✅ Creates gitignored config files
+- ✅ Works in all environments (local, Codespaces, etc.)
+
+**Then you manually:**
+- Copy Code.gs to Google Apps Script
+- Set Script Properties
+- Run setupSheets_() function
+- Deploy Web App
+
+**Time:** ~10 minutes total
 
 **Documentation:** [docs/ADMIN_QUICKSTART.md](../docs/ADMIN_QUICKSTART.md)
 
