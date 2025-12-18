@@ -18,19 +18,25 @@ const { useState, useEffect, useCallback, useRef, memo, useMemo, Component } =
 
 // Debug helper - enable by setting window.DEBUG = true in config.local.js or when running locally
 const DEBUG = Boolean(
-  (typeof window !== 'undefined' && window.DEBUG) ||
-  (typeof window !== 'undefined' && window.APP_VERSION === 'local-dev') ||
-  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+  (typeof window !== "undefined" && window.DEBUG) ||
+    (typeof window !== "undefined" && window.APP_VERSION === "local-dev") ||
+    (typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"))
 );
 const dlog = (...args) => {
   if (DEBUG) console.log(...args);
 };
 
 // Silence console.log in production to avoid noisy logs in hot paths
-if (!DEBUG && typeof console !== 'undefined' && typeof console.log === 'function') {
+if (
+  !DEBUG &&
+  typeof console !== "undefined" &&
+  typeof console.log === "function"
+) {
   try {
     console._originalLog = console.log;
-    console.log = function() {};
+    console.log = function () {};
   } catch (e) {}
 }
 
@@ -38,41 +44,111 @@ if (!DEBUG && typeof console !== 'undefined' && typeof console.log === 'function
 // ERROR BOUNDARY
 // ============================================================================
 
+let __errorCodeCounter = 0;
+const makeErrorCode = () => {
+  const ts = Date.now().toString(36);
+  const seq = (__errorCodeCounter++ % 4096).toString(16).padStart(3, "0");
+  return `E-${ts}-${seq}`;
+};
+
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, code: null, stack: null };
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    return { hasError: true, error, code: makeErrorCode() };
   }
 
   componentDidCatch(error, errorInfo) {
+    const stack = errorInfo?.componentStack || error?.stack || null;
+    this.setState({ stack });
     console.error("React Error Boundary caught:", error, errorInfo);
     if (typeof logError === "function") {
-      logError("React Error Boundary: " + error.message, error);
+      const meta = {
+        code: this.state.code,
+        message: error?.message,
+        stack,
+        url: window.location?.href,
+        userAgent: navigator?.userAgent,
+        appVersion: window?.APP_VERSION,
+      };
+      logError(`React Error Boundary [${this.state.code}]`, {
+        ...error,
+        meta,
+      });
     }
   }
 
   render() {
     if (this.state.hasError) {
+      const { code, error, stack } = this.state;
+
+      const copyReport = async () => {
+        const payload = {
+          code,
+          message: error?.message,
+          stack,
+          url: window.location?.href,
+          userAgent: navigator?.userAgent,
+          appVersion: window?.APP_VERSION,
+        };
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+          alert("Error report copied to clipboard.");
+        } catch (e) {
+          console.warn("Clipboard copy failed", e);
+        }
+      };
+
+      const renderStack = () => {
+        if (!stack) return null;
+        const lines = stack.split("\n").slice(0, 6);
+        return (
+          <pre className="text-[11px] leading-snug bg-gray-900/80 text-white rounded px-3 py-2 overflow-auto max-h-36 whitespace-pre-wrap mt-2">
+            {lines.join("\n")}
+          </pre>
+        );
+      };
       return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-900">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg max-w-md text-center">
-            <div className="text-4xl mb-4">😕</div>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg max-w-md text-center space-y-3">
+            <div className="text-4xl mb-1">😕</div>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">
               Something went wrong
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              The game encountered an unexpected error.
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              <div className="font-mono text-xs bg-gray-100 dark:bg-gray-700 rounded px-2 py-1 inline-block mb-2">
+                Code: {code || "N/A"}
+              </div>
+              <div className="text-left bg-gray-50 dark:bg-gray-700 rounded px-3 py-2">
+                <div className="font-semibold text-gray-700 dark:text-gray-200 text-xs mb-1">
+                  Details
+                </div>
+                <div className="text-xs break-words text-gray-700 dark:text-gray-200">
+                  {error?.message || "Unexpected error"}
+                </div>
+                {renderStack()}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Share the code with support to cross-reference the issue.
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Reload Game
-            </button>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={copyReport}
+                className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-xs font-semibold"
+              >
+                Copy error report
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Reload Game
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -966,6 +1042,14 @@ const Icons = {
 };
 
 const CHAT_POLL_INTERVAL = 5000;
+
+const FullScreenLoader = ({ message = "Loading..." }) => (
+  <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white gap-3 animate-fade-in">
+    <div className="w-12 h-12 border-4 border-white/50 border-t-white rounded-full animate-spin" aria-label="Loading" />
+    <div className="text-sm font-semibold tracking-wide">{message}</div>
+    <div className="text-[11px] text-white/80">Please wait while we finish updating.</div>
+  </div>
+);
 
 // --- AWARDS ZONE (Themes + Sound Packs) ---
 const AwardsZone = ({
@@ -2602,6 +2686,7 @@ const App = () => {
   const [appUserSession, setAppUserSession] = useState(
     StorageService.getUserSession()
   );
+  const [isHydrating, setIsHydrating] = useState(true);
   const [viewingProfile, setViewingProfile] = useState(null); // For viewing other users' profiles
   const [profileLoading, setProfileLoading] = useState(false);
   const [hoverProfile, setHoverProfile] = useState(null); // For hover preview in chat
@@ -3021,6 +3106,8 @@ const App = () => {
       // Clear corrupted save
       StorageService.clearSavedGame();
     }
+
+    setIsHydrating(false);
   }, []);
 
   // Ensure dark mode is enabled when Midnight theme is active
@@ -3369,10 +3456,18 @@ const App = () => {
                       difficulty: difficulty,
                     };
                     // Use robust wrapper to handle transient errors
-                    if (typeof window.robustRunGasFn === 'function') {
-                      window.robustRunGasFn("updateUserProfile", updateData, { retries: 2, backoff: 250 }).catch((err) =>
-                        console.error("Failed to update user stats (loss):", err)
-                      );
+                    if (typeof window.robustRunGasFn === "function") {
+                      window
+                        .robustRunGasFn("updateUserProfile", updateData, {
+                          retries: 2,
+                          backoff: 250,
+                        })
+                        .catch((err) =>
+                          console.error(
+                            "Failed to update user stats (loss):",
+                            err
+                          )
+                        );
                     } else {
                       runGasFn && runGasFn("updateUserProfile", updateData);
                     }
@@ -3529,10 +3624,17 @@ const App = () => {
             };
 
             // Use robustRunGasFn to reduce impact of transient failures
-            if (typeof window.robustRunGasFn === 'function') {
-              await window.robustRunGasFn("updateUserProfile", updateData, { retries: 2, backoff: 300 });
+            if (typeof window.robustRunGasFn === "function") {
+              await window.robustRunGasFn("updateUserProfile", updateData, {
+                retries: 2,
+                backoff: 300,
+              });
               // Refresh user profile to get updated stats
-              const updatedProfile = await window.robustRunGasFn("getUserProfile", { userId: session.userId }, { retries: 2, backoff: 300 });
+              const updatedProfile = await window.robustRunGasFn(
+                "getUserProfile",
+                { userId: session.userId },
+                { retries: 2, backoff: 300 }
+              );
               if (updatedProfile && updatedProfile.success) {
                 // Update both global storage and component state for consistency
                 StorageService.setUserSession(updatedProfile.user);
@@ -3540,20 +3642,26 @@ const App = () => {
               }
 
               try {
-                await window.robustRunGasFn("saveUserState", {
-                  userId: session.userId,
-                  unlockedThemes: StorageService.getUnlockedThemes(),
-                  unlockedSoundPacks: StorageService.getUnlockedSoundPacks(),
-                  activeTheme: activeThemeId,
-                  activeSoundPack: activeSoundPackId,
-                  gameStats: stats,
-                }, { retries: 2, backoff: 300 });
+                await window.robustRunGasFn(
+                  "saveUserState",
+                  {
+                    userId: session.userId,
+                    unlockedThemes: StorageService.getUnlockedThemes(),
+                    unlockedSoundPacks: StorageService.getUnlockedSoundPacks(),
+                    activeTheme: activeThemeId,
+                    activeSoundPack: activeSoundPackId,
+                    gameStats: stats,
+                  },
+                  { retries: 2, backoff: 300 }
+                );
               } catch (e) {
                 console.error("Failed to persist user state to backend:", e);
               }
             } else {
               await runGasFn("updateUserProfile", updateData);
-              const updatedProfile = await runGasFn("getUserProfile", { userId: session.userId });
+              const updatedProfile = await runGasFn("getUserProfile", {
+                userId: session.userId,
+              });
               if (updatedProfile && updatedProfile.success) {
                 StorageService.setUserSession(updatedProfile.user);
                 setAppUserSession(updatedProfile.user);
@@ -3675,6 +3783,19 @@ const App = () => {
       // Explicit logout path
       StorageService.clearUserSession();
       setAppUserSession(null);
+      setUnlockedThemes(StorageService.getUnlockedThemes());
+      setUnlockedSoundPacks(StorageService.getUnlockedSoundPacks());
+      setActiveThemeId(sanitizeThemeId(StorageService.getActiveTheme()));
+      setActiveSoundPackId(
+        sanitizeSoundPackId(StorageService.getActiveSoundPack())
+      );
+      setNewlyUnlockedThemes([]);
+      setNewlyUnlockedSoundPacks([]);
+      setNewlyAwardedBadges([]);
+      profileCacheRef.current.clear();
+      setBackendError(null);
+      setViewingProfile(null);
+      setUserStatus(StorageService.getUserStatus());
     }
     setShowUserPanel(false);
   };
@@ -5649,6 +5770,12 @@ const App = () => {
           activePackId={activeSoundPackId}
           unlockedPacks={unlockedSoundPacks}
           onSelectPack={(id) => handleSoundPackChange(id, { persist: false })}
+        />
+      )}
+
+      {(loading || isHydrating) && (
+        <FullScreenLoader
+          message={isHydrating ? "Preparing your game..." : "Updating data..."}
         />
       )}
 
