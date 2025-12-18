@@ -2042,16 +2042,54 @@ const App = () => {
     setLoading(true);
     try {
       let newBoard = null;
-      try {
-        newBoard = await runGasFn('generateSudoku', diff);
-      } catch (err) {
-        console.warn('GAS generation failed, falling back to local generator', err);
-        newBoard = null;
+      let retries = 0;
+      const maxRetries = 3;
+      
+      // Try GAS backend with retries
+      while (!newBoard && retries < maxRetries) {
+        try {
+          newBoard = await runGasFn('generateSudoku', diff);
+          
+          // Validate the board structure
+          if (newBoard && Array.isArray(newBoard) && newBoard.length === 81) {
+            // Check if board has the required properties
+            const isValid = newBoard.every(cell => 
+              cell && 
+              typeof cell.id === 'number' && 
+              typeof cell.row === 'number' && 
+              typeof cell.col === 'number'
+            );
+            
+            if (!isValid) {
+              console.warn('Invalid board structure received from GAS');
+              newBoard = null;
+            }
+          } else {
+            newBoard = null;
+          }
+        } catch (err) {
+          console.warn(`GAS generation attempt ${retries + 1} failed:`, err);
+          newBoard = null;
+        }
+        
+        if (!newBoard) {
+          retries++;
+          if (retries < maxRetries) {
+            // Wait a bit before retrying
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
       }
 
       if (!newBoard) {
-        // Fallback to local generator for dev when GAS isn't configured
+        console.warn('GAS generation failed after retries, falling back to local generator');
+        // Fallback to local generator
         newBoard = generateLocalBoard(diff);
+      }
+      
+      // Final validation
+      if (!newBoard || !Array.isArray(newBoard) || newBoard.length !== 81) {
+        throw new Error('Failed to generate a valid board');
       }
 
       // Count initially filled cells (pre-filled by the puzzle)
@@ -2064,7 +2102,12 @@ const App = () => {
       setView('game');
       // Set practice mode only after successful board generation
       setIsPracticeMode(practiceMode);
-    } catch (e) { console.error(e); alert("Failed to start game."); } finally { setLoading(false); }
+    } catch (e) { 
+      console.error('Failed to start game:', e); 
+      alert("Failed to start game. Please try again."); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleNumberInput = useCallback((num) => {
@@ -2240,8 +2283,27 @@ const App = () => {
     const msg = { id: Date.now().toString(), sender: currentUserId, text: txt, timestamp: Date.now(), status: (userStatus || '').slice(0, 50) };
     setChatMessages(prev => [...prev, msg]);
     isSendingRef.current = true;
-    const updated = await postChatMessage(msg);
-    if (updated && Array.isArray(updated)) setChatMessages(updated);
+    
+    try {
+      const updated = await postChatMessage(msg);
+      if (updated && Array.isArray(updated)) setChatMessages(updated);
+    } catch (error) {
+      // Handle ban/mute errors
+      if (error.message.startsWith('BANNED:')) {
+        alert('You have been banned from chat');
+        // Remove the pending message
+        setChatMessages(prev => prev.filter(m => m.id !== msg.id));
+      } else if (error.message.startsWith('MUTED:')) {
+        const match = error.message.match(/(\d+) more minute/);
+        const minutes = match ? match[1] : 'several';
+        alert(`You are muted for ${minutes} more minute(s)`);
+        // Remove the pending message
+        setChatMessages(prev => prev.filter(m => m.id !== msg.id));
+      } else {
+        console.error('Failed to send chat message:', error);
+      }
+    }
+    
     isSendingRef.current = false;
   };
 
