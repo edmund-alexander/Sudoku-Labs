@@ -60,6 +60,46 @@
       src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
     ></script>
     <!-- Babel Standalone for in-browser JSX compilation -->
+
+    <!-- Inline shim: define minimal legacy globals if services.js fails to load -->
+    <script>
+      (function() {
+        // Declare legacy var globals to avoid ReferenceError in app.jsx
+        // If the real services load, they will overwrite these globals.
+        try {
+          if (typeof window !== 'undefined') {
+            // If services already attached, copy to vars
+            if (window.StorageService) {
+              try { var StorageService = window.StorageService; } catch(e) {}
+            } else {
+              // Minimal stub to avoid crashes; returns safe defaults
+              try {
+                var StorageService = window.StorageService = {
+                  isAvailable: function(){return false;},
+                  getUserSession: function(){return null;},
+                  getUserId: function(){return 'guest';},
+                  getUnlockedThemes: function(){return ['default'];},
+                  getUnlockedSoundPacks: function(){return ['classic'];},
+                  getActiveTheme: function(){return 'default';},
+                  getActiveSoundPack: function(){return 'classic';},
+                  isUserAuthenticated: function(){return false;},
+                  saveUserSession: function(){},
+                  setUserSession: function(){},
+                  saveUnlockedThemes: function(){},
+                  saveUnlockedSoundPacks: function(){},
+                  getGameStats: function(){return {}},
+                  saveGameStats: function(){},
+                };
+              } catch (err) {
+                // ignore shim errors
+              }
+            }
+          }
+        } catch (e) {
+          // no-op
+        }
+      })();
+    </script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
