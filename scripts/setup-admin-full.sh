@@ -87,12 +87,37 @@ else
     REMOTE_ENV=false
 fi
 
-# Always try to check status more thoroughly
-CLASP_STATUS_OUTPUT=$(clasp login --status 2>&1)
+# Check if login status check itself fails (clasp issue)
+if ! clasp login --status &> /dev/null; then
+    NEEDS_LOGIN=true
+else
+    # Even if status check passes, verify credentials are actually valid
+    CLASP_STATUS_OUTPUT=$(clasp login --status 2>&1)
+    
+    if echo "$CLASP_STATUS_OUTPUT" | grep -qi "not.*logged.*in\|no.*credentials"; then
+        NEEDS_LOGIN=true
+    else
+        # Try a simple test operation to verify credentials actually work
+        echo "   Verifying credentials are valid..."
+        if ! clasp setting &> /dev/null; then
+            echo "   ⚠️  Credentials appear stale - will re-authenticate"
+            NEEDS_LOGIN=true
+        else
+            NEEDS_LOGIN=false
+        fi
+    fi
+fi
 
-if echo "$CLASP_STATUS_OUTPUT" | grep -qi "not.*logged.*in\|no.*credentials"; then
+if [ "$NEEDS_LOGIN" = true ]; then
     echo ""
     echo "You need to authenticate with Google to manage Apps Script."
+    echo ""
+    
+    # Force clean logout first
+    echo "🧹 Cleaning any stale credentials..."
+    clasp logout &> /dev/null || true
+    rm -f ~/.clasprc.json &> /dev/null || true
+    echo ""
     
     if [ "$REMOTE_ENV" = true ]; then
         echo "🌐 Remote environment detected - using manual auth flow"
