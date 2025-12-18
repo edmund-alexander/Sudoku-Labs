@@ -4212,7 +4212,9 @@ const App = () => {
                 setView("menu");
               }}
             >
-              Sudoku <span className="text-blue-600 dark:text-blue-300">Logic</span> Lab
+              Sudoku{" "}
+              <span className="text-blue-600 dark:text-blue-300">Logic</span>{" "}
+              Lab
             </h1>
           </div>
           <div className="flex gap-1 sm:gap-2 items-center">
