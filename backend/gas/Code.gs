@@ -463,7 +463,12 @@ function getUserProfile(data) {
   const userId = sanitizeInput_(data.userId, 50);
   
   try {
-    const rowInfo = getUserRowById_(userId);
+    // Try to find by UserID first, then by Username (case-insensitive)
+    let rowInfo = getUserRowById_(userId);
+    if (!rowInfo) {
+      rowInfo = getUserRowByUsername_(userId);
+    }
+    
     if (!rowInfo) {
       return { success: false, error: 'User not found' };
     }
@@ -861,6 +866,19 @@ function getUserRowById_(userId) {
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (data[i][map['UserID']] === userId) {
+      return { rowIndex: i + 1, row: data[i], map, sheet };
+    }
+  }
+  return null;
+}
+
+function getUserRowByUsername_(username) {
+  const info = getUserHeaderMap_();
+  if (!info) return null;
+  const { map, sheet } = info;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][map['Username']] && data[i][map['Username']].toLowerCase() === username.toLowerCase()) {
       return { rowIndex: i + 1, row: data[i], map, sheet };
     }
   }
