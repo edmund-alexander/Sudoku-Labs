@@ -30,7 +30,15 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-    <div id="root"></div>
+    <div id="root">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#444;">
+        <div style="font-size:3rem;animation:spin 1s linear infinite;">🧩</div>
+        <div style="margin-top:1rem;font-size:1.2rem;">Loading Sudoku Logic Lab...</div>
+      </div>
+      <style>
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+      </style>
+    </div>
 
     <!-- Prevent dark mode flash: Check localStorage and apply dark class ASAP -->
     <script>
