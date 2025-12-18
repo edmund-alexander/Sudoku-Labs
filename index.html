@@ -163,12 +163,18 @@
     <!-- Dynamic path resolution for different deployment environments -->
     <script>
       // Detect environment:
-      // - GitHub Pages: files are in root (./src/, ./config/)
-      // - Local dev served from root: files are also in root (./src/, ./config/)
-      // - Local dev served from public/: files are in parent (../src/, ../config/)
+      // - GitHub Pages: files are at ./src/, ./config/ (same as production)
+      // - Local dev from root: files are at ./src/, ./config/
+      // - Local dev served from public/: files are at ../src/, ../config/
       const isGitHubPages = window.location.hostname.includes("github.io");
-      const isLocalInPublic = window.location.pathname.includes("/public/");
-      const pathPrefix = isLocalInPublic ? "../" : "./";
+      const isLocalhost =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "";
+      
+      // When serving from public/ directory locally, src/ is one level up
+      // We can detect this by checking if we can access /index.html (we're in public/)
+      const pathPrefix = isLocalhost ? "../" : "./";
 
       // Helper to load scripts with correct path, with error handling
       function loadScript(src, attributes = {}) {
