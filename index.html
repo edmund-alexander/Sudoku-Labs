@@ -362,10 +362,13 @@
       const isLocalDev = window.location.pathname.includes('/public/');
       const pathPrefix = isLocalDev ? '../' : './';
       
-      // Helper to load scripts with correct path
+      // Helper to load scripts with correct path, silently handling failures
       function loadScript(src, attributes = {}) {
         const script = document.createElement('script');
         script.src = pathPrefix + src;
+        script.onerror = function() {
+          // Silently fail - file is optional
+        };
         Object.entries(attributes).forEach(([key, value]) => {
           if (value === true) script.setAttribute(key, '');
           else script.setAttribute(key, value);
@@ -374,15 +377,16 @@
       }
     </script>
     
-    <!-- Configuration files -->
+    <!-- Configuration files (load conditionally to avoid conflicts) -->
     <script>
-      loadScript('config/config.local.js');
-    </script>
-    <script>
-      loadScript('config/config.production.example.js');
-    </script>
-    <script>
-      loadScript('config/admin.local.js');
+      // Only load production config if we're NOT in local dev and config.local.js doesn't exist
+      if (isLocalDev) {
+        loadScript('config/config.local.js');
+        loadScript('config/admin.local.js');
+      } else {
+        // Production: only load production config
+        loadScript('config/config.local.js');
+      }
     </script>
 
     <!-- Load modular JavaScript files (plain JS, loaded before React components) -->
