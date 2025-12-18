@@ -21,9 +21,9 @@ jobs:
 
       - name: Assemble Build Directory 📦
         run: |
-          mkdir -p build/public/assets build/config build/src
+          mkdir -p build/config build/src
           cp public/index.html public/favicon.svg build/
-          cp -r public/assets/. build/public/assets/
+          cp -r public/assets build/
           cp -r src/. build/src/
           cp config/config.example.js config/config.production.example.js build/config/
 
