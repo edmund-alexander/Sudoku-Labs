@@ -6,18 +6,63 @@ Utility scripts for development, setup, and maintenance.
 
 ```
 scripts/
-├── setup/               # Setup and configuration scripts
-│   └── production-setup.sh    # Interactive production config setup
+├── setup-admin-full.sh          # 🚀 Automated admin console setup (recommended)
+├── setup-admin.sh               # ⚙️ Manual admin console setup
+├── README.md                    # This file
 │
-└── dev/                 # Development utilities
-    ├── diagnostic.sh          # Health check and diagnostics
-    ├── generate_backgrounds.py # AI background generator
-    ├── theme_combos.json      # Theme combination definitions
+├── setup/                       # Setup and configuration scripts
+│   └── production-setup.sh      # Interactive production config setup
+│
+└── dev/                         # Development utilities
+    ├── diagnostic.sh            # Health check and diagnostics
+    ├── generate_backgrounds.py  # AI background generator
+    ├── theme_combos.json        # Theme combination definitions
     ├── cleanup-merged-branches.sh # Git branch cleanup
-    └── README.md              # Background generator docs
+    └── README.md                # Background generator docs
 ```
 
 ## 🚀 Quick Reference
+
+### Admin Console Setup (NEW!)
+
+#### 🚀 Automated Setup - `setup-admin-full.sh` (Recommended)
+**Fully automated admin console setup with Google Apps Script deployment**
+
+```bash
+bash scripts/setup-admin-full.sh
+```
+
+**Features:**
+- ✅ Complete automation with Google authentication
+- ✅ Deploys code to Google Apps Script
+- ✅ Configures Script Properties automatically
+- ✅ Initializes database structure
+- ✅ Minimal manual steps required
+
+**Requirements:**
+- Node.js and npm installed
+- Google account with GAS access
+- Existing GAS project
+
+**Documentation:** [docs/ADMIN_AUTOMATED_SETUP.md](../docs/ADMIN_AUTOMATED_SETUP.md)
+
+---
+
+#### ⚙️ Manual Setup - `setup-admin.sh`
+**Basic admin console setup (frontend only)**
+
+```bash
+bash scripts/setup-admin.sh
+```
+
+**Features:**
+- ✅ Frontend configuration
+- ✅ Password hashing
+- ⚠️ Requires manual GAS configuration
+
+**Documentation:** [docs/ADMIN_QUICKSTART.md](../docs/ADMIN_QUICKSTART.md)
+
+---
 
 ### Setup Scripts
 
