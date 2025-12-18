@@ -1634,6 +1634,7 @@ const App = () => {
   const [hoverProfile, setHoverProfile] = useState(null); // For hover preview in chat
   const [hoverProfilePos, setHoverProfilePos] = useState({ x: 0, y: 0 });
   const hoverTimeoutRef = useRef(null);
+  const profileCacheRef = useRef(new Map()); // Cache for profile data
 
   // Theme State
   const [activeThemeId, setActiveThemeId] = useState(StorageService.getActiveTheme());
@@ -1940,12 +1941,31 @@ const App = () => {
           }
           return msgs;
         });
+        
+        // Pre-cache profiles for recent chat users (background task)
+        const recentUsers = [...new Set(msgs.slice(-20).map(m => m.sender))].filter(u => u !== userId);
+        recentUsers.forEach(async (username) => {
+          const cached = profileCacheRef.current.get(username);
+          if (!cached || (Date.now() - cached.timestamp > 5 * 60 * 1000)) {
+            try {
+              const result = await runGasFn('getUserProfile', { userId: username });
+              if (result && result.success) {
+                profileCacheRef.current.set(username, {
+                  data: result.user,
+                  timestamp: Date.now()
+                });
+              }
+            } catch (err) {
+              // Silently fail pre-caching
+            }
+          }
+        });
       }
     };
     fetchChat();
     interval = setInterval(fetchChat, GAME_SETTINGS.CHAT_POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [isChatOpen, soundEnabled]);
+  }, [isChatOpen, soundEnabled, userId]);
 
   useEffect(() => { if (isChatOpen) chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages, isChatOpen]);
 
@@ -2242,9 +2262,23 @@ const App = () => {
     if (soundEnabled) SoundManager.play('uiTap');
     
     try {
+      // Check cache first
+      const now = Date.now();
+      const cached = profileCacheRef.current.get(username);
+      if (cached && (now - cached.timestamp < 5 * 60 * 1000)) {
+        setViewingProfile(cached.data);
+        setProfileLoading(false);
+        return;
+      }
+      
       // Get user profile from backend using username as userId (they're the same in the system)
       const result = await runGasFn('getUserProfile', { userId: username });
       if (result && result.success) {
+        // Cache the result
+        profileCacheRef.current.set(username, {
+          data: result.user,
+          timestamp: now
+        });
         setViewingProfile(result.user);
       } else {
         console.error('Failed to load profile:', result?.error);
@@ -2269,17 +2303,31 @@ const App = () => {
     const rect = event.currentTarget.getBoundingClientRect();
     setHoverProfilePos({ x: rect.left, y: rect.bottom + 5 });
     
-    // Wait 500ms before showing
+    // Check cache first (cache expires after 5 minutes)
+    const now = Date.now();
+    const cached = profileCacheRef.current.get(username);
+    if (cached && (now - cached.timestamp < 5 * 60 * 1000)) {
+      // Show cached profile immediately
+      setHoverProfile(cached.data);
+      return;
+    }
+    
+    // Wait 300ms before fetching (reduced from 500ms)
     hoverTimeoutRef.current = setTimeout(async () => {
       try {
         const result = await runGasFn('getUserProfile', { userId: username });
         if (result && result.success) {
+          // Cache the result
+          profileCacheRef.current.set(username, {
+            data: result.user,
+            timestamp: now
+          });
           setHoverProfile(result.user);
         }
       } catch (err) {
         console.error('Error loading hover profile:', err);
       }
-    }, 500);
+    }, 300);
   };
 
   const handleProfileHoverEnd = () => {
