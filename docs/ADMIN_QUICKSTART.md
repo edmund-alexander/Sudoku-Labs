@@ -17,7 +17,7 @@ The Admin Console is a secure, hidden administrative panel for Sudoku Labs that 
 
 ```bash
 cd /path/to/Sudoku-Labs
-./scripts/setup-admin.sh
+bash scripts/setup-admin.sh
 ```
 
 This will:
@@ -39,43 +39,37 @@ This will:
    Value: [your hash from script]
    ```
 
-### Step 3: Add Admin Endpoints
+### Step 3: Update Backend (Google Apps Script)
 
-1. In your GAS project, create a new file: **AdminEndpoints.gs**
-2. Copy ALL code from `backend/gas/AdminEndpoints.gs` and paste it
-3. In your `Code.gs`, find the `doGet(e)` function
-4. Add these cases to the switch statement (before `default:`):
+The admin endpoints are now **already included** in the main `Code.gs` file!
 
-```javascript
-case 'adminLogin':
-  return makeJsonResponse(adminLogin(e.parameter));
-case 'getAdminStats':
-  return makeJsonResponse(getAdminStats(e.parameter));
-case 'getAdminChatHistory':
-  return makeJsonResponse(getAdminChatHistory(e.parameter));
-case 'getAdminUsers':
-  return makeJsonResponse(getAdminUsers(e.parameter));
-case 'deleteMessages':
-  return makeJsonResponse(deleteMessages(e.parameter));
-case 'banUser':
-  return makeJsonResponse(banUser(e.parameter));
-case 'unbanUser':
-  return makeJsonResponse(unbanUser(e.parameter));
-case 'muteUser':
-  return makeJsonResponse(muteUser(e.parameter));
-case 'updateUserStats':
-  return makeJsonResponse(updateUserStats(e.parameter));
-case 'clearAllChat':
-  return makeJsonResponse(clearAllChat(e.parameter));
-```
+1. **Open your Google Apps Script project** containing Code.gs
 
-### Step 4: Deploy
+2. **Replace the entire Code.gs file** with the version from the repository:
+   - Copy the entire contents of `backend/gas/Code.gs`
+   - Paste into your GAS Code.gs, replacing all existing code
 
-1. Click **Deploy → New Deployment**
-2. Or update existing deployment
-3. Click **Deploy**
+3. **Run the setup function** (one-time):
+   - In GAS, select the function: `setupSheets_`
+   - Click "Run" 
+   - This creates/updates the database structure with admin support (adds `MuteUntil` and `Banned` columns)
 
-✅ **Setup Complete!**
+4. **Set Script Properties** (File → Project Properties → Script Properties):
+   - Click "+ Add property"
+   - Add TWO properties (use values from setup script):
+   ```
+   Key: ADMIN_USERNAME
+   Value: [your username from setup script]
+
+   Key: ADMIN_PASSWORD_HASH
+   Value: [your hash from setup script]
+   ```
+
+5. **Deploy** your web app:
+   - Click **Deploy → New Deployment** (or update existing)
+   - Click **Deploy**
+
+✅ **Setup Complete!** All admin endpoints are now active.
 
 ## How to Use
 

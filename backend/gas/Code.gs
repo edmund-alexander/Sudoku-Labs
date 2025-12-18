@@ -83,6 +83,37 @@ function doGet(e) {
       case 'awardBadge':
         return makeJsonResponse(awardBadge(e.parameter));
       
+      // Admin endpoints
+      case 'adminLogin':
+        return makeJsonResponse(adminLogin(e.parameter));
+      
+      case 'getAdminStats':
+        return makeJsonResponse(getAdminStats(e.parameter));
+      
+      case 'getAdminChatHistory':
+        return makeJsonResponse(getAdminChatHistory(e.parameter));
+      
+      case 'getAdminUsers':
+        return makeJsonResponse(getAdminUsers(e.parameter));
+      
+      case 'deleteMessages':
+        return makeJsonResponse(deleteMessages(e.parameter));
+      
+      case 'banUser':
+        return makeJsonResponse(banUser(e.parameter));
+      
+      case 'unbanUser':
+        return makeJsonResponse(unbanUser(e.parameter));
+      
+      case 'muteUser':
+        return makeJsonResponse(muteUser(e.parameter));
+      
+      case 'updateUserStats':
+        return makeJsonResponse(updateUserStats(e.parameter));
+      
+      case 'clearAllChat':
+        return makeJsonResponse(clearAllChat(e.parameter));
+      
       default:
         return makeJsonResponse({ error: 'Unknown action: ' + action });
     }
@@ -801,7 +832,7 @@ function setupSheets_() {
     Leaderboard: ['Name', 'Time (seconds)', 'Difficulty', 'Date'],
     Chat: ['ID', 'Sender', 'Text', 'Timestamp', 'Status'],
     Logs: ['Timestamp', 'Type', 'Message', 'UserAgent', 'Count'],
-    Users: ['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'TotalGames', 'TotalWins', 'EasyWins', 'MediumWins', 'HardWins', 'PerfectWins', 'FastWins', 'UnlockedThemes', 'ActiveTheme', 'UnlockedSoundPacks', 'ActiveSoundPack', 'GameStats', 'Badges', 'Unlocks']
+    Users: ['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'MuteUntil', 'Banned', 'TotalGames', 'TotalWins', 'EasyWins', 'MediumWins', 'HardWins', 'PerfectWins', 'FastWins', 'UnlockedThemes', 'ActiveTheme', 'UnlockedSoundPacks', 'ActiveSoundPack', 'GameStats', 'Badges', 'Unlocks']
   };
 
   Object.entries(definitions).forEach(([name, headers]) => {
@@ -812,7 +843,7 @@ function setupSheets_() {
     ensureSheetHeaders_(sheet, headers);
   });
 
-  Logger.log('Sheets initialized successfully');
+  Logger.log('Sheets initialized successfully with admin support');
 }
 
 // Ensure the Users sheet contains all expected columns. Adds missing columns to the header row.
@@ -820,7 +851,7 @@ function ensureUsersSheetHeaders_() {
   const sheet = getSpreadsheet_().getSheetByName('Users');
   if (!sheet) return;
 
-  const required = ['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'TotalGames', 'TotalWins', 'EasyWins', 'MediumWins', 'HardWins', 'PerfectWins', 'FastWins', 'UnlockedThemes', 'ActiveTheme', 'UnlockedSoundPacks', 'ActiveSoundPack', 'GameStats', 'Badges', 'Unlocks'];
+  const required = ['UserID', 'Username', 'PasswordHash', 'CreatedAt', 'DisplayName', 'MuteUntil', 'Banned', 'TotalGames', 'TotalWins', 'EasyWins', 'MediumWins', 'HardWins', 'PerfectWins', 'FastWins', 'UnlockedThemes', 'ActiveTheme', 'UnlockedSoundPacks', 'ActiveSoundPack', 'GameStats', 'Badges', 'Unlocks'];
   ensureSheetHeaders_(sheet, required);
 }
 
@@ -981,4 +1012,473 @@ function awardBadge(data) {
   }
 
   return { success: true, badge: newBadge };
+}
+// ============================================================================
+// Admin Endpoints for Sudoku-Labs Backend
+// ============================================================================
+// 
+// Add these functions to your Code.gs file to enable admin functionality.
+// These endpoints provide secure administrative access to manage users,
+// chat, and game data.
+// 
+// SECURITY NOTES:
+// 1. Store admin credentials in Script Properties (File → Project Properties → Script Properties)
+// 2. Add properties: ADMIN_USERNAME and ADMIN_PASSWORD_HASH
+// 3. Generate password hash with SHA-256: https://emn178.github.io/online-tools/sha256.html
+// 4. Session tokens expire after 30 minutes
+// 
+// Add these to your doGet() switch statement:
+//
+// case 'adminLogin':
+//   return makeJsonResponse(adminLogin(e.parameter));
+// case 'getAdminStats':
+//   return makeJsonResponse(getAdminStats(e.parameter));
+// case 'getAdminChatHistory':
+//   return makeJsonResponse(getAdminChatHistory(e.parameter));
+// case 'getAdminUsers':
+//   return makeJsonResponse(getAdminUsers(e.parameter));
+// case 'deleteMessages':
+//   return makeJsonResponse(deleteMessages(e.parameter));
+// case 'banUser':
+//   return makeJsonResponse(banUser(e.parameter));
+// case 'unbanUser':
+//   return makeJsonResponse(unbanUser(e.parameter));
+// case 'muteUser':
+//   return makeJsonResponse(muteUser(e.parameter));
+// case 'updateUserStats':
+//   return makeJsonResponse(updateUserStats(e.parameter));
+// case 'clearAllChat':
+//   return makeJsonResponse(clearAllChat(e.parameter));
+//
+// ============================================================================
+
+// Admin session tokens (in-memory storage, expires with script restart or 30 min timeout)
+const ADMIN_SESSIONS = {};
+const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+/**
+ * Verify admin session token
+ */
+function verifyAdminToken_(token) {
+  if (!token || !ADMIN_SESSIONS[token]) {
+    return false;
+  }
+  
+  const session = ADMIN_SESSIONS[token];
+  if (Date.now() > session.expiry) {
+    delete ADMIN_SESSIONS[token];
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Admin login - generates a one-time session token
+ */
+function adminLogin(params) {
+  const username = params.username;
+  const passwordHash = params.passwordHash;
+  
+  if (!username || !passwordHash) {
+    return { success: false, error: 'Missing credentials' };
+  }
+  
+  // Get admin credentials from Script Properties
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const adminUsername = scriptProperties.getProperty('ADMIN_USERNAME');
+  const adminPasswordHash = scriptProperties.getProperty('ADMIN_PASSWORD_HASH');
+  
+  if (!adminUsername || !adminPasswordHash) {
+    return { success: false, error: 'Admin credentials not configured in Script Properties' };
+  }
+  
+  // Verify credentials
+  if (username !== adminUsername || passwordHash !== adminPasswordHash) {
+    return { success: false, error: 'Invalid credentials' };
+  }
+  
+  // Generate session token
+  const token = Utilities.getUuid();
+  ADMIN_SESSIONS[token] = {
+    username: username,
+    createdAt: Date.now(),
+    expiry: Date.now() + ADMIN_SESSION_TIMEOUT
+  };
+  
+  return { success: true, token: token };
+}
+
+/**
+ * Get system statistics
+ */
+function getAdminStats(params) {
+  if (!verifyAdminToken_(params.token)) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    
+    // Get user count
+    const usersSheet = ss.getSheetByName('Users');
+    const totalUsers = usersSheet ? Math.max(0, usersSheet.getLastRow() - 1) : 0;
+    
+    // Get chat message count
+    const chatSheet = ss.getSheetByName('Chat');
+    const totalChatMessages = chatSheet ? Math.max(0, chatSheet.getLastRow() - 1) : 0;
+    
+    // Get leaderboard entries (games played)
+    const leaderboardSheet = ss.getSheetByName('Leaderboard');
+    const totalGames = leaderboardSheet ? Math.max(0, leaderboardSheet.getLastRow() - 1) : 0;
+    
+    // Calculate active users (last 24h) - approximate from recent scores
+    let activeUsers24h = 0;
+    if (leaderboardSheet && leaderboardSheet.getLastRow() > 1) {
+      const data = leaderboardSheet.getRange(2, 1, leaderboardSheet.getLastRow() - 1, 4).getValues();
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const recentUsers = new Set();
+      
+      data.forEach(row => {
+        const dateStr = row[3]; // date column
+        try {
+          const rowDate = new Date(dateStr);
+          if (rowDate >= yesterday) {
+            recentUsers.add(row[0]); // userId
+          }
+        } catch (e) {}
+      });
+      
+      activeUsers24h = recentUsers.size;
+    }
+    
+    return {
+      success: true,
+      stats: {
+        totalUsers: totalUsers,
+        totalGames: totalGames,
+        totalChatMessages: totalChatMessages,
+        activeUsers24h: activeUsers24h
+      }
+    };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Get full chat history with metadata
+ */
+function getAdminChatHistory(params) {
+  if (!verifyAdminToken_(params.token)) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const chatSheet = ss.getSheetByName('Chat');
+    
+    if (!chatSheet || chatSheet.getLastRow() <= 1) {
+      return { success: true, messages: [] };
+    }
+    
+    const data = chatSheet.getRange(2, 1, chatSheet.getLastRow() - 1, 5).getValues();
+    const messages = data.map(row => ({
+      id: row[0],
+      sender: sanitizeOutput_(row[1]),
+      text: sanitizeOutput_(row[2]),
+      timestamp: row[3],
+      status: row[4] || ''
+    }));
+    
+    return { success: true, messages: messages };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Get all users with stats
+ */
+function getAdminUsers(params) {
+  if (!verifyAdminToken_(params.token)) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const usersSheet = ss.getSheetByName('Users');
+    
+    if (!usersSheet || usersSheet.getLastRow() <= 1) {
+      return { success: true, users: [], bannedUsers: [], mutedUsers: [] };
+    }
+    
+    // Get user data - now including MuteUntil(col 6) and Banned(col 7)
+    // Columns: UserID(0), Username(1), PasswordHash(2), CreatedAt(3), DisplayName(4), 
+    //          MuteUntil(5), Banned(6), TotalGames(7), TotalWins(8), EasyWins(9), 
+    //          MediumWins(10), HardWins(11), PerfectWins(12), FastWins(13)...
+    const lastRow = usersSheet.getLastRow();
+    const lastCol = Math.max(14, usersSheet.getLastColumn()); // Get at least 14 columns
+    const data = usersSheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    
+    const now = Date.now();
+    const users = data.map(row => {
+      const muteUntil = row[5] ? Number(row[5]) : 0;
+      const isMuted = muteUntil > now;
+      
+      return {
+        username: sanitizeOutput_(row[1]) || sanitizeOutput_(row[0]), // Username or UserID
+        userId: sanitizeOutput_(row[0]),
+        displayName: sanitizeOutput_(row[4]) || '',
+        totalGames: row[7] || 0,
+        totalWins: row[8] || 0,
+        easyWins: row[9] || 0,
+        mediumWins: row[10] || 0,
+        hardWins: row[11] || 0,
+        perfectWins: row[12] || 0,
+        fastWins: row[13] || 0,
+        banned: row[6] || false,
+        muted: isMuted,
+        muteUntil: muteUntil
+      };
+    });
+    
+    const bannedUsers = users.filter(u => u.banned).map(u => u.username);
+    const mutedUsers = users.filter(u => u.muted).map(u => u.username);
+    
+    return { success: true, users: users, bannedUsers: bannedUsers, mutedUsers: mutedUsers };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Delete chat messages by IDs
+ */
+function deleteMessages(params) {
+  if (!verifyAdminToken_(params.token)) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  
+  try {
+    const messageIds = params.messageIds ? params.messageIds.split(',') : [];
+    if (messageIds.length === 0) {
+      return { success: false, error: 'No message IDs provided' };
+    }
+    
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const chatSheet = ss.getSheetByName('Chat');
+    
+    if (!chatSheet) {
+      return { success: false, error: 'Chat sheet not found' };
+    }
+    
+    const data = chatSheet.getRange(2, 1, chatSheet.getLastRow() - 1, 5).getValues();
+    const rowsToDelete = [];
+    
+    data.forEach((row, index) => {
+      if (messageIds.includes(String(row[0]))) {
+        rowsToDelete.push(index + 2); // +2 for header and 0-based index
+      }
+    });
+    
+    // Delete rows in reverse order to maintain indices
+    rowsToDelete.sort((a, b) => b - a).forEach(rowNum => {
+      chatSheet.deleteRow(rowNum);
+    });
+    
+    return { success: true, deleted: rowsToDelete.length };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Ban a user
+ */
+function banUser(params) {
+  if (!verifyAdminToken_(params.token)) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  
+  const username = params.username;
+  if (!username) {
+    return { success: false, error: 'Username required' };
+  }
+  
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const usersSheet = ss.getSheetByName('Users');
+    
+    if (!usersSheet) {
+      return { success: false, error: 'Users sheet not found' };
+    }
+    
+    const data = usersSheet.getRange(2, 1, usersSheet.getLastRow() - 1, 7).getValues();
+    
+    for (let i = 0; i < data.length; i++) {
+      // Check both UserID (col 0) and Username (col 1)
+      if (data[i][0] === username || data[i][1] === username) {
+        usersSheet.getRange(i + 2, 7).setValue(true); // Set banned flag (column 7)
+        return { success: true };
+      }
+    }
+    
+    return { success: false, error: 'User not found' };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Unban a user
+ */
+function unbanUser(params) {
+  if (!verifyAdminToken_(params.token)) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  
+  const username = params.username;
+  if (!username) {
+    return { success: false, error: 'Username required' };
+  }
+  
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const usersSheet = ss.getSheetByName('Users');
+    
+    if (!usersSheet) {
+      return { success: false, error: 'Users sheet not found' };
+    }
+    
+    const data = usersSheet.getRange(2, 1, usersSheet.getLastRow() - 1, 7).getValues();
+    
+    for (let i = 0; i < data.length; i++) {
+      // Check both UserID (col 0) and Username (col 1)
+      if (data[i][0] === username || data[i][1] === username) {
+        usersSheet.getRange(i + 2, 7).setValue(false); // Clear banned flag (column 7)
+        return { success: true };
+      }
+    }
+    
+    return { success: false, error: 'User not found' };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Mute a user for a duration
+ */
+function muteUser(params) {
+  if (!verifyAdminToken_(params.token)) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  
+  const username = params.username;
+  const duration = parseInt(params.duration) || 3600000; // Default 1 hour
+  
+  if (!username) {
+    return { success: false, error: 'Username required' };
+  }
+  
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const usersSheet = ss.getSheetByName('Users');
+    
+    if (!usersSheet) {
+      return { success: false, error: 'Users sheet not found' };
+    }
+    
+    const muteUntil = Date.now() + duration;
+    const data = usersSheet.getRange(2, 1, usersSheet.getLastRow() - 1, 6).getValues();
+    
+    for (let i = 0; i < data.length; i++) {
+      // Check both UserID (col 0) and Username (col 1)
+      if (data[i][0] === username || data[i][1] === username) {
+        usersSheet.getRange(i + 2, 6).setValue(muteUntil); // Set mute expiry (column 6)
+        return { success: true, muteUntil: muteUntil };
+      }
+    }
+    
+    return { success: false, error: 'User not found' };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Update user statistics
+ */
+function updateUserStats(params) {
+  if (!verifyAdminToken_(params.token)) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  
+  const username = params.username;
+  if (!username) {
+    return { success: false, error: 'Username required' };
+  }
+  
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const usersSheet = ss.getSheetByName('Users');
+    
+    if (!usersSheet) {
+      return { success: false, error: 'Users sheet not found' };
+    }
+    
+    const data = usersSheet.getRange(2, 1, usersSheet.getLastRow() - 1, 14).getValues();
+    
+    for (let i = 0; i < data.length; i++) {
+      // Check both UserID (col 0) and Username (col 1)
+      if (data[i][0] === username || data[i][1] === username) {
+        const row = i + 2;
+        
+        // Update stats - columns adjusted for new structure
+        // TotalGames(8), TotalWins(9), EasyWins(10), MediumWins(11), 
+        // HardWins(12), PerfectWins(13), FastWins(14)
+        if (params.totalGames !== undefined) usersSheet.getRange(row, 8).setValue(parseInt(params.totalGames));
+        if (params.totalWins !== undefined) usersSheet.getRange(row, 9).setValue(parseInt(params.totalWins));
+        if (params.easyWins !== undefined) usersSheet.getRange(row, 10).setValue(parseInt(params.easyWins));
+        if (params.mediumWins !== undefined) usersSheet.getRange(row, 11).setValue(parseInt(params.mediumWins));
+        if (params.hardWins !== undefined) usersSheet.getRange(row, 12).setValue(parseInt(params.hardWins));
+        if (params.perfectWins !== undefined) usersSheet.getRange(row, 13).setValue(parseInt(params.perfectWins));
+        if (params.fastWins !== undefined) usersSheet.getRange(row, 14).setValue(parseInt(params.fastWins));
+        
+        return { success: true };
+      }
+    }
+    
+    return { success: false, error: 'User not found' };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+/**
+ * Clear all chat messages
+ */
+function clearAllChat(params) {
+  if (!verifyAdminToken_(params.token)) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const chatSheet = ss.getSheetByName('Chat');
+    
+    if (!chatSheet) {
+      return { success: false, error: 'Chat sheet not found' };
+    }
+    
+    // Keep header, delete all data rows
+    if (chatSheet.getLastRow() > 1) {
+      chatSheet.deleteRows(2, chatSheet.getLastRow() - 1);
+    }
+    
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
 }

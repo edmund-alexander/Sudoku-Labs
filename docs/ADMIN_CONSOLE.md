@@ -52,7 +52,17 @@ The Sudoku Labs Admin Console is a secure, browser-based administrative panel fo
 
 1. **Open your Google Apps Script project** containing Code.gs
 
-2. **Set Script Properties** (File → Project Properties → Script Properties):
+2. **Update Code.gs with admin support**:
+   - Copy the entire contents of `backend/gas/Code.gs` from the repository
+   - Paste into your GAS Code.gs, replacing all existing code
+   - This includes all admin endpoints already integrated
+
+3. **Run the setup function** (one-time):
+   - In GAS editor, select function: `setupSheets_`
+   - Click "Run" button
+   - This creates/updates database structure with admin columns (`MuteUntil`, `Banned`)
+
+4. **Set Script Properties** (File → Project Properties → Script Properties):
    ```
    Key: ADMIN_USERNAME
    Value: your_admin_username
@@ -61,41 +71,19 @@ The Sudoku Labs Admin Console is a secure, browser-based administrative panel fo
    Value: your_sha256_hashed_password
    ```
 
-3. **Generate Password Hash**:
+5. **Generate Password Hash**:
    - Visit: https://emn178.github.io/online-tools/sha256.html
    - Enter your desired password
    - Copy the resulting hash
    - Paste into ADMIN_PASSWORD_HASH property
 
-4. **Add Admin Endpoints**:
-   - Copy all code from `backend/gas/AdminEndpoints.gs`
-   - Paste into your Code.gs file (or create a new .gs file in the project)
+6. **Deploy** your web app:
+   - Click **Deploy → New Deployment** (or update existing)
+   - Execute as: Your email
+   - Who has access: Anyone
+   - Click **Deploy**
 
-5. **Update doGet() function** to include admin routes:
-   ```javascript
-   case 'adminLogin':
-     return makeJsonResponse(adminLogin(e.parameter));
-   case 'getAdminStats':
-     return makeJsonResponse(getAdminStats(e.parameter));
-   case 'getAdminChatHistory':
-     return makeJsonResponse(getAdminChatHistory(e.parameter));
-   case 'getAdminUsers':
-     return makeJsonResponse(getAdminUsers(e.parameter));
-   case 'deleteMessages':
-     return makeJsonResponse(deleteMessages(e.parameter));
-   case 'banUser':
-     return makeJsonResponse(banUser(e.parameter));
-   case 'unbanUser':
-     return makeJsonResponse(unbanUser(e.parameter));
-   case 'muteUser':
-     return makeJsonResponse(muteUser(e.parameter));
-   case 'updateUserStats':
-     return makeJsonResponse(updateUserStats(e.parameter));
-   case 'clearAllChat':
-     return makeJsonResponse(clearAllChat(e.parameter));
-   ```
-
-6. **Deploy** your web app (must redeploy after adding new endpoints)
+✅ Admin endpoints are now active (no manual code additions needed!)
 
 ### 2. Frontend Configuration
 
