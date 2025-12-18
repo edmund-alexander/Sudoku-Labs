@@ -10,10 +10,12 @@ const UsersTab = ({
   handleMuteUser,
   setStatUser,
   setStatValues,
-  setActiveTab
+  setActiveTab,
 }) => {
-  const filteredUsers = users.filter(user =>
-    !userFilter || user.username.toLowerCase().includes(userFilter.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      !userFilter ||
+      user.username.toLowerCase().includes(userFilter.toLowerCase())
   );
 
   return (
@@ -53,20 +55,38 @@ const UsersTab = ({
             </thead>
             <tbody>
               {filteredUsers.map((user, idx) => {
-                const winRate = user.totalGames > 0 ? Math.round((user.totalWins / user.totalGames) * 100) : 0;
+                const winRate =
+                  user.totalGames > 0
+                    ? Math.round((user.totalWins / user.totalGames) * 100)
+                    : 0;
                 const isBanned = bannedUsers.has(user.username);
                 const isMuted = mutedUsers.has(user.username);
-                
+
                 return (
-                  <tr key={user.username} className={`border-t border-gray-700 ${idx % 2 === 0 ? 'bg-gray-800' : 'bg-gray-850'}`}>
+                  <tr
+                    key={user.username}
+                    className={`border-t border-gray-700 ${
+                      idx % 2 === 0 ? "bg-gray-800" : "bg-gray-850"
+                    }`}
+                  >
                     <td className="p-3 font-medium">{user.username}</td>
                     <td className="p-3 text-sm">{user.totalGames || 0}</td>
                     <td className="p-3 text-sm">{user.totalWins || 0}</td>
                     <td className="p-3 text-sm">{winRate}%</td>
                     <td className="p-3">
-                      {isBanned && <span className="px-2 py-1 bg-red-900/50 text-red-300 text-xs rounded mr-1">BANNED</span>}
-                      {isMuted && <span className="px-2 py-1 bg-yellow-900/50 text-yellow-300 text-xs rounded">MUTED</span>}
-                      {!isBanned && !isMuted && <span className="text-green-400 text-sm">✓ Active</span>}
+                      {isBanned && (
+                        <span className="px-2 py-1 bg-red-900/50 text-red-300 text-xs rounded mr-1">
+                          BANNED
+                        </span>
+                      )}
+                      {isMuted && (
+                        <span className="px-2 py-1 bg-yellow-900/50 text-yellow-300 text-xs rounded">
+                          MUTED
+                        </span>
+                      )}
+                      {!isBanned && !isMuted && (
+                        <span className="text-green-400 text-sm">✓ Active</span>
+                      )}
                     </td>
                     <td className="p-3">
                       <div className="flex gap-1">
@@ -102,9 +122,9 @@ const UsersTab = ({
                               mediumWins: user.mediumWins || 0,
                               hardWins: user.hardWins || 0,
                               perfectWins: user.perfectWins || 0,
-                              fastWins: user.fastWins || 0
+                              fastWins: user.fastWins || 0,
                             });
-                            setActiveTab('stats');
+                            setActiveTab("stats");
                           }}
                           className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs"
                         >

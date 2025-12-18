@@ -1,24 +1,24 @@
 const { useState, useEffect, useCallback, useRef } = React;
 
 const AdminConsole = ({ onClose, sessionToken }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
-  
+
   // Chat Management
   const [chatHistory, setChatHistory] = useState([]);
-  const [chatFilter, setChatFilter] = useState('');
+  const [chatFilter, setChatFilter] = useState("");
   const [selectedMessages, setSelectedMessages] = useState([]);
-  
+
   // User Management
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [userFilter, setUserFilter] = useState('');
+  const [userFilter, setUserFilter] = useState("");
   const [bannedUsers, setBannedUsers] = useState(new Set());
   const [mutedUsers, setMutedUsers] = useState(new Set());
-  
+
   // Stats Management
-  const [statUser, setStatUser] = useState('');
+  const [statUser, setStatUser] = useState("");
   const [statValues, setStatValues] = useState({
     totalGames: 0,
     totalWins: 0,
@@ -26,9 +26,9 @@ const AdminConsole = ({ onClose, sessionToken }) => {
     mediumWins: 0,
     hardWins: 0,
     perfectWins: 0,
-    fastWins: 0
+    fastWins: 0,
   });
-  
+
   // Theme Management
   const [themes, setThemes] = useState([]);
   const [soundPacks, setSoundPacks] = useState([]);
@@ -37,13 +37,13 @@ const AdminConsole = ({ onClose, sessionToken }) => {
   const [editingTheme, setEditingTheme] = useState(null);
   const [editingSoundPack, setEditingSoundPack] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
+
   // System Stats
   const [systemStats, setSystemStats] = useState({
     totalUsers: 0,
     totalGames: 0,
     totalChatMessages: 0,
-    activeUsers24h: 0
+    activeUsers24h: 0,
   });
 
   // Load data on mount
@@ -57,21 +57,29 @@ const AdminConsole = ({ onClose, sessionToken }) => {
   const loadSystemStats = async () => {
     try {
       if (!CONFIG.GAS_URL) {
-        console.error('❌ GAS_URL not configured');
-        setMessage({ type: 'error', text: 'Backend URL not configured in config.local.js' });
+        console.error("❌ GAS_URL not configured");
+        setMessage({
+          type: "error",
+          text: "Backend URL not configured in config.local.js",
+        });
         return;
       }
-      const response = await fetch(`${CONFIG.GAS_URL}?action=getAdminStats&token=${sessionToken}`);
+      const response = await fetch(
+        `${CONFIG.GAS_URL}?action=getAdminStats&token=${sessionToken}`
+      );
       const data = await response.json();
       if (data.success) {
         setSystemStats(data.stats);
       } else {
-        console.error('Failed to load stats:', data.error);
-        setMessage({ type: 'error', text: data.error || 'Failed to load stats' });
+        console.error("Failed to load stats:", data.error);
+        setMessage({
+          type: "error",
+          text: data.error || "Failed to load stats",
+        });
       }
     } catch (err) {
-      console.error('Failed to load system stats:', err);
-      setMessage({ type: 'error', text: `Connection error: ${err.message}` });
+      console.error("Failed to load system stats:", err);
+      setMessage({ type: "error", text: `Connection error: ${err.message}` });
     }
   };
 
@@ -80,15 +88,17 @@ const AdminConsole = ({ onClose, sessionToken }) => {
       if (!CONFIG.GAS_URL) {
         return; // Already shown error in loadSystemStats
       }
-      const response = await fetch(`${CONFIG.GAS_URL}?action=getAdminChatHistory&token=${sessionToken}`);
+      const response = await fetch(
+        `${CONFIG.GAS_URL}?action=getAdminChatHistory&token=${sessionToken}`
+      );
       const data = await response.json();
       if (data.success) {
         setChatHistory(data.messages || []);
       } else {
-        console.error('Failed to load chat:', data.error);
+        console.error("Failed to load chat:", data.error);
       }
     } catch (err) {
-      console.error('Failed to load chat history:', err);
+      console.error("Failed to load chat history:", err);
     }
   };
 
@@ -97,24 +107,28 @@ const AdminConsole = ({ onClose, sessionToken }) => {
       if (!CONFIG.GAS_URL) {
         return; // Already shown error in loadSystemStats
       }
-      const response = await fetch(`${CONFIG.GAS_URL}?action=getAdminUsers&token=${sessionToken}`);
+      const response = await fetch(
+        `${CONFIG.GAS_URL}?action=getAdminUsers&token=${sessionToken}`
+      );
       const data = await response.json();
       if (data.success) {
         setUsers(data.users || []);
         setBannedUsers(new Set(data.bannedUsers || []));
         setMutedUsers(new Set(data.mutedUsers || []));
       } else {
-        console.error('Failed to load users:', data.error);
+        console.error("Failed to load users:", data.error);
       }
     } catch (err) {
-      console.error('Failed to load users:', err);
+      console.error("Failed to load users:", err);
     }
   };
 
   const loadThemes = async () => {
     // Load available themes from THEMES constant
     setThemes(Object.entries(THEMES).map(([id, theme]) => ({ id, ...theme })));
-    setSoundPacks(Object.entries(SOUND_PACKS).map(([id, pack]) => ({ id, ...pack })));
+    setSoundPacks(
+      Object.entries(SOUND_PACKS).map(([id, pack]) => ({ id, ...pack }))
+    );
   };
 
   const handleDeleteMessages = async () => {
@@ -123,45 +137,63 @@ const AdminConsole = ({ onClose, sessionToken }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${CONFIG.GAS_URL}?action=deleteMessages&token=${sessionToken}&messageIds=${selectedMessages.join(',')}`);
+      const response = await fetch(
+        `${
+          CONFIG.GAS_URL
+        }?action=deleteMessages&token=${sessionToken}&messageIds=${selectedMessages.join(
+          ","
+        )}`
+      );
       const data = await response.json();
       if (data.success) {
-        setMessage({ type: 'success', text: 'Messages deleted successfully' });
+        setMessage({ type: "success", text: "Messages deleted successfully" });
         setSelectedMessages([]);
         loadChatHistory();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to delete messages' });
+        setMessage({
+          type: "error",
+          text: data.error || "Failed to delete messages",
+        });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error deleting messages' });
+      setMessage({ type: "error", text: "Error deleting messages" });
     } finally {
       setLoading(false);
     }
   };
 
   const handleBanUser = async (username) => {
-    if (!confirm(`Ban user ${username}? They will be immediately disconnected.`)) return;
+    if (
+      !confirm(`Ban user ${username}? They will be immediately disconnected.`)
+    )
+      return;
 
     setLoading(true);
     try {
-      const response = await fetch(`${CONFIG.GAS_URL}?action=banUser&token=${sessionToken}&username=${username}`);
+      const response = await fetch(
+        `${CONFIG.GAS_URL}?action=banUser&token=${sessionToken}&username=${username}`
+      );
       const data = await response.json();
       if (data.success) {
         // Show notification UI
-        const notif = document.createElement('div');
-        notif.className = 'fixed bottom-4 right-4 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-pulse';
+        const notif = document.createElement("div");
+        notif.className =
+          "fixed bottom-4 right-4 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-pulse";
         notif.textContent = `🚫 User "${username}" has been banned and will be unable to send messages.`;
         document.body.appendChild(notif);
         setTimeout(() => notif.remove(), 4000);
-        
-        setMessage({ type: 'success', text: `✅ User "${username}" banned successfully` });
+
+        setMessage({
+          type: "success",
+          text: `✅ User "${username}" banned successfully`,
+        });
         loadUsers();
         loadChatHistory();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to ban user' });
+        setMessage({ type: "error", text: data.error || "Failed to ban user" });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error banning user' });
+      setMessage({ type: "error", text: "Error banning user" });
     } finally {
       setLoading(false);
     }
@@ -170,23 +202,32 @@ const AdminConsole = ({ onClose, sessionToken }) => {
   const handleUnbanUser = async (username) => {
     setLoading(true);
     try {
-      const response = await fetch(`${CONFIG.GAS_URL}?action=unbanUser&token=${sessionToken}&username=${username}`);
+      const response = await fetch(
+        `${CONFIG.GAS_URL}?action=unbanUser&token=${sessionToken}&username=${username}`
+      );
       const data = await response.json();
       if (data.success) {
         // Show notification UI
-        const notif = document.createElement('div');
-        notif.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-pulse';
+        const notif = document.createElement("div");
+        notif.className =
+          "fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-pulse";
         notif.textContent = `✅ User "${username}" has been unbanned and can now send messages.`;
         document.body.appendChild(notif);
         setTimeout(() => notif.remove(), 4000);
-        
-        setMessage({ type: 'success', text: `✅ User "${username}" unbanned successfully` });
+
+        setMessage({
+          type: "success",
+          text: `✅ User "${username}" unbanned successfully`,
+        });
         loadUsers();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to unban user' });
+        setMessage({
+          type: "error",
+          text: data.error || "Failed to unban user",
+        });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error unbanning user' });
+      setMessage({ type: "error", text: "Error unbanning user" });
     } finally {
       setLoading(false);
     }
@@ -196,23 +237,32 @@ const AdminConsole = ({ onClose, sessionToken }) => {
     const durationMinutes = Math.round(duration / 60000);
     setLoading(true);
     try {
-      const response = await fetch(`${CONFIG.GAS_URL}?action=muteUser&token=${sessionToken}&username=${username}&duration=${duration}`);
+      const response = await fetch(
+        `${CONFIG.GAS_URL}?action=muteUser&token=${sessionToken}&username=${username}&duration=${duration}`
+      );
       const data = await response.json();
       if (data.success) {
         // Show notification UI
-        const notif = document.createElement('div');
-        notif.className = 'fixed bottom-4 right-4 bg-yellow-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-pulse';
+        const notif = document.createElement("div");
+        notif.className =
+          "fixed bottom-4 right-4 bg-yellow-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-pulse";
         notif.textContent = `🔇 User "${username}" muted for ${durationMinutes} minute(s).`;
         document.body.appendChild(notif);
         setTimeout(() => notif.remove(), 4000);
-        
-        setMessage({ type: 'success', text: `✅ User "${username}" muted for ${durationMinutes} minute(s)` });
+
+        setMessage({
+          type: "success",
+          text: `✅ User "${username}" muted for ${durationMinutes} minute(s)`,
+        });
         loadUsers();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to mute user' });
+        setMessage({
+          type: "error",
+          text: data.error || "Failed to mute user",
+        });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error muting user' });
+      setMessage({ type: "error", text: "Error muting user" });
     } finally {
       setLoading(false);
     }
@@ -220,28 +270,31 @@ const AdminConsole = ({ onClose, sessionToken }) => {
 
   const handleUpdateUserStats = async () => {
     if (!statUser) {
-      setMessage({ type: 'error', text: 'Please enter a username' });
+      setMessage({ type: "error", text: "Please enter a username" });
       return;
     }
 
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        action: 'updateUserStats',
+        action: "updateUserStats",
         token: sessionToken,
         username: statUser,
-        ...statValues
+        ...statValues,
       });
       const response = await fetch(`${CONFIG.GAS_URL}?${params}`);
       const data = await response.json();
       if (data.success) {
-        setMessage({ type: 'success', text: `Stats updated for ${statUser}` });
+        setMessage({ type: "success", text: `Stats updated for ${statUser}` });
         loadUsers();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to update stats' });
+        setMessage({
+          type: "error",
+          text: data.error || "Failed to update stats",
+        });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error updating stats' });
+      setMessage({ type: "error", text: "Error updating stats" });
     } finally {
       setLoading(false);
     }
@@ -258,7 +311,9 @@ const AdminConsole = ({ onClose, sessionToken }) => {
                 <span>🔐</span>
                 <span>Admin Console</span>
               </h1>
-              <p className="text-xs text-red-200 mt-1">Secure Administrative Panel</p>
+              <p className="text-xs text-red-200 mt-1">
+                Secure Administrative Panel
+              </p>
             </div>
             <button
               onClick={onClose}
@@ -271,10 +326,18 @@ const AdminConsole = ({ onClose, sessionToken }) => {
 
         {/* Message Banner */}
         {message && (
-          <div className={`p-3 m-4 rounded-lg ${message.type === 'success' ? 'bg-green-900/50 border border-green-700 text-green-200' : 'bg-red-900/50 border border-red-700 text-red-200'}`}>
+          <div
+            className={`p-3 m-4 rounded-lg ${
+              message.type === "success"
+                ? "bg-green-900/50 border border-green-700 text-green-200"
+                : "bg-red-900/50 border border-red-700 text-red-200"
+            }`}
+          >
             <div className="flex justify-between items-center">
               <span>{message.text}</span>
-              <button onClick={() => setMessage(null)} className="text-xl">×</button>
+              <button onClick={() => setMessage(null)} className="text-xl">
+                ×
+              </button>
             </div>
           </div>
         )}
@@ -282,20 +345,20 @@ const AdminConsole = ({ onClose, sessionToken }) => {
         {/* Tabs */}
         <div className="flex gap-2 p-4 border-b border-gray-700 overflow-x-auto">
           {[
-            { id: 'overview', label: '📊 Overview', icon: '📊' },
-            { id: 'chat', label: '💬 Chat Management', icon: '💬' },
-            { id: 'users', label: '👥 User Management', icon: '👥' },
-            { id: 'stats', label: '📈 Stats Editor', icon: '📈' },
-            { id: 'themes', label: '🎨 Theme Manager', icon: '🎨' },
-            { id: 'system', label: '⚙️ System', icon: '⚙️' }
-          ].map(tab => (
+            { id: "overview", label: "📊 Overview", icon: "📊" },
+            { id: "chat", label: "💬 Chat Management", icon: "💬" },
+            { id: "users", label: "👥 User Management", icon: "👥" },
+            { id: "stats", label: "📈 Stats Editor", icon: "📈" },
+            { id: "themes", label: "🎨 Theme Manager", icon: "🎨" },
+            { id: "system", label: "⚙️ System", icon: "⚙️" },
+          ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  ? "bg-red-600 text-white"
+                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
               }`}
             >
               {tab.label}
@@ -305,14 +368,14 @@ const AdminConsole = ({ onClose, sessionToken }) => {
 
         {/* Content */}
         <div className="p-6">
-          {activeTab === 'overview' && (
-            <window.OverviewTab 
-              systemStats={systemStats} 
-              setActiveTab={setActiveTab} 
+          {activeTab === "overview" && (
+            <window.OverviewTab
+              systemStats={systemStats}
+              setActiveTab={setActiveTab}
             />
           )}
 
-          {activeTab === 'chat' && (
+          {activeTab === "chat" && (
             <window.ChatTab
               chatHistory={chatHistory}
               loadChatHistory={loadChatHistory}
@@ -327,7 +390,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
             />
           )}
 
-          {activeTab === 'users' && (
+          {activeTab === "users" && (
             <window.UsersTab
               users={users}
               loadUsers={loadUsers}
@@ -344,7 +407,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
             />
           )}
 
-          {activeTab === 'stats' && (
+          {activeTab === "stats" && (
             <window.StatsTab
               statUser={statUser}
               setStatUser={setStatUser}
@@ -355,7 +418,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
             />
           )}
 
-          {activeTab === 'themes' && (
+          {activeTab === "themes" && (
             <window.ThemesTab
               themes={themes}
               setThemes={setThemes}
@@ -369,7 +432,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
             />
           )}
 
-          {activeTab === 'system' && (
+          {activeTab === "system" && (
             <window.SystemTab
               sessionToken={sessionToken}
               loadSystemStats={loadSystemStats}

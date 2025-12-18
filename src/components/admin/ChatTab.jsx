@@ -8,11 +8,13 @@ const ChatTab = ({
   handleDeleteMessages,
   handleBanUser,
   bannedUsers,
-  loading
+  loading,
 }) => {
-  const filteredMessages = chatHistory.filter(msg => 
-    !chatFilter || msg.sender.toLowerCase().includes(chatFilter.toLowerCase()) ||
-    msg.text.toLowerCase().includes(chatFilter.toLowerCase())
+  const filteredMessages = chatHistory.filter(
+    (msg) =>
+      !chatFilter ||
+      msg.sender.toLowerCase().includes(chatFilter.toLowerCase()) ||
+      msg.text.toLowerCase().includes(chatFilter.toLowerCase())
   );
 
   return (
@@ -65,12 +67,15 @@ const ChatTab = ({
                     type="checkbox"
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedMessages(filteredMessages.map(m => m.id));
+                        setSelectedMessages(filteredMessages.map((m) => m.id));
                       } else {
                         setSelectedMessages([]);
                       }
                     }}
-                    checked={selectedMessages.length === filteredMessages.length && filteredMessages.length > 0}
+                    checked={
+                      selectedMessages.length === filteredMessages.length &&
+                      filteredMessages.length > 0
+                    }
                   />
                 </th>
                 <th className="p-3 text-left">Time</th>
@@ -81,7 +86,12 @@ const ChatTab = ({
             </thead>
             <tbody>
               {filteredMessages.map((msg, idx) => (
-                <tr key={msg.id} className={`border-t border-gray-700 ${idx % 2 === 0 ? 'bg-gray-800' : 'bg-gray-850'}`}>
+                <tr
+                  key={msg.id}
+                  className={`border-t border-gray-700 ${
+                    idx % 2 === 0 ? "bg-gray-800" : "bg-gray-850"
+                  }`}
+                >
                   <td className="p-3">
                     <input
                       type="checkbox"
@@ -90,7 +100,9 @@ const ChatTab = ({
                         if (e.target.checked) {
                           setSelectedMessages([...selectedMessages, msg.id]);
                         } else {
-                          setSelectedMessages(selectedMessages.filter(id => id !== msg.id));
+                          setSelectedMessages(
+                            selectedMessages.filter((id) => id !== msg.id)
+                          );
                         }
                       }}
                     />
@@ -101,7 +113,9 @@ const ChatTab = ({
                   <td className="p-3">
                     <span className="font-medium">{msg.sender}</span>
                     {bannedUsers.has(msg.sender) && (
-                      <span className="ml-2 px-2 py-0.5 bg-red-900/50 text-red-300 text-xs rounded">BANNED</span>
+                      <span className="ml-2 px-2 py-0.5 bg-red-900/50 text-red-300 text-xs rounded">
+                        BANNED
+                      </span>
                     )}
                   </td>
                   <td className="p-3 text-sm">{msg.text}</td>
