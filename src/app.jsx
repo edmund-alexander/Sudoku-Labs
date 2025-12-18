@@ -2294,6 +2294,7 @@ const ClosingScreen = ({
   const isWin = status === "won";
 
   useEffect(() => {
+    console.log("ClosingScreen mount:", { status, isWin, time, difficulty, mistakes });
     if (isWin) {
       if (soundEnabled) SoundManager.play("success");
       triggerConfetti();
@@ -3166,6 +3167,7 @@ const App = () => {
 
     if (newBoard.every((c) => c.value === c.solution)) {
       if (soundEnabled) SoundManager.play("success");
+      console.log("Detected win: all cells correct", { selectedCell, mistakes, timer });
       setStatus("won");
       StorageService.clearSavedGame();
       handleWin(newBoard, mistakes, timer);
@@ -3299,9 +3301,49 @@ const App = () => {
             const newMistakes = mistakes + 1;
             setMistakes(newMistakes);
             if (newMistakes >= 3) {
+              // Edge case: if the board happens to be complete (all correct) at the same time,
+              // treat it as a win rather than a loss. This prevents rare race/logic issues where
+              // a final move could trigger both an increment and a completion check in different
+              // contexts.
+              if (newBoard.every((c) => c.value === c.solution)) {
+                console.warn("Edge-case: mistakes reached 3 but board is complete; preferring win", {
+                  newMistakes,
+                  selectedCell,
+                });
+                setBoard(newBoard);
+                setStatus("won");
+                StorageService.clearSavedGame();
+                handleWin(newBoard, newMistakes, timer);
+                return;
+              }
+
+              console.warn("Game lost: reached maximum mistakes", {
+                newMistakes,
+                selectedCell,
+              });
+
               setBoard(newBoard);
               setStatus("lost");
               StorageService.clearSavedGame();
+
+              // Increment games played in backend if authenticated (on loss)
+              if (isUserAuthenticated() && isGasEnvironment()) {
+                const session = StorageService.getUserSession();
+                if (session && session.userId) {
+                  try {
+                    const updateData = {
+                      userId: session.userId,
+                      incrementGames: true,
+                      // Do NOT incrementWins on loss
+                      difficulty: difficulty,
+                    };
+                    runGasFn && runGasFn("updateUserProfile", updateData);
+                  } catch (err) {
+                    console.error("Failed to update user stats (loss):", err);
+                  }
+                }
+              }
+
               return;
             }
           }
@@ -3360,93 +3402,134 @@ const App = () => {
   );
 
   const handleWin = async (finalBoard, finalMistakes, finalTime) => {
-    const currentUserId = StorageService.getCurrentUserId();
-    saveScore({
-      name: currentUserId,
-      time: finalTime,
-      difficulty,
-      date: new Date().toLocaleDateString(),
-    });
+    try {
+      console.log("handleWin:", {
+        difficulty,
+        finalMistakes,
+        finalTime,
+        userId:
+          StorageService.getCurrentUserId && StorageService.getCurrentUserId(),
+        gas: isGasEnvironment && isGasEnvironment(),
+      });
 
-    // Update game stats for theme unlocking
-    const stats = StorageService.getGameStats();
-    stats.totalWins += 1;
-    if (difficulty === "Easy") stats.easyWins += 1;
-    if (difficulty === "Medium") stats.mediumWins += 1;
-    if (difficulty === "Hard") stats.hardWins += 1;
-    if (finalMistakes === 0) stats.perfectWins += 1;
-    if (finalTime <= 180) stats.fastWins += 1; // 3 minutes or less = fast win
-    StorageService.saveGameStats(stats);
+      // Save to leaderboard (best-effort)
+      try {
+        await saveScore({
+          name: StorageService.getCurrentUserId(),
+          time: finalTime,
+          difficulty,
+          date: new Date().toLocaleDateString(),
+        });
+      } catch (e) {
+        console.error("Failed to save leaderboard score:", e);
+      }
 
-    // Check for theme unlocks
-    const newThemes = UnlockService.checkThemeUnlocks(stats);
-    if (newThemes.length > 0) {
-      setNewlyUnlockedThemes(newThemes);
-      setUnlockedThemes(StorageService.getUnlockedThemes()); // Update state with newly unlocked themes
-      setShowUnlockNotification(true); // Show notification
-      if (soundEnabled) setTimeout(() => SoundManager.play("unlock"), 250);
-    }
+      // Update game stats for theme unlocking
+      const stats = StorageService.getGameStats();
+      stats.totalWins = Number(stats.totalWins || 0) + 1;
+      if (difficulty === "Easy")
+        stats.easyWins = Number(stats.easyWins || 0) + 1;
+      if (difficulty === "Medium")
+        stats.mediumWins = Number(stats.mediumWins || 0) + 1;
+      if (difficulty === "Hard")
+        stats.hardWins = Number(stats.hardWins || 0) + 1;
+      if (finalMistakes === 0)
+        stats.perfectWins = Number(stats.perfectWins || 0) + 1;
+      if (finalTime <= 180) stats.fastWins = Number(stats.fastWins || 0) + 1; // 3 minutes or less = fast win
+      StorageService.saveGameStats(stats);
 
-    // Check for sound pack unlocks
-    const newPacks = UnlockService.checkSoundPackUnlocks(stats);
-    if (newPacks.length > 0) {
-      setNewlyUnlockedSoundPacks(newPacks);
-      setUnlockedSoundPacks(StorageService.getUnlockedSoundPacks());
-      setShowUnlockNotification(true); // Show notification
-      if (soundEnabled) setTimeout(() => SoundManager.play("unlock"), 250);
-    }
-
-    // Check for badge awards
-    const newBadges = BadgeService.checkAndAwardBadges(stats, {
-      currentTime: new Date(),
-      chatMessageCount: chatMessages.length,
-    });
-    if (newBadges.length > 0) {
-      setNewlyAwardedBadges(newBadges);
-      if (soundEnabled) setTimeout(() => SoundManager.play("chestOpen"), 300);
-    }
-
-    // Update user stats if authenticated
-    // Note: This function is only called when the player wins, so we increment both games and wins
-    // Game losses are not tracked in the current implementation
-    if (isUserAuthenticated() && isGasEnvironment()) {
-      const session = StorageService.getUserSession();
-      if (session && session.userId) {
-        try {
-          // Prepare win metadata for backend tracking
-          const updateData = {
-            userId: session.userId, // Backend requires userId for lookups
-            incrementGames: true,
-            incrementWins: true,
-            difficulty: difficulty, // Track which difficulty was won
-            perfectWin: finalMistakes === 0, // Perfect win if no mistakes
-            fastWin: finalTime <= 180, // Fast win if 3 minutes or less
-          };
-
-          await runGasFn("updateUserProfile", updateData);
-          // Refresh user profile to get updated stats
-          const updatedProfile = await runGasFn("getUserProfile", {
-            userId: session.userId,
-          });
-          if (updatedProfile && updatedProfile.success) {
-            // Update both global storage and component state for consistency
-            StorageService.setUserSession(updatedProfile.user);
-            setAppUserSession(updatedProfile.user);
-          }
-
-          await persistUserStateToBackend({
-            unlockedThemes: StorageService.getUnlockedThemes(),
-            unlockedSoundPacks: StorageService.getUnlockedSoundPacks(),
-            activeTheme: activeThemeId,
-            activeSoundPack: activeSoundPackId,
-            gameStats: stats,
-          });
-
-          // Sync badges with backend
-          await BadgeService.syncBadgesWithBackend();
-        } catch (err) {
-          console.error("Failed to update user stats:", err);
+      // Check for theme unlocks
+      try {
+        const newThemes = UnlockService.checkThemeUnlocks(stats);
+        if (newThemes.length > 0) {
+          setNewlyUnlockedThemes(newThemes);
+          setUnlockedThemes(StorageService.getUnlockedThemes()); // Update state with newly unlocked themes
+          setShowUnlockNotification(true); // Show notification
+          if (soundEnabled) setTimeout(() => SoundManager.play("unlock"), 250);
         }
+
+        // Check for sound pack unlocks
+        const newPacks = UnlockService.checkSoundPackUnlocks(stats);
+        if (newPacks.length > 0) {
+          setNewlyUnlockedSoundPacks(newPacks);
+          setUnlockedSoundPacks(StorageService.getUnlockedSoundPacks());
+          setShowUnlockNotification(true); // Show notification
+          if (soundEnabled) setTimeout(() => SoundManager.play("unlock"), 250);
+        }
+      } catch (e) {
+        console.error("Unlock check failed:", e);
+      }
+
+      // Check for badge awards
+      try {
+        const newBadges = BadgeService.checkAndAwardBadges(stats, {
+          currentTime: new Date(),
+          chatMessageCount: chatMessages.length,
+        });
+        if (newBadges.length > 0) {
+          setNewlyAwardedBadges(newBadges);
+          if (soundEnabled)
+            setTimeout(() => SoundManager.play("chestOpen"), 300);
+        }
+      } catch (e) {
+        console.error("Badge check failed:", e);
+      }
+
+      // Update user stats if authenticated
+      if (isUserAuthenticated() && isGasEnvironment()) {
+        const session = StorageService.getUserSession();
+        if (session && session.userId) {
+          try {
+            // Prepare win metadata for backend tracking
+            const updateData = {
+              userId: session.userId, // Backend requires userId for lookups
+              incrementGames: true,
+              incrementWins: true,
+              difficulty: difficulty, // Track which difficulty was won
+              perfectWin: finalMistakes === 0, // Perfect win if no mistakes
+              fastWin: finalTime <= 180, // Fast win if 3 minutes or less
+            };
+
+            await runGasFn("updateUserProfile", updateData);
+            // Refresh user profile to get updated stats
+            const updatedProfile = await runGasFn("getUserProfile", {
+              userId: session.userId,
+            });
+            if (updatedProfile && updatedProfile.success) {
+              // Update both global storage and component state for consistency
+              StorageService.setUserSession(updatedProfile.user);
+              setAppUserSession(updatedProfile.user);
+            }
+
+            await persistUserStateToBackend({
+              unlockedThemes: StorageService.getUnlockedThemes(),
+              unlockedSoundPacks: StorageService.getUnlockedSoundPacks(),
+              activeTheme: activeThemeId,
+              activeSoundPack: activeSoundPackId,
+              gameStats: stats,
+            });
+
+            // Sync badges with backend
+            await BadgeService.syncBadgesWithBackend();
+          } catch (err) {
+            console.error("Failed to update user stats:", err);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("handleWin error:", err);
+
+      // Show user-friendly notification
+      try {
+        if (soundEnabled) SoundManager.play("error");
+        const notif = document.createElement("div");
+        notif.className =
+          "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-900 text-white px-6 py-4 rounded-lg shadow-2xl z-50 border-2 border-red-500 animate-bounce max-w-md";
+        notif.innerHTML = `<div class="text-center"><div class="text-xl font-bold mb-2">⚠️ Win processing failed</div><div class="text-sm">Something went wrong while saving your win. Your progress is preserved locally. See console for details.</div></div>`;
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 5000);
+      } catch (e) {
+        console.error("Failed to show notification:", e);
       }
     }
   };
