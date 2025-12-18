@@ -2294,7 +2294,13 @@ const ClosingScreen = ({
   const isWin = status === "won";
 
   useEffect(() => {
-    console.log("ClosingScreen mount:", { status, isWin, time, difficulty, mistakes });
+    console.log("ClosingScreen mount:", {
+      status,
+      isWin,
+      time,
+      difficulty,
+      mistakes,
+    });
     if (isWin) {
       if (soundEnabled) SoundManager.play("success");
       triggerConfetti();
@@ -3167,7 +3173,11 @@ const App = () => {
 
     if (newBoard.every((c) => c.value === c.solution)) {
       if (soundEnabled) SoundManager.play("success");
-      console.log("Detected win: all cells correct", { selectedCell, mistakes, timer });
+      console.log("Detected win: all cells correct", {
+        selectedCell,
+        mistakes,
+        timer,
+      });
       setStatus("won");
       StorageService.clearSavedGame();
       handleWin(newBoard, mistakes, timer);
@@ -3306,10 +3316,13 @@ const App = () => {
               // a final move could trigger both an increment and a completion check in different
               // contexts.
               if (newBoard.every((c) => c.value === c.solution)) {
-                console.warn("Edge-case: mistakes reached 3 but board is complete; preferring win", {
-                  newMistakes,
-                  selectedCell,
-                });
+                console.warn(
+                  "Edge-case: mistakes reached 3 but board is complete; preferring win",
+                  {
+                    newMistakes,
+                    selectedCell,
+                  }
+                );
                 setBoard(newBoard);
                 setStatus("won");
                 StorageService.clearSavedGame();
