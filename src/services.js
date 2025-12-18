@@ -1,9 +1,9 @@
 /**
  * Sudoku Logic Lab - Services (API & Storage)
- * 
+ *
  * API service layer for GAS backend communication and local storage management.
  * This file uses plain JavaScript (no JSX) and can be loaded before React.
- * 
+ *
  * @version 2.3.0
  */
 
@@ -12,8 +12,9 @@
 // ============================================================================
 
 // GAS Backend API URL - Configure via config/config.local.js
-const DEFAULT_GAS_URL = '';
-const GAS_URL = (typeof CONFIG !== 'undefined' && CONFIG.GAS_URL) || DEFAULT_GAS_URL;
+const DEFAULT_GAS_URL = "";
+const GAS_URL =
+  (typeof CONFIG !== "undefined" && CONFIG.GAS_URL) || DEFAULT_GAS_URL;
 
 /**
  * Check if GAS backend is properly configured
@@ -21,9 +22,9 @@ const GAS_URL = (typeof CONFIG !== 'undefined' && CONFIG.GAS_URL) || DEFAULT_GAS
  */
 const isGasEnvironment = () => {
   try {
-    if (typeof GAS_URL !== 'string') return false;
-    const host = (new URL(GAS_URL)).host;
-    return host === 'script.google.com';
+    if (typeof GAS_URL !== "string") return false;
+    const host = new URL(GAS_URL).host;
+    return host === "script.google.com";
   } catch (e) {
     return false;
   }
@@ -41,55 +42,56 @@ const isGasEnvironment = () => {
  */
 const runGasFn = async (fnName, ...args) => {
   if (!GAS_URL) {
-    console.error('GAS_URL not configured');
+    console.error("GAS_URL not configured");
     return null;
   }
 
   try {
     // Map function names to API actions
     const actionMap = {
-      generateSudoku: { action: 'generateSudoku', method: 'GET' },
-      getLeaderboardData: { action: 'getLeaderboard', method: 'GET' },
-      saveLeaderboardScore: { action: 'saveScore', method: 'GET' },
-      getChatData: { action: 'getChat', method: 'GET' },
-      postChatData: { action: 'postChat', method: 'GET' },
-      logClientError: { action: 'logError', method: 'GET' },
-      registerUser: { action: 'register', method: 'GET' },
-      loginUser: { action: 'login', method: 'GET' },
-      getUserProfile: { action: 'getUserProfile', method: 'GET' },
-      updateUserProfile: { action: 'updateUserProfile', method: 'GET' },
-      getUserState: { action: 'getUserState', method: 'GET' },
-      saveUserState: { action: 'saveUserState', method: 'GET' },
-      getUserBadges: { action: 'getUserBadges', method: 'GET' },
-      awardBadge: { action: 'awardBadge', method: 'GET' }
+      generateSudoku: { action: "generateSudoku", method: "GET" },
+      getLeaderboardData: { action: "getLeaderboard", method: "GET" },
+      saveLeaderboardScore: { action: "saveScore", method: "GET" },
+      getChatData: { action: "getChat", method: "GET" },
+      postChatData: { action: "postChat", method: "GET" },
+      logClientError: { action: "logError", method: "GET" },
+      registerUser: { action: "register", method: "GET" },
+      loginUser: { action: "login", method: "GET" },
+      getUserProfile: { action: "getUserProfile", method: "GET" },
+      updateUserProfile: { action: "updateUserProfile", method: "GET" },
+      getUserState: { action: "getUserState", method: "GET" },
+      saveUserState: { action: "saveUserState", method: "GET" },
+      getUserBadges: { action: "getUserBadges", method: "GET" },
+      awardBadge: { action: "awardBadge", method: "GET" },
     };
 
     const mapping = actionMap[fnName];
     if (!mapping) {
-      console.error('Unknown function:', fnName);
+      console.error("Unknown function:", fnName);
       return null;
     }
 
     const { action } = mapping;
     const url = new URL(GAS_URL);
-    url.searchParams.set('action', action);
+    url.searchParams.set("action", action);
 
     // Add all arguments as URL parameters
     if (args[0] !== undefined) {
-      if (typeof args[0] === 'object') {
+      if (typeof args[0] === "object") {
         Object.entries(args[0]).forEach(([k, v]) => {
-          const value = (v !== null && typeof v === 'object') ? JSON.stringify(v) : v;
+          const value =
+            v !== null && typeof v === "object" ? JSON.stringify(v) : v;
           if (value !== undefined) url.searchParams.set(k, value);
         });
       } else {
-        url.searchParams.set('data', args[0]);
+        url.searchParams.set("data", args[0]);
       }
     }
 
     // All requests use GET to avoid GAS POST redirect issues
     const response = await fetch(url.toString(), {
-      method: 'GET',
-      redirect: 'follow'
+      method: "GET",
+      redirect: "follow",
     });
 
     if (!response.ok) {
@@ -98,7 +100,7 @@ const runGasFn = async (fnName, ...args) => {
 
     return await response.json();
   } catch (error) {
-    console.error('GAS API Error:', error);
+    console.error("GAS API Error:", error);
     throw error;
   }
 };
@@ -111,14 +113,14 @@ const runGasFn = async (fnName, ...args) => {
 const logError = async (message, error) => {
   console.log(message, error);
   try {
-    await runGasFn('logClientError', {
-      type: error?.name || 'Error',
-      message: message || error?.message || 'Unknown error',
+    await runGasFn("logClientError", {
+      type: error?.name || "Error",
+      message: message || error?.message || "Unknown error",
       userAgent: navigator.userAgent,
-      count: 1
+      count: 1,
     });
   } catch (e) {
-    console.error('Failed to log error to GAS:', e);
+    console.error("Failed to log error to GAS:", e);
   }
 };
 
@@ -133,12 +135,12 @@ const StorageService = {
    */
   isAvailable() {
     try {
-      const test = '__storage_test__';
+      const test = "__storage_test__";
       localStorage.setItem(test, test);
       localStorage.removeItem(test);
       return true;
     } catch (e) {
-      console.warn('localStorage not available:', e);
+      console.warn("localStorage not available:", e);
       return false;
     }
   },
@@ -147,7 +149,7 @@ const StorageService = {
    * Handle quota exceeded error
    */
   handleQuotaExceeded() {
-    console.warn('localStorage quota exceeded, attempting cleanup...');
+    console.warn("localStorage quota exceeded, attempting cleanup...");
     try {
       // Essential keys to preserve
       const essentialKeys = [
@@ -159,18 +161,18 @@ const StorageService = {
         KEYS.ACTIVE_THEME,
         KEYS.ACTIVE_SOUND_PACK,
         KEYS.GAME_STATS,
-        'theme', // Dark mode preference
-        'APP_VERSION'
+        "theme", // Dark mode preference
+        "APP_VERSION",
       ];
-      
+
       const allKeys = Object.keys(localStorage);
-      allKeys.forEach(key => {
+      allKeys.forEach((key) => {
         if (!essentialKeys.includes(key)) {
           localStorage.removeItem(key);
         }
       });
     } catch (e) {
-      console.error('Failed to clean up localStorage:', e);
+      console.error("Failed to clean up localStorage:", e);
     }
   },
 
@@ -183,16 +185,16 @@ const StorageService = {
     try {
       localStorage.setItem(KEYS.GAME_STATE, JSON.stringify(state));
     } catch (e) {
-      if (e.name === 'QuotaExceededError') {
+      if (e.name === "QuotaExceededError") {
         this.handleQuotaExceeded();
         // Try again after cleanup
         try {
           localStorage.setItem(KEYS.GAME_STATE, JSON.stringify(state));
         } catch (retryErr) {
-          console.error('Failed to save game even after cleanup:', retryErr);
+          console.error("Failed to save game even after cleanup:", retryErr);
         }
       } else {
-        console.error('Failed to save game:', e);
+        console.error("Failed to save game:", e);
       }
     }
   },
@@ -253,7 +255,7 @@ const StorageService = {
         localStorage.setItem(KEYS.USER_ID, user.username);
       }
     } catch (e) {
-      console.warn('Failed to save user session to localStorage:', e);
+      console.warn("Failed to save user session to localStorage:", e);
     }
   },
 
@@ -293,9 +295,9 @@ const StorageService = {
    */
   getUserStatus() {
     try {
-      return localStorage.getItem(KEYS.USER_STATUS) || '';
+      return localStorage.getItem(KEYS.USER_STATUS) || "";
     } catch (e) {
-      return '';
+      return "";
     }
   },
 
@@ -305,9 +307,9 @@ const StorageService = {
    */
   saveUserStatus(status) {
     try {
-      const trimmed = (status || '').slice(0, GAME_SETTINGS.STATUS_MAX_LENGTH);
+      const trimmed = (status || "").slice(0, GAME_SETTINGS.STATUS_MAX_LENGTH);
       localStorage.setItem(KEYS.USER_STATUS, trimmed);
-    } catch (e) { }
+    } catch (e) {}
   },
 
   /**
@@ -317,16 +319,25 @@ const StorageService = {
   getGameStats() {
     try {
       const stored = localStorage.getItem(KEYS.GAME_STATS);
-      return stored ? JSON.parse(stored) : {
+      return stored
+        ? JSON.parse(stored)
+        : {
+            totalWins: 0,
+            easyWins: 0,
+            mediumWins: 0,
+            hardWins: 0,
+            perfectWins: 0,
+            fastWins: 0,
+          };
+    } catch (e) {
+      return {
         totalWins: 0,
         easyWins: 0,
         mediumWins: 0,
         hardWins: 0,
         perfectWins: 0,
-        fastWins: 0
+        fastWins: 0,
       };
-    } catch (e) {
-      return { totalWins: 0, easyWins: 0, mediumWins: 0, hardWins: 0, perfectWins: 0, fastWins: 0 };
     }
   },
 
@@ -337,7 +348,7 @@ const StorageService = {
   saveGameStats(stats) {
     try {
       localStorage.setItem(KEYS.GAME_STATS, JSON.stringify(stats));
-    } catch (e) { }
+    } catch (e) {}
   },
 
   /**
@@ -347,9 +358,9 @@ const StorageService = {
   getUnlockedThemes() {
     try {
       const stored = localStorage.getItem(KEYS.UNLOCKED_THEMES);
-      return stored ? JSON.parse(stored) : ['default'];
+      return stored ? JSON.parse(stored) : ["default"];
     } catch (e) {
-      return ['default'];
+      return ["default"];
     }
   },
 
@@ -360,7 +371,7 @@ const StorageService = {
   saveUnlockedThemes(themes) {
     try {
       localStorage.setItem(KEYS.UNLOCKED_THEMES, JSON.stringify(themes));
-    } catch (e) { }
+    } catch (e) {}
   },
 
   /**
@@ -369,9 +380,24 @@ const StorageService = {
    */
   getActiveTheme() {
     try {
-      return localStorage.getItem(KEYS.ACTIVE_THEME) || 'default';
+      const raw = localStorage.getItem(KEYS.ACTIVE_THEME);
+      if (!raw) return "default";
+      if (raw.trim().startsWith("[")) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (
+            Array.isArray(parsed) &&
+            parsed.length > 0 &&
+            typeof parsed[0] === "string"
+          )
+            return parsed[0];
+        } catch (e) {
+          /* fallthrough */
+        }
+      }
+      return typeof raw === "string" && raw.trim() ? raw.trim() : "default";
     } catch (e) {
-      return 'default';
+      return "default";
     }
   },
 
@@ -381,8 +407,24 @@ const StorageService = {
    */
   saveActiveTheme(themeId) {
     try {
-      localStorage.setItem(KEYS.ACTIVE_THEME, themeId);
-    } catch (e) { }
+      let value = themeId;
+      if (Array.isArray(themeId)) value = themeId[0] || "default";
+      if (typeof themeId === "object" && themeId !== null) {
+        try {
+          const s = JSON.stringify(themeId);
+          if (s.trim().startsWith("[")) {
+            const parsed = JSON.parse(s);
+            if (Array.isArray(parsed) && parsed.length > 0) value = parsed[0];
+            else value = "default";
+          } else {
+            value = String(themeId);
+          }
+        } catch (e) {
+          value = "default";
+        }
+      }
+      localStorage.setItem(KEYS.ACTIVE_THEME, value);
+    } catch (e) {}
   },
 
   /**
@@ -392,9 +434,9 @@ const StorageService = {
   getUnlockedSoundPacks() {
     try {
       const stored = localStorage.getItem(KEYS.UNLOCKED_SOUND_PACKS);
-      return stored ? JSON.parse(stored) : ['classic', 'zen'];
+      return stored ? JSON.parse(stored) : ["classic", "zen"];
     } catch (e) {
-      return ['classic', 'zen'];
+      return ["classic", "zen"];
     }
   },
 
@@ -405,7 +447,7 @@ const StorageService = {
   saveUnlockedSoundPacks(packs) {
     try {
       localStorage.setItem(KEYS.UNLOCKED_SOUND_PACKS, JSON.stringify(packs));
-    } catch (e) { }
+    } catch (e) {}
   },
 
   /**
@@ -414,9 +456,27 @@ const StorageService = {
    */
   getActiveSoundPack() {
     try {
-      return localStorage.getItem(KEYS.ACTIVE_SOUND_PACK) || 'classic';
+      const raw = localStorage.getItem(KEYS.ACTIVE_SOUND_PACK);
+      if (!raw) return "classic";
+      // If stored as JSON array (old bug), pick first element
+      if (raw.trim().startsWith("[")) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (
+            Array.isArray(parsed) &&
+            parsed.length > 0 &&
+            typeof parsed[0] === "string"
+          )
+            return parsed[0];
+        } catch (e) {
+          /* fallthrough */
+        }
+      }
+      // If the value looks like a JSON object or array-as-string, fall back
+      if (raw === "null" || raw === "undefined") return "classic";
+      return typeof raw === "string" && raw.trim() ? raw.trim() : "classic";
     } catch (e) {
-      return 'classic';
+      return "classic";
     }
   },
 
@@ -426,9 +486,27 @@ const StorageService = {
    */
   saveActiveSoundPack(packId) {
     try {
-      localStorage.setItem(KEYS.ACTIVE_SOUND_PACK, packId);
-    } catch (e) { }
-  }
+      let value = packId;
+      // Coerce arrays/objects to a safe string (pick first element for arrays)
+      if (Array.isArray(packId)) value = packId[0] || "classic";
+      if (typeof packId === "object" && packId !== null) {
+        try {
+          const s = JSON.stringify(packId);
+          // If it was an array encoded as string, try parse back
+          if (s.trim().startsWith("[")) {
+            const parsed = JSON.parse(s);
+            if (Array.isArray(parsed) && parsed.length > 0) value = parsed[0];
+            else value = "classic";
+          } else {
+            value = String(packId);
+          }
+        } catch (e) {
+          value = "classic";
+        }
+      }
+      localStorage.setItem(KEYS.ACTIVE_SOUND_PACK, value);
+    } catch (e) {}
+  },
 };
 
 // ============================================================================
@@ -455,13 +533,16 @@ const LeaderboardService = {
   async saveScore(entry) {
     if (isGasEnvironment()) {
       try {
-        await runGasFn('saveLeaderboardScore', entry);
-      } catch (e) { }
+        await runGasFn("saveLeaderboardScore", entry);
+      } catch (e) {}
     }
     const current = this.getLocal();
     current.push(entry);
     sortLeaderboard(current);
-    localStorage.setItem(KEYS.LEADERBOARD, JSON.stringify(current.slice(0, GAME_SETTINGS.LEADERBOARD_MAX_ENTRIES)));
+    localStorage.setItem(
+      KEYS.LEADERBOARD,
+      JSON.stringify(current.slice(0, GAME_SETTINGS.LEADERBOARD_MAX_ENTRIES))
+    );
   },
 
   /**
@@ -471,15 +552,15 @@ const LeaderboardService = {
   async get() {
     if (isGasEnvironment()) {
       try {
-        const data = await runGasFn('getLeaderboardData');
+        const data = await runGasFn("getLeaderboardData");
         if (Array.isArray(data)) {
           sortLeaderboard(data);
           return data;
         }
-      } catch (e) { }
+      } catch (e) {}
     }
     return this.getLocal();
-  }
+  },
 };
 
 // ============================================================================
@@ -510,7 +591,7 @@ const ChatService = {
       sender: msg.sender,
       text: msg.text,
       timestamp: msg.timestamp,
-      status: msg.status || ''
+      status: msg.status || "",
     };
   },
 
@@ -521,9 +602,9 @@ const ChatService = {
   async getMessages() {
     if (isGasEnvironment()) {
       try {
-        const data = await runGasFn('getChatData');
+        const data = await runGasFn("getChatData");
         if (Array.isArray(data)) return data.map(this.normalizeMessage);
-      } catch (e) { }
+      } catch (e) {}
     }
     return this.getLocal().map(this.normalizeMessage);
   },
@@ -536,39 +617,42 @@ const ChatService = {
   async postMessage(msg) {
     if (isGasEnvironment()) {
       try {
-        const data = await runGasFn('postChatData', msg);
-        
+        const data = await runGasFn("postChatData", msg);
+
         // Check if user is banned or muted
         if (data && data.error) {
           if (data.banned) {
-            throw new Error('BANNED: You have been banned from chat');
+            throw new Error("BANNED: You have been banned from chat");
           }
           if (data.muted) {
             const minutes = Math.ceil((data.muteUntil - Date.now()) / 60000);
-            throw new Error(`MUTED: You are muted for ${minutes} more minute(s)`);
+            throw new Error(
+              `MUTED: You are muted for ${minutes} more minute(s)`
+            );
           }
           throw new Error(data.error);
         }
-        
+
         if (Array.isArray(data)) return data.map(this.normalizeMessage);
         if (data && data.messages && Array.isArray(data.messages)) {
           return data.messages.map(this.normalizeMessage);
         }
       } catch (e) {
         // Re-throw ban/mute errors so they can be shown to user
-        if (e.message.startsWith('BANNED:') || e.message.startsWith('MUTED:')) {
+        if (e.message.startsWith("BANNED:") || e.message.startsWith("MUTED:")) {
           throw e;
         }
       }
     }
     const current = this.getLocal();
     current.push(this.normalizeMessage(msg));
-    const trimmed = current.length > GAME_SETTINGS.CHAT_MAX_MESSAGES 
-      ? current.slice(current.length - GAME_SETTINGS.CHAT_MAX_MESSAGES) 
-      : current;
+    const trimmed =
+      current.length > GAME_SETTINGS.CHAT_MAX_MESSAGES
+        ? current.slice(current.length - GAME_SETTINGS.CHAT_MAX_MESSAGES)
+        : current;
     localStorage.setItem(KEYS.CHAT, JSON.stringify(trimmed));
     return trimmed;
-  }
+  },
 };
 
 // ============================================================================
@@ -586,38 +670,38 @@ const UnlockService = {
     const currentUnlocked = StorageService.getUnlockedThemes();
 
     // Ocean: Win 5 games
-    if (stats.totalWins >= 5 && !currentUnlocked.includes('ocean')) {
-      newlyUnlocked.push('ocean');
+    if (stats.totalWins >= 5 && !currentUnlocked.includes("ocean")) {
+      newlyUnlocked.push("ocean");
     }
 
     // Forest: Win 10 games
-    if (stats.totalWins >= 10 && !currentUnlocked.includes('forest')) {
-      newlyUnlocked.push('forest');
+    if (stats.totalWins >= 10 && !currentUnlocked.includes("forest")) {
+      newlyUnlocked.push("forest");
     }
 
     // Sunset: Complete a Hard puzzle
-    if (stats.hardWins >= 1 && !currentUnlocked.includes('sunset')) {
-      newlyUnlocked.push('sunset');
+    if (stats.hardWins >= 1 && !currentUnlocked.includes("sunset")) {
+      newlyUnlocked.push("sunset");
     }
 
     // Midnight: Win with 0 mistakes
-    if (stats.perfectWins >= 1 && !currentUnlocked.includes('midnight')) {
-      newlyUnlocked.push('midnight');
+    if (stats.perfectWins >= 1 && !currentUnlocked.includes("midnight")) {
+      newlyUnlocked.push("midnight");
     }
 
     // Sakura: Win 3 Easy puzzles
-    if (stats.easyWins >= 3 && !currentUnlocked.includes('sakura')) {
-      newlyUnlocked.push('sakura');
+    if (stats.easyWins >= 3 && !currentUnlocked.includes("sakura")) {
+      newlyUnlocked.push("sakura");
     }
 
     // Volcano: Win 3 Medium puzzles
-    if (stats.mediumWins >= 3 && !currentUnlocked.includes('volcano')) {
-      newlyUnlocked.push('volcano');
+    if (stats.mediumWins >= 3 && !currentUnlocked.includes("volcano")) {
+      newlyUnlocked.push("volcano");
     }
 
     // Arctic: Win in under 3 minutes
-    if (stats.fastWins >= 1 && !currentUnlocked.includes('arctic')) {
-      newlyUnlocked.push('arctic');
+    if (stats.fastWins >= 1 && !currentUnlocked.includes("arctic")) {
+      newlyUnlocked.push("arctic");
     }
 
     if (newlyUnlocked.length > 0) {
@@ -641,12 +725,12 @@ const UnlockService = {
       if (!currentUnlocked.includes(id) && condition) newlyUnlocked.push(id);
     };
 
-    tryUnlock('funfair', stats.totalWins >= 3);
-    tryUnlock('retro', stats.easyWins >= 3);
-    tryUnlock('space', stats.hardWins >= 1);
-    tryUnlock('nature', stats.mediumWins >= 3);
-    tryUnlock('crystal', stats.perfectWins >= 1);
-    tryUnlock('minimal', stats.fastWins >= 1);
+    tryUnlock("funfair", stats.totalWins >= 3);
+    tryUnlock("retro", stats.easyWins >= 3);
+    tryUnlock("space", stats.hardWins >= 1);
+    tryUnlock("nature", stats.mediumWins >= 3);
+    tryUnlock("crystal", stats.perfectWins >= 1);
+    tryUnlock("minimal", stats.fastWins >= 1);
 
     if (newlyUnlocked.length > 0) {
       const updated = [...currentUnlocked, ...newlyUnlocked];
@@ -654,7 +738,7 @@ const UnlockService = {
     }
 
     return newlyUnlocked;
-  }
+  },
 };
 
 // ============================================================================
@@ -702,7 +786,7 @@ const BadgeService = {
    * @returns {Array} Array of badge objects with id and awardedAt
    */
   getUserBadges() {
-    const badges = localStorage.getItem('sudoku_v2_user_badges');
+    const badges = localStorage.getItem("sudoku_v2_user_badges");
     try {
       return badges ? JSON.parse(badges) : [];
     } catch {
@@ -715,7 +799,7 @@ const BadgeService = {
    * @param {Array} badges - Array of badge objects
    */
   saveUserBadges(badges) {
-    localStorage.setItem('sudoku_v2_user_badges', JSON.stringify(badges));
+    localStorage.setItem("sudoku_v2_user_badges", JSON.stringify(badges));
   },
 
   /**
@@ -725,7 +809,7 @@ const BadgeService = {
    */
   hasBadge(badgeId) {
     const badges = this.getUserBadges();
-    return badges.some(b => b.id === badgeId);
+    return badges.some((b) => b.id === badgeId);
   },
 
   /**
@@ -735,26 +819,28 @@ const BadgeService = {
    */
   awardBadge(badgeId) {
     if (this.hasBadge(badgeId)) return false;
-    
+
     const badges = this.getUserBadges();
     const newBadge = {
       id: badgeId,
-      awardedAt: new Date().toISOString()
+      awardedAt: new Date().toISOString(),
     };
     badges.push(newBadge);
     this.saveUserBadges(badges);
-    
+
     // If user is authenticated, also save to backend
     if (isUserAuthenticated() && isGasEnvironment()) {
       const session = StorageService.getUserSession();
       if (session && session.userId) {
-        runGasFn('awardBadge', { 
-          userId: session.userId, 
-          badge: badgeId 
-        }).catch(err => console.error('Failed to save badge to backend:', err));
+        runGasFn("awardBadge", {
+          userId: session.userId,
+          badge: badgeId,
+        }).catch((err) =>
+          console.error("Failed to save badge to backend:", err)
+        );
       }
     }
-    
+
     return true;
   },
 
@@ -769,81 +855,97 @@ const BadgeService = {
     const { currentTime, chatMessageCount } = additionalContext;
 
     // Milestone badges
-    if (stats.totalWins >= 1 && !this.hasBadge('first_win')) {
-      if (this.awardBadge('first_win')) newlyAwarded.push('first_win');
+    if (stats.totalWins >= 1 && !this.hasBadge("first_win")) {
+      if (this.awardBadge("first_win")) newlyAwarded.push("first_win");
     }
-    if (stats.totalWins >= 10 && !this.hasBadge('wins_10')) {
-      if (this.awardBadge('wins_10')) newlyAwarded.push('wins_10');
+    if (stats.totalWins >= 10 && !this.hasBadge("wins_10")) {
+      if (this.awardBadge("wins_10")) newlyAwarded.push("wins_10");
     }
-    if (stats.totalWins >= 25 && !this.hasBadge('wins_25')) {
-      if (this.awardBadge('wins_25')) newlyAwarded.push('wins_25');
+    if (stats.totalWins >= 25 && !this.hasBadge("wins_25")) {
+      if (this.awardBadge("wins_25")) newlyAwarded.push("wins_25");
     }
-    if (stats.totalWins >= 50 && !this.hasBadge('wins_50')) {
-      if (this.awardBadge('wins_50')) newlyAwarded.push('wins_50');
+    if (stats.totalWins >= 50 && !this.hasBadge("wins_50")) {
+      if (this.awardBadge("wins_50")) newlyAwarded.push("wins_50");
     }
-    if (stats.totalWins >= 100 && !this.hasBadge('wins_100')) {
-      if (this.awardBadge('wins_100')) newlyAwarded.push('wins_100');
+    if (stats.totalWins >= 100 && !this.hasBadge("wins_100")) {
+      if (this.awardBadge("wins_100")) newlyAwarded.push("wins_100");
     }
 
     // Difficulty badges
-    if (stats.easyWins >= 20 && !this.hasBadge('easy_specialist')) {
-      if (this.awardBadge('easy_specialist')) newlyAwarded.push('easy_specialist');
+    if (stats.easyWins >= 20 && !this.hasBadge("easy_specialist")) {
+      if (this.awardBadge("easy_specialist"))
+        newlyAwarded.push("easy_specialist");
     }
-    if (stats.mediumWins >= 20 && !this.hasBadge('medium_master')) {
-      if (this.awardBadge('medium_master')) newlyAwarded.push('medium_master');
+    if (stats.mediumWins >= 20 && !this.hasBadge("medium_master")) {
+      if (this.awardBadge("medium_master")) newlyAwarded.push("medium_master");
     }
-    if (stats.hardWins >= 20 && !this.hasBadge('hard_hero')) {
-      if (this.awardBadge('hard_hero')) newlyAwarded.push('hard_hero');
+    if (stats.hardWins >= 20 && !this.hasBadge("hard_hero")) {
+      if (this.awardBadge("hard_hero")) newlyAwarded.push("hard_hero");
     }
 
     // Achievement badges
-    if (stats.perfectWins >= 1 && !this.hasBadge('perfect_game')) {
-      if (this.awardBadge('perfect_game')) newlyAwarded.push('perfect_game');
+    if (stats.perfectWins >= 1 && !this.hasBadge("perfect_game")) {
+      if (this.awardBadge("perfect_game")) newlyAwarded.push("perfect_game");
     }
-    if (stats.perfectWins >= 5 && !this.hasBadge('perfect_5')) {
-      if (this.awardBadge('perfect_5')) newlyAwarded.push('perfect_5');
+    if (stats.perfectWins >= 5 && !this.hasBadge("perfect_5")) {
+      if (this.awardBadge("perfect_5")) newlyAwarded.push("perfect_5");
     }
-    if (stats.fastWins >= 1 && !this.hasBadge('speed_demon')) {
-      if (this.awardBadge('speed_demon')) newlyAwarded.push('speed_demon');
+    if (stats.fastWins >= 1 && !this.hasBadge("speed_demon")) {
+      if (this.awardBadge("speed_demon")) newlyAwarded.push("speed_demon");
     }
-    if (stats.fastWins >= 10 && !this.hasBadge('lightning_fast')) {
-      if (this.awardBadge('lightning_fast')) newlyAwarded.push('lightning_fast');
+    if (stats.fastWins >= 10 && !this.hasBadge("lightning_fast")) {
+      if (this.awardBadge("lightning_fast"))
+        newlyAwarded.push("lightning_fast");
     }
 
     // Special time-based badges
     if (currentTime) {
       const hour = currentTime.getHours();
-      if (hour < 8 && !this.hasBadge('early_bird')) {
-        if (this.awardBadge('early_bird')) newlyAwarded.push('early_bird');
+      if (hour < 8 && !this.hasBadge("early_bird")) {
+        if (this.awardBadge("early_bird")) newlyAwarded.push("early_bird");
       }
-      if (hour >= 0 && hour < 6 && !this.hasBadge('night_owl')) {
-        if (this.awardBadge('night_owl')) newlyAwarded.push('night_owl');
+      if (hour >= 0 && hour < 6 && !this.hasBadge("night_owl")) {
+        if (this.awardBadge("night_owl")) newlyAwarded.push("night_owl");
       }
     }
 
     // Chat badge
-    if (chatMessageCount >= 50 && !this.hasBadge('social_butterfly')) {
-      if (this.awardBadge('social_butterfly')) newlyAwarded.push('social_butterfly');
+    if (chatMessageCount >= 50 && !this.hasBadge("social_butterfly")) {
+      if (this.awardBadge("social_butterfly"))
+        newlyAwarded.push("social_butterfly");
     }
 
     // Collection badges
     const unlockedThemes = StorageService.getUnlockedThemes();
     const allThemes = Object.keys(THEMES);
-    if (unlockedThemes.length >= allThemes.length && !this.hasBadge('theme_collector')) {
-      if (this.awardBadge('theme_collector')) newlyAwarded.push('theme_collector');
+    if (
+      unlockedThemes.length >= allThemes.length &&
+      !this.hasBadge("theme_collector")
+    ) {
+      if (this.awardBadge("theme_collector"))
+        newlyAwarded.push("theme_collector");
     }
 
     const unlockedPacks = StorageService.getUnlockedSoundPacks();
     const allPacks = Object.keys(SOUND_PACKS);
-    if (unlockedPacks.length >= allPacks.length && !this.hasBadge('sound_collector')) {
-      if (this.awardBadge('sound_collector')) newlyAwarded.push('sound_collector');
+    if (
+      unlockedPacks.length >= allPacks.length &&
+      !this.hasBadge("sound_collector")
+    ) {
+      if (this.awardBadge("sound_collector"))
+        newlyAwarded.push("sound_collector");
     }
 
     // Completionist badge (has all other badges)
-    const allBadgeIds = Object.keys(BADGES).filter(id => id !== 'completionist');
+    const allBadgeIds = Object.keys(BADGES).filter(
+      (id) => id !== "completionist"
+    );
     const userBadges = this.getUserBadges();
-    if (allBadgeIds.every(id => userBadges.some(b => b.id === id)) && !this.hasBadge('completionist')) {
-      if (this.awardBadge('completionist')) newlyAwarded.push('completionist');
+    if (
+      allBadgeIds.every((id) => userBadges.some((b) => b.id === id)) &&
+      !this.hasBadge("completionist")
+    ) {
+      if (this.awardBadge("completionist")) newlyAwarded.push("completionist");
     }
 
     return newlyAwarded;
@@ -854,36 +956,40 @@ const BadgeService = {
    */
   async syncBadgesWithBackend() {
     if (!isUserAuthenticated() || !isGasEnvironment()) return;
-    
+
     const session = StorageService.getUserSession();
     if (!session || !session.userId) return;
 
     try {
       // Get badges from backend
-      const result = await runGasFn('getUserBadges', { userId: session.userId });
+      const result = await runGasFn("getUserBadges", {
+        userId: session.userId,
+      });
       if (result && result.success) {
         const backendBadges = result.badges || [];
         const localBadges = this.getUserBadges();
-        
+
         // Merge: use backend badges as source of truth, but keep any local-only badges
         const merged = [...backendBadges];
-        localBadges.forEach(local => {
-          if (!merged.some(b => b.id === local.id)) {
+        localBadges.forEach((local) => {
+          if (!merged.some((b) => b.id === local.id)) {
             merged.push(local);
             // Also save this local badge to backend
-            runGasFn('awardBadge', { 
-              userId: session.userId, 
-              badge: local.id 
-            }).catch(err => console.error('Failed to sync badge to backend:', err));
+            runGasFn("awardBadge", {
+              userId: session.userId,
+              badge: local.id,
+            }).catch((err) =>
+              console.error("Failed to sync badge to backend:", err)
+            );
           }
         });
-        
+
         this.saveUserBadges(merged);
       }
     } catch (err) {
-      console.error('Failed to sync badges:', err);
+      console.error("Failed to sync badges:", err);
     }
-  }
+  },
 };
 
 // Make services available globally
