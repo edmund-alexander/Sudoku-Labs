@@ -1833,51 +1833,35 @@ const App = () => {
       if (target.value === num) return;
       target.value = num;
       if (num !== target.solution) {
-        // In practice mode, show error but don't count as mistake or end game
-        if (isPracticeMode) {
-          if (soundEnabled) SoundManager.play('error');
-          target.isError = true;
-          // Clear error after visual feedback
-          const errorCellIndex = selectedCell;
-          setTimeout(() => {
-            setBoard(prev => {
-              const b = [...prev];
-              if (b[errorCellIndex]) { 
-                b[errorCellIndex] = {
-                  ...b[errorCellIndex],
-                  isError: false
-                };
-              }
-              return b;
-            });
-          }, 500);
-        } else {
-          // Normal mode - count mistakes and end game at 3
-          if (soundEnabled) SoundManager.play('error');
-          target.isError = true;
+        // Play error sound and mark cell as error
+        if (soundEnabled) SoundManager.play('error');
+        target.isError = true;
+        
+        // Handle mistake counting (only in normal mode)
+        if (!isPracticeMode) {
           const newMistakes = mistakes + 1;
           setMistakes(newMistakes);
-
           if (newMistakes >= 3) {
             setBoard(newBoard); setStatus('lost'); StorageService.clearSavedGame(); return;
           }
-          
-          // Capture cellIndex to avoid race condition
-          const errorCellIndex = selectedCell;
-          setTimeout(() => {
-            setBoard(prev => {
-              const b = [...prev];
-              if (b[errorCellIndex]) { 
-                b[errorCellIndex] = {
-                  ...b[errorCellIndex],
-                  isError: false,
-                  value: null
-                };
-              }
-              return b;
-            });
-          }, 500);
         }
+        
+        // Clear error feedback after delay
+        const errorCellIndex = selectedCell;
+        setTimeout(() => {
+          setBoard(prev => {
+            const b = [...prev];
+            if (b[errorCellIndex]) { 
+              b[errorCellIndex] = {
+                ...b[errorCellIndex],
+                isError: false,
+                // In normal mode, also clear the value; in practice mode, keep it
+                value: isPracticeMode ? b[errorCellIndex].value : null
+              };
+            }
+            return b;
+          });
+        }, 500);
       } else {
         if (soundEnabled) SoundManager.play('write');
         target.isError = false; target.notes = [];
@@ -2063,7 +2047,7 @@ const App = () => {
         if (selectedCell === null) { if (soundEnabled) SoundManager.play('select'); setSelectedCell(0); return; }
         if (soundEnabled) SoundManager.play('select');
         const row = Math.floor(selectedCell / 9);
-        const col = selectedCell % 9);
+        const col = selectedCell % 9;
         let nextRow = row, nextCol = col;
         
         if (e.key === 'ArrowRight') nextCol = Math.min(8, col + 1);
@@ -2115,6 +2099,8 @@ const App = () => {
     const currentFilled = board.filter(c => c.value !== null).length;
     const userFilled = currentFilled - initialFilledCount;
     const totalToFill = 81 - initialFilledCount;
+    // Handle edge case of fully pre-filled puzzle
+    if (totalToFill === 0) return 100;
     return Math.round((userFilled / totalToFill) * 100);
   };
 
