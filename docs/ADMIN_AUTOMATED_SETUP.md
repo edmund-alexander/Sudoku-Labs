@@ -194,7 +194,21 @@ Then run setup script again.
 
 **Solution**: The script automatically detects remote environments and uses manual auth flow
 
-If you need to force manual auth:
+**In Codespaces, you'll see a redirect to localhost. Here's how to handle it:**
+
+1. After authorizing in your browser, you'll see a URL like:
+   ```
+   http://localhost:34343/?code=4/0ATX87lNze5by...&scope=email...
+   ```
+
+2. **Extract the authorization code** (the part after `code=` and before `&`):
+   ```
+   4/0ATX87lNze5byl0Cq5HDlpVDzva9bn0rTkzUQNM1srjGTnDUKVMorWzCu_M-aaZ38my4C0w
+   ```
+
+3. **Copy ONLY the code part** and paste it into the Codespaces terminal
+
+**Manual auth command:**
 ```bash
 clasp login --no-localhost
 ```
@@ -202,10 +216,15 @@ clasp login --no-localhost
 This will:
 1. Display a URL
 2. You copy and open it in your browser
-3. Authorize and get a code
-4. Paste the code back in terminal
+3. Authorize and get redirected to localhost
+4. Extract the code from the URL (as shown above)
+5. Paste the code back in terminal
 
-**For Codespaces users**: The script handles this automatically!
+**For Codespaces users**: The script handles this automatically and shows clear instructions!
+
+**Example of what to copy:**
+- ❌ Wrong: `http://localhost:34343/?code=4/0ATX87lNze5byl0Cq5HDlpVDzva...&scope=...`
+- ✅ Right: `4/0ATX87lNze5byl0Cq5HDlpVDzva9bn0rTkzUQNM1srjGTnDUKVMorWzCu_M-aaZ38my4C0w`
 
 ### "No credentials found" after successful login
 
