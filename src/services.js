@@ -1031,6 +1031,21 @@ window.getChatMessages = getChatMessages;
 window.postChatMessage = postChatMessage;
 window.isUserAuthenticated = isUserAuthenticated;
 
+// Guarantee legacy global bindings for compatibility with all load orders
+// (some codepaths expect both window.StorageService and bare StorageService)
+if (typeof StorageService === 'undefined') var StorageService = window.StorageService;
+if (typeof runGasFn === 'undefined') var runGasFn = window.runGasFn;
+if (typeof logError === 'undefined') var logError = window.logError;
+if (typeof LeaderboardService === 'undefined') var LeaderboardService = window.LeaderboardService;
+if (typeof ChatService === 'undefined') var ChatService = window.ChatService;
+if (typeof UnlockService === 'undefined') var UnlockService = window.UnlockService;
+if (typeof BadgeService === 'undefined') var BadgeService = window.BadgeService;
+if (typeof getLeaderboard === 'undefined') var getLeaderboard = window.getLeaderboard;
+if (typeof saveScore === 'undefined') var saveScore = window.saveScore;
+if (typeof getChatMessages === 'undefined') var getChatMessages = window.getChatMessages;
+if (typeof postChatMessage === 'undefined') var postChatMessage = window.postChatMessage;
+if (typeof isUserAuthenticated === 'undefined') var isUserAuthenticated = window.isUserAuthenticated;
+
 // Legacy global bindings for older codepaths that reference bare identifiers
 // (some build/runtime environments expect `var` globals instead of only
 // properties on `window`). Declaring these with `var` ensures they become
