@@ -19,10 +19,22 @@ jobs:
         run: |
           git config pull.rebase false
 
+      - name: Setup Node.js 📦
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies 📚
+        run: npm ci
+
+      - name: Build Tailwind CSS 🎨
+        run: npm run build:css
+
       - name: Assemble Build Directory 📦
         run: |
           mkdir -p build/config build/src
-          cp public/index.html public/favicon.svg build/
+          cp public/index.html public/favicon.svg public/styles.css build/
           cp -r public/assets build/
           cp -r src/. build/src/
           cp config/config.example.js config/config.production.example.js build/config/
