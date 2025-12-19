@@ -57,9 +57,9 @@ const AdminManager = {
       return;
     }
 
-    // Prompt for credentials
-    const username = prompt("Admin Username:");
-    if (!username) {
+    // Prompt for credentials (using email for Firebase Auth)
+    const email = prompt("Admin Email:");
+    if (!email) {
       this.renderStatus("❌ Login cancelled", "error");
       return;
     }
@@ -70,10 +70,7 @@ const AdminManager = {
       return;
     }
 
-    this.renderStatus("🔒 Encrypting credentials...", "info");
-
-    // Hash password (SHA-256)
-    const passwordHash = await this.sha256(password);
+    this.renderStatus("🔒 Authenticating with Firebase...", "info");
 
     const apiUrl = window.CONFIG?.API_URL;
     if (!apiUrl) {
@@ -84,16 +81,23 @@ const AdminManager = {
 
     this.renderStatus("📡 Connecting to secure backend...", "info");
 
-    const requestUrl = `${apiUrl}?action=adminLogin&username=${encodeURIComponent(
-      username
-    )}&passwordHash=${passwordHash}`;
-
-    // Request session token from backend
+    // Request session token from backend using email/password
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-      const response = await fetch(requestUrl, { signal: controller.signal });
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "adminLogin",
+          email: email,
+          password: password,
+        }),
+        signal: controller.signal,
+      });
       clearTimeout(timeoutId);
 
       const text = await response.text();
@@ -114,7 +118,6 @@ const AdminManager = {
         this.sessionExpiry =
           Date.now() + (window.ADMIN_CONFIG?.SESSION_TIMEOUT || 30 * 60 * 1000);
 
-        // this.renderHeader(); // Removed to prevent console grouping confusion
         console.log("");
         this.renderStatus("✓ ACCESS GRANTED", "success");
         console.log("----------------------------------------");
@@ -239,33 +242,16 @@ const AdminManager = {
     console.log("  sudokuAdmin.status() - Check authentication status");
     console.log("  sudokuAdmin.help()   - Show this help message");
     console.log("");
-    console.log("%cConfiguration:", "font-weight: bold;");
-    console.log("  Admin credentials are stored in config/admin.local.js");
-    console.log("  This file must be created from admin.example.js");
-    console.log("  Never commit admin.local.js to version control!");
+    console.log("%cAuthentication:", "font-weight: bold;");
+    console.log("  Admins are authenticated using Firebase Auth.");
+    console.log("  You need an admin email/password to log in.");
+    console.log("  Admin status is stored in Firestore under 'admins' collection.");
     console.log("");
     console.log("%cSecurity Notes:", "font-weight: bold; color: #ff6600;");
     console.log("  • Sessions expire after 30 minutes");
-    console.log("  • Passwords are hashed with SHA-256");
-    console.log("  • One-time tokens are generated per session");
+    console.log("  • Authentication uses Firebase ID tokens");
+    console.log("  • Admin status is verified server-side");
     console.log("  • Always logout when done");
-  },
-
-  // SHA-256 hash function
-  async sha256(message) {
-    if (!crypto || !crypto.subtle) {
-      console.error(
-        "❌ Web Crypto API not available. Ensure you are using HTTPS or localhost."
-      );
-      throw new Error("Web Crypto API unavailable");
-    }
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-    return hashHex;
   },
 };
 

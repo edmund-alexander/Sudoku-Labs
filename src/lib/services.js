@@ -361,6 +361,35 @@ export const StorageService = {
   saveGameStats: (stats) => StorageService.set(KEYS.GAME_STATS, stats),
   getGameStats: () => StorageService.get(KEYS.GAME_STATS) || {},
 
+  // --- Preferences (sound, darkMode, theme) ---
+  savePreferences: (prefs) => StorageService.set(KEYS.PREFERENCES, prefs),
+  getPreferences: () => {
+    const defaults = { sound: true, darkMode: false, theme: 'default' };
+    return { ...defaults, ...StorageService.get(KEYS.PREFERENCES) };
+  },
+
+  // --- User (alias for UserSession for backward compat) ---
+  saveUser: (user) => StorageService.set(KEYS.USER_SESSION, user),
+  getUser: () => StorageService.get(KEYS.USER_SESSION),
+  clearUser: () => StorageService.remove(KEYS.USER_SESSION),
+
+  // --- Update Stats ---
+  updateStats: (gameStats) => {
+    const current = StorageService.getStats();
+    const newStats = {
+      ...current,
+      gamesStarted: (current.gamesStarted || 0) + 1,
+      gamesWon: (current.gamesWon || 0) + 1,
+      totalTime: (current.totalTime || 0) + (gameStats.time || 0),
+    };
+    // Update best time if applicable
+    if (gameStats.time && (!current.bestTime || gameStats.time < current.bestTime)) {
+      newStats.bestTime = gameStats.time;
+    }
+    StorageService.saveStats(newStats);
+    return newStats;
+  },
+
   // --- Aliases for Backward Compatibility ---
   loadGame: () => StorageService.getGameState(),
   saveGame: (data) => StorageService.saveGameState(data),
