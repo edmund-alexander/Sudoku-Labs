@@ -4,7 +4,7 @@
  * Collection of SVG icons used throughout the application.
  */
 
-import React, { Component } from 'react';
+import React, { Component } from "react";
 
 export const Icons = {
   Undo: () => (
