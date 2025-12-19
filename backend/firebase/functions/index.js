@@ -3,16 +3,42 @@ const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
 const sudoku = require("./sudoku");
 const axios = require("axios");
+const path = require("path");
 
-admin.initializeApp();
+// Initialize Firebase Admin with service account if available
+// This is critical for local testing or environments where ADC is not set up
+const serviceAccountPath = path.resolve(
+  __dirname,
+  "../../gas/sudoku-labs-firebase-adminsdk-fbsvc-1dbcf9956f.json"
+);
+let serviceAccount;
+try {
+  serviceAccount = require(serviceAccountPath);
+} catch (e) {
+  console.log("Service account file not found, using default credentials");
+}
+
+if (serviceAccount) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+} else {
+  admin.initializeApp();
+}
+
 const db = admin.firestore();
 
 // --- CONFIGURATION ---
 // IMPORTANT: Set this via: firebase functions:config:set auth.api_key="YOUR_WEB_API_KEY"
 // Or hardcode it temporarily for testing (NOT RECOMMENDED FOR PRODUCTION)
-const FIREBASE_WEB_API_KEY = functions.config().auth
-  ? functions.config().auth.api_key
-  : process.env.FIREBASE_WEB_API_KEY;
+let FIREBASE_WEB_API_KEY;
+try {
+  FIREBASE_WEB_API_KEY = functions.config().auth
+    ? functions.config().auth.api_key
+    : process.env.FIREBASE_WEB_API_KEY;
+} catch (e) {
+  FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY;
+}
 
 // Helper to sanitize input (basic XSS prevention)
 function sanitizeInput(str, maxLength) {

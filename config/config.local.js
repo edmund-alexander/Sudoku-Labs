@@ -1,4 +1,4 @@
 window.CONFIG = window.CONFIG || {};
-window.CONFIG.API_URL =
-  "https://us-central1-sudoku-labs.cloudfunctions.net/api";
+// Use relative path for API when hosted on the same domain
+window.CONFIG.API_URL = "/";
 window.CONFIG.BASE_PATH = "";
