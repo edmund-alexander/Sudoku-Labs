@@ -60,10 +60,13 @@
       loadConfig("config/config.local.js");
       loadConfig("config/admin.local.js");
 
-      // Production Check: If we are on github.io but loading a .jsx file, 
+      // Production Check: If we are on github.io but loading a .jsx file,
       // it means the site is misconfigured to serve the source instead of the build.
       if (window.location.hostname.includes("github.io")) {
-        console.log("%c🚀 Sudoku Labs Production Environment", "color: #4f46e5; font-weight: bold;");
+        console.log(
+          "%c🚀 Sudoku Labs Production Environment",
+          "color: #4f46e5; font-weight: bold;"
+        );
       }
     </script>
   </head>
@@ -87,14 +90,14 @@
     <script type="module">
       // Diagnostic check for GitHub Pages deployment
       if (window.location.hostname.includes("github.io")) {
-        const scripts = Array.from(document.getElementsByTagName('script'));
-        const hasJsx = scripts.some(s => s.src && s.src.endsWith('.jsx'));
+        const scripts = Array.from(document.getElementsByTagName("script"));
+        const hasJsx = scripts.some((s) => s.src && s.src.endsWith(".jsx"));
         if (hasJsx) {
           console.error(
             "❌ DEPLOYMENT ERROR: GitHub Pages is serving the SOURCE code instead of the BUILD output.\n\n" +
-            "FIX: Go to Repository Settings -> Pages -> Build and deployment -> Source\n" +
-            "Change 'Deploy from a branch' to 'GitHub Actions'.\n\n" +
-            "The site will then use the optimized build from the .github/workflows/deploy.yml"
+              "FIX: Go to Repository Settings -> Pages -> Build and deployment -> Source\n" +
+              "Change 'Deploy from a branch' to 'GitHub Actions'.\n\n" +
+              "The site will then use the optimized build from the .github/workflows/deploy.yml"
           );
         }
       }
