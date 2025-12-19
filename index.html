@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sudoku Logic Lab</title>
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" sizes="any" href="/favicon.svg?v=2" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="./favicon.svg?v=2" />
     <link
       rel="alternate icon"
       type="image/svg+xml"
       sizes="any"
-      href="/favicon.svg?v=2"
+      href="./favicon.svg?v=2"
     />
-    <link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg?v=2" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.svg?v=2" />
+    <link rel="shortcut icon" type="image/svg+xml" href="./favicon.svg?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./favicon.svg?v=2" />
 
     <!-- Google Material Icons -->
     <link
@@ -41,17 +41,18 @@
         const script = document.createElement("script");
         script.src = src;
         script.async = false;
-        script.onerror = () =>
-          console.log("Config file not found (using defaults): " + src);
+        script.onerror = () => {
+          // Only log if it's not the optional admin config
+          if (!src.includes("admin.local.js")) {
+            console.log("Config file not found (using defaults): " + src);
+          }
+        };
         document.head.appendChild(script);
       }
 
-      // Use relative path so it works in subdirectories (GitHub Pages)
-      // In Vite dev (root), it looks for ./config/config.local.js
-      // In production (dist), it looks for ./config/config.local.js
-      const configPath = "./config/";
-      loadConfig(configPath + "config.local.js");
-      loadConfig(configPath + "admin.local.js");
+      // Use relative paths for configuration
+      loadConfig("./config/config.local.js");
+      loadConfig("./config/admin.local.js");
     </script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -71,6 +72,6 @@
     </script>
 
     <!-- Main Entry Point -->
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>
