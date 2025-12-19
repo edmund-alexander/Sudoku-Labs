@@ -17,7 +17,8 @@ filter_str = 'resource.type="cloud_run_revision" AND resource.labels.service_nam
 
 print("Fetching logs...")
 try:
-    entries = client.list_entries(filter_=filter_str, order_by=logging.DESCENDING, max_results=20)
+    entries = client.list_entries(
+        filter_=filter_str, order_by=logging.DESCENDING, max_results=20)
     for entry in entries:
         print(f"[{entry.timestamp}] {entry.severity}: {entry.payload}")
 except Exception as e:
