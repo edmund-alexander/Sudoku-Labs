@@ -23,6 +23,7 @@ export const UserPanel = ({
 }) => {
   const [mode, setMode] = useState(initialMode); // menu, login, register
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -108,8 +109,8 @@ export const UserPanel = ({
   };
 
   const handleRegister = async () => {
-    if (!username || !password) {
-      setError("Please enter username and password");
+    if (!username || !password || !email) {
+      setError("Please enter username, email, and password");
       return;
     }
 
@@ -127,6 +128,11 @@ export const UserPanel = ({
     // Only allow alphanumeric characters and underscores
     if (!/^[a-zA-Z0-9_]+$/.test(trimmedUsername)) {
       setError("Username can only contain letters, numbers, and underscores");
+      return;
+    }
+
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address");
       return;
     }
 
@@ -149,7 +155,11 @@ export const UserPanel = ({
     setError("");
 
     try {
-      const result = await runGasFn("registerUser", { username, password });
+      const result = await runGasFn("registerUser", {
+        username: trimmedUsername,
+        email: email.trim(),
+        password,
+      });
       if (result && result.success) {
         setLocalUserSession(result.user);
         StorageService.setUserSession(result.user);
@@ -642,6 +652,21 @@ export const UserPanel = ({
                 onKeyDown={(e) => e.key === "Enter" && handleRegister()}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                 placeholder="Choose a username (3+ chars)"
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleRegister()}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                placeholder="Enter your email"
                 disabled={loading}
               />
             </div>
