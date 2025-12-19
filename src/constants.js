@@ -932,18 +932,21 @@ export const getThemeAssetSet = (visualId, audioId) => {
     // Get base path from Vite (build-time) or window.CONFIG (runtime fallback)
     const buildBase = import.meta.env.BASE_URL || "./";
     const runtimeBase = (window.CONFIG && window.CONFIG.BASE_PATH) || "";
-    
+
     // Prefer runtime base if explicitly set, otherwise use build-time base
     let base = runtimeBase || buildBase;
-    
+
     // Normalize: ensure it ends with a slash if it's not empty
     if (base && !base.endsWith("/")) base += "/";
-    
+
     // Assets are always under assets/themes/ in the final build
     const assetsRoot = "assets/themes";
-    
-    assetBase = `${base}${assetsRoot}/${safeVisualId}/${safeAudioId}`.replace(/\/+/g, "/");
-    
+
+    assetBase = `${base}${assetsRoot}/${safeVisualId}/${safeAudioId}`.replace(
+      /\/+/g,
+      "/"
+    );
+
     // Fix for relative paths starting with ./
     if (assetBase.startsWith("./")) {
       // Keep it as is

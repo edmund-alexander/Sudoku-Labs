@@ -44,20 +44,27 @@
       // This must happen before the main app loads.
       function loadConfig(src) {
         const script = document.createElement("script");
-        script.src = src;
+        // Ensure path is relative to the current directory
+        script.src = src.startsWith("./") ? src : "./" + src;
         script.async = false;
         script.onerror = () => {
           // Only log if it's not the optional admin config
           if (!src.includes("admin.local.js")) {
-            console.log("Config file not found (using defaults): " + src);
+            console.warn("Config file not found (using defaults): " + src);
           }
         };
         document.head.appendChild(script);
       }
 
       // Use relative paths for configuration
-      loadConfig("./config/config.local.js");
-      loadConfig("./config/admin.local.js");
+      loadConfig("config/config.local.js");
+      loadConfig("config/admin.local.js");
+
+      // Production Check: If we are on github.io but loading a .jsx file, 
+      // it means the site is misconfigured to serve the source instead of the build.
+      if (window.location.hostname.includes("github.io")) {
+        console.log("%c🚀 Sudoku Labs Production Environment", "color: #4f46e5; font-weight: bold;");
+      }
     </script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -77,6 +84,21 @@
     </script>
 
     <!-- Main Entry Point -->
+    <script type="module">
+      // Diagnostic check for GitHub Pages deployment
+      if (window.location.hostname.includes("github.io")) {
+        const scripts = Array.from(document.getElementsByTagName('script'));
+        const hasJsx = scripts.some(s => s.src && s.src.endsWith('.jsx'));
+        if (hasJsx) {
+          console.error(
+            "❌ DEPLOYMENT ERROR: GitHub Pages is serving the SOURCE code instead of the BUILD output.\n\n" +
+            "FIX: Go to Repository Settings -> Pages -> Build and deployment -> Source\n" +
+            "Change 'Deploy from a branch' to 'GitHub Actions'.\n\n" +
+            "The site will then use the optimized build from the .github/workflows/deploy.yml"
+          );
+        }
+      }
+    </script>
     <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>
