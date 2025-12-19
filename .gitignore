@@ -1,35 +1,4 @@
-# Environment & Configuration
+node_modules
+dist
 .env
-.env.local
-
-# Logs
-node_modules/
-*.log
-npm-debug.log*
-
-# Editor
-.vscode/
-.idea/
-*.swp
-
-# Build
-dist/
-firebase-debug.log
-*.swo
-*~
-
-# Jupyter Notebooks
-.ipynb_checkpoints/
-*.ipynb_checkpoints
-
-# OS
 .DS_Store
-Thumbs.db
-
-# Build artifacts
-dist/
-build/
-.cache/
-tailwindcss-linux-*
-backend/gas/sudoku-labs-firebase-adminsdk-*.json
-backend/firebase/functions/sudoku-labs-firebase-adminsdk-*.json

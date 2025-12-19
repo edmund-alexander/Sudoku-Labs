@@ -16,7 +16,8 @@ export default defineConfig({
     open: true,
   },
   build: {
-    outDir: "dist",
+    outDir: "dist/public",
     assetsDir: "assets",
+    emptyOutDir: true,
   },
 });
