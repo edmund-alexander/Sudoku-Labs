@@ -28,10 +28,12 @@
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
+    "puppeteer": "^24.34.0",
     "tailwindcss": "^3.4.17",
     "vite": "^7.3.0"
   },
   "dependencies": {
+    "@google-cloud/logging": "^11.2.1",
     "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
     "axios": "^1.13.2",

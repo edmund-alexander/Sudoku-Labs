@@ -32,7 +32,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install @google-cloud/logging
+        run: npm install @google-cloud/logging puppeteer
 
       - name: Create Firebase credentials
         env:
@@ -104,7 +104,7 @@ jobs:
                 if (jsMatch) {
                   const jsRes = await httpGet(`${APP_URL}${jsMatch[1]}`);
                   if (jsRes.status === 200 && jsRes.headers['content-type']?.includes('javascript')) {
-                    console.log('✅ JS Bundle: PASS');
+                    console.log(`✅ JS Bundle: PASS (${Math.round(jsRes.body.length/1024)}KB)`);
                     results.passed.push('JS Bundle');
                   } else {
                     console.log(`❌ JS Bundle: FAIL (MIME: ${jsRes.headers['content-type']})`);
@@ -131,6 +131,102 @@ jobs:
             } catch (err) {
               console.log(`❌ Frontend: FAIL (${err.message})`);
               results.failed.push({ name: 'Frontend', reason: err.message });
+            }
+          }
+
+          async function checkBrowserRendering() {
+            console.log('\n🌐 BROWSER RENDERING CHECKS\n');
+            
+            const puppeteer = require('puppeteer');
+            let browser;
+            
+            try {
+              browser = await puppeteer.launch({
+                headless: 'new',
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+              });
+              
+              const page = await browser.newPage();
+              const consoleErrors = [];
+              const networkErrors = [];
+              
+              page.on('console', msg => {
+                if (msg.type() === 'error') consoleErrors.push(msg.text());
+              });
+              
+              page.on('requestfailed', req => {
+                networkErrors.push(`${req.url()} - ${req.failure()?.errorText}`);
+              });
+              
+              const response = await page.goto(APP_URL, { 
+                waitUntil: 'networkidle2',
+                timeout: 30000 
+              });
+              
+              if (response && response.status() === 200) {
+                console.log('✅ Page Load: PASS');
+                results.passed.push('Page Load');
+              } else {
+                console.log(`❌ Page Load: FAIL (${response?.status() || 'no response'})`);
+                results.failed.push({ name: 'Page Load', reason: `Status ${response?.status()}` });
+              }
+              
+              await new Promise(r => setTimeout(r, 3000));
+              
+              const rootContent = await page.evaluate(() => {
+                const root = document.getElementById('root');
+                return {
+                  exists: !!root,
+                  hasChildren: root ? root.children.length : 0
+                };
+              });
+              
+              if (rootContent.exists && rootContent.hasChildren > 0) {
+                console.log(`✅ React Rendered: PASS (${rootContent.hasChildren} children)`);
+                results.passed.push('React Rendered');
+              } else if (!rootContent.exists) {
+                console.log('❌ React Rendered: FAIL (no #root)');
+                results.failed.push({ name: 'React Rendered', reason: 'No #root element' });
+              } else {
+                console.log('❌ React Rendered: FAIL (empty #root - WHITE SCREEN)');
+                results.failed.push({ name: 'React Rendered', reason: 'Empty #root - white screen detected' });
+              }
+              
+              const uiCheck = await page.evaluate(() => ({
+                buttonCount: document.querySelectorAll('button').length,
+                textLength: document.body.innerText.length
+              }));
+              
+              if (uiCheck.buttonCount > 0 || uiCheck.textLength > 100) {
+                console.log(`✅ UI Elements: PASS (${uiCheck.buttonCount} buttons, ${uiCheck.textLength} chars)`);
+                results.passed.push('UI Elements');
+              } else {
+                console.log('❌ UI Elements: FAIL (no buttons or text)');
+                results.failed.push({ name: 'UI Elements', reason: 'No interactive elements found' });
+              }
+              
+              if (consoleErrors.length > 0) {
+                console.log(`⚠️ Console Errors: ${consoleErrors.length} found`);
+                consoleErrors.slice(0, 3).forEach(e => console.log(`   - ${e.substring(0, 80)}`));
+                results.failed.push({ name: 'Console Clean', reason: `${consoleErrors.length} errors` });
+              } else {
+                console.log('✅ Console Clean: PASS');
+                results.passed.push('Console Clean');
+              }
+              
+              if (networkErrors.length > 0) {
+                console.log(`⚠️ Network Errors: ${networkErrors.length} failed requests`);
+                results.failed.push({ name: 'Network Clean', reason: `${networkErrors.length} failed` });
+              }
+              
+              await page.screenshot({ path: '/tmp/health-screenshot.png', fullPage: true });
+              console.log('📸 Screenshot saved');
+              
+            } catch (err) {
+              console.log(`❌ Browser Test: FAIL (${err.message})`);
+              results.failed.push({ name: 'Browser Test', reason: err.message });
+            } finally {
+              if (browser) await browser.close();
             }
           }
 
@@ -187,6 +283,7 @@ jobs:
 
             if (checkType === 'full' || checkType === 'api-only') await checkAPIs();
             if (checkType === 'full' || checkType === 'frontend-only') await checkFrontend();
+            if (checkType === 'full' || checkType === 'frontend-only') await checkBrowserRendering();
             if (checkType === 'full' || checkType === 'logs-only') await checkLogs();
 
             console.log('\n' + '='.repeat(50));
@@ -217,6 +314,15 @@ jobs:
       - name: Cleanup
         if: always()
         run: rm -f /tmp/firebase-sa.json
+
+      - name: Upload Screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-check-screenshot
+          path: /tmp/health-screenshot.png
+          retention-days: 3
+          if-no-files-found: ignore
 
       - name: Create Issue if Unhealthy
         if: failure()
