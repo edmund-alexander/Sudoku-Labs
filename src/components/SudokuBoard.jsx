@@ -13,20 +13,30 @@ const Cell = memo(
     if (isBottomBorder)
       baseClasses += " border-b-2 border-gray-400 dark:border-gray-500";
     else baseClasses += " border-b border-gray-200 dark:border-gray-700";
-    let bgClass = "bg-white dark:bg-gray-800";
-    if (isSelected) bgClass = "bg-blue-200 dark:bg-blue-900";
-    else if (isError) bgClass = "bg-red-100 dark:bg-red-900 animate-shake";
-    else if (isHinted) bgClass = "bg-yellow-100 dark:bg-yellow-900";
-    else if (isConflicting)
+    
+    let bgClass = "";
+    if (isSelected) {
+      bgClass = "bg-blue-200 dark:bg-blue-900";
+    } else if (isError) {
+      bgClass = "bg-red-100 dark:bg-red-900 animate-shake";
+    } else if (isHinted) {
+      bgClass = "bg-yellow-100 dark:bg-yellow-900";
+    } else if (isConflicting) {
       bgClass =
         "bg-orange-100 dark:bg-orange-900/50 ring-1 ring-orange-300 dark:ring-orange-700";
-    else if (isFixed)
+    } else if (isCompletedBox) {
+      bgClass =
+        "bg-amber-50 dark:bg-amber-900/30 transition-colors duration-1000";
+      if (isFixed) {
+        bgClass += " text-gray-900 dark:text-gray-100 font-bold";
+      } else {
+        bgClass += " text-blue-600 dark:text-blue-400";
+      }
+    } else if (isFixed) {
       bgClass =
         "bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-bold";
-    else bgClass = "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400";
-    if (isCompletedBox && !isSelected && !isError) {
-      bgClass +=
-        " transition-colors duration-1000 bg-amber-50 dark:bg-amber-900/30";
+    } else {
+      bgClass = "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400";
     }
 
     // Accessibility labels
