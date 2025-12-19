@@ -46,23 +46,10 @@
         document.head.appendChild(script);
       }
 
-      // In Vite dev, public/config is served at /config
-      // In production, it's at ./config
-      const isGitHubPages = window.location.hostname.includes("github.io");
-      // Note: Vite serves public folder at root. So config/config.local.js should be accessible at /config/config.local.js
-      // But wait, config folder is at root of workspace, NOT in public/.
-      // So Vite won't serve it by default unless I configure it or move it.
-      // The original structure had config/ at root.
-      // Python http.server served root.
-      // Vite serves root? No, Vite serves index.html and imports.
-      // Static assets should be in public.
-      // I should move config/ to public/config/ ?
-      // Or configure Vite to serve config/ folder.
-
-      // For now, let's assume I will move config to public/config.
-      // But config.local.js is gitignored.
-
-      const configPath = "/config/";
+      // Use relative path so it works in subdirectories (GitHub Pages)
+      // In Vite dev (root), it looks for ./config/config.local.js
+      // In production (dist), it looks for ./config/config.local.js
+      const configPath = "./config/";
       loadConfig(configPath + "config.local.js");
       loadConfig(configPath + "admin.local.js");
     </script>
