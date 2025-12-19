@@ -63,8 +63,8 @@ const AdminConsole = ({ onClose, sessionToken }) => {
 
   const loadSystemStats = async () => {
     try {
-      if (!window.CONFIG?.GAS_URL) {
-        console.error("❌ GAS_URL not configured");
+      if (!window.CONFIG?.API_URL) {
+        console.error("❌ API_URL not configured");
         setMessage({
           type: "error",
           text: "Backend URL not configured in config.local.js",
@@ -72,7 +72,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
         return;
       }
       const response = await fetch(
-        `${window.CONFIG?.GAS_URL}?action=getAdminStats&token=${sessionToken}`
+        `${window.CONFIG?.API_URL}?action=getAdminStats&token=${sessionToken}`
       );
       const data = await response.json();
       if (data.success) {
@@ -92,11 +92,11 @@ const AdminConsole = ({ onClose, sessionToken }) => {
 
   const loadChatHistory = async () => {
     try {
-      if (!window.CONFIG?.GAS_URL) {
+      if (!window.CONFIG?.API_URL) {
         return; // Already shown error in loadSystemStats
       }
       const response = await fetch(
-        `${window.CONFIG?.GAS_URL}?action=getAdminChatHistory&token=${sessionToken}`
+        `${window.CONFIG?.API_URL}?action=getAdminChatHistory&token=${sessionToken}`
       );
       const data = await response.json();
       if (data.success) {
@@ -111,11 +111,11 @@ const AdminConsole = ({ onClose, sessionToken }) => {
 
   const loadUsers = async () => {
     try {
-      if (!window.CONFIG?.GAS_URL) {
+      if (!window.CONFIG?.API_URL) {
         return; // Already shown error in loadSystemStats
       }
       const response = await fetch(
-        `${window.CONFIG?.GAS_URL}?action=getAdminUsers&token=${sessionToken}`
+        `${window.CONFIG?.API_URL}?action=getAdminUsers&token=${sessionToken}`
       );
       const data = await response.json();
       if (data.success) {
@@ -146,7 +146,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
     try {
       const response = await fetch(
         `${
-          window.CONFIG?.GAS_URL
+          window.CONFIG?.API_URL
         }?action=deleteMessages&token=${sessionToken}&messageIds=${selectedMessages.join(
           ","
         )}`
@@ -178,7 +178,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${window.CONFIG?.GAS_URL}?action=banUser&token=${sessionToken}&username=${username}`
+        `${window.CONFIG?.API_URL}?action=banUser&token=${sessionToken}&username=${username}`
       );
       const data = await response.json();
       if (data.success) {
@@ -210,7 +210,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${window.CONFIG?.GAS_URL}?action=unbanUser&token=${sessionToken}&username=${username}`
+        `${window.CONFIG?.API_URL}?action=unbanUser&token=${sessionToken}&username=${username}`
       );
       const data = await response.json();
       if (data.success) {
@@ -245,7 +245,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${window.CONFIG?.GAS_URL}?action=muteUser&token=${sessionToken}&username=${username}&duration=${duration}`
+        `${window.CONFIG?.API_URL}?action=muteUser&token=${sessionToken}&username=${username}&duration=${duration}`
       );
       const data = await response.json();
       if (data.success) {
@@ -289,7 +289,7 @@ const AdminConsole = ({ onClose, sessionToken }) => {
         username: statUser,
         ...statValues,
       });
-      const response = await fetch(`${window.CONFIG?.GAS_URL}?${params}`);
+      const response = await fetch(`${window.CONFIG?.API_URL}?${params}`);
       const data = await response.json();
       if (data.success) {
         setMessage({ type: "success", text: `Stats updated for ${statUser}` });

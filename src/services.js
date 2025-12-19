@@ -4,7 +4,7 @@
  * API service layer for GAS/Firebase Cloud Functions backend communication and local storage management.
  * This file uses plain JavaScript (no JSX) and can be loaded before React.
  *
- * @version 3.1.0 (Cloud Functions)
+ * @version 3.2.0 (API Refactor)
  */
 
 import {
@@ -20,27 +20,31 @@ import { generateGuestId, sortLeaderboard } from "./utils.js";
 // CONFIGURATION
 // ============================================================================
 
-// GAS Backend API URL - Configure via config/config.local.js
-export const DEFAULT_GAS_URL = "";
+// Backend API URL - Configure via config/config.local.js
+export const DEFAULT_API_URL = "";
 
-// Helper to get GAS_URL dynamically to handle race conditions with config loading
-const getGasUrl = () =>
-  (typeof window.CONFIG !== "undefined" && window.CONFIG.GAS_URL) ||
-  DEFAULT_GAS_URL;
+// Helper to get API_URL dynamically to handle race conditions with config loading
+const getApiUrl = () =>
+  (typeof window.CONFIG !== "undefined" && window.CONFIG.API_URL) ||
+  (typeof window.CONFIG !== "undefined" && window.CONFIG.GAS_URL) || // Fallback for legacy config
+  DEFAULT_API_URL;
 
 /**
  * Check if Backend is properly configured
  * @returns {boolean} Whether Backend URL is available
  */
-export const isGasEnvironment = () => {
+export const isBackendAvailable = () => {
   try {
-    const url = getGasUrl();
+    const url = getApiUrl();
     if (typeof url !== "string" || !url) return false;
     return true;
   } catch (e) {
     return false;
   }
 };
+
+// Legacy alias for backward compatibility
+export const isGasEnvironment = isBackendAvailable;
 
 // ============================================================================
 // API SERVICE
@@ -52,14 +56,15 @@ export const isGasEnvironment = () => {
  * @param {Object} args - Arguments to pass
  * @returns {Promise<any>} API response
  */
-export const runGasFn = async (fnName, ...args) => {
-  const gasUrl = getGasUrl();
-  if (!gasUrl) {
+export const runApiFn = async (fnName, ...args) => {
+  const apiUrl = getApiUrl();
+  if (!apiUrl) {
     console.error("Backend URL not configured");
     return null;
   }
 
-  const isGas = gasUrl.includes("script.google.com");
+  // Detect if we are still using GAS (legacy) or Firebase (modern)
+  const isLegacyGas = apiUrl.includes("script.google.com");
 
   try {
     // Map function names to API actions
@@ -68,25 +73,37 @@ export const runGasFn = async (fnName, ...args) => {
       getLeaderboardData: { action: "getLeaderboard", method: "GET" },
       saveLeaderboardScore: {
         action: "saveScore",
-        method: isGas ? "GET" : "POST",
+        method: isLegacyGas ? "GET" : "POST",
       },
       getChatData: { action: "getChat", method: "GET" },
-      postChatData: { action: "postChat", method: isGas ? "GET" : "POST" },
-      logClientError: { action: "logError", method: isGas ? "GET" : "POST" },
-      registerUser: { action: "register", method: isGas ? "GET" : "POST" },
-      loginUser: { action: "login", method: isGas ? "GET" : "POST" },
+      postChatData: {
+        action: "postChat",
+        method: isLegacyGas ? "GET" : "POST",
+      },
+      logClientError: {
+        action: "logError",
+        method: isLegacyGas ? "GET" : "POST",
+      },
+      registerUser: {
+        action: "register",
+        method: isLegacyGas ? "GET" : "POST",
+      },
+      loginUser: { action: "login", method: isLegacyGas ? "GET" : "POST" },
       getUserProfile: { action: "getUserProfile", method: "GET" },
       updateUserProfile: {
         action: "updateUserProfile",
-        method: isGas ? "GET" : "POST",
+        method: isLegacyGas ? "GET" : "POST",
       },
       getUserState: { action: "getUserState", method: "GET" },
       saveUserState: {
         action: "saveUserState",
-        method: isGas ? "GET" : "POST",
+        method: isLegacyGas ? "GET" : "POST",
       },
       getUserBadges: { action: "getUserBadges", method: "GET" },
-      awardBadge: { action: "awardBadge", method: isGas ? "GET" : "POST" },
+      awardBadge: {
+        action: "awardBadge",
+        method: isLegacyGas ? "GET" : "POST",
+      },
     };
 
     const mapping = actionMap[fnName];
@@ -96,7 +113,7 @@ export const runGasFn = async (fnName, ...args) => {
     }
 
     const { action, method } = mapping;
-    const url = new URL(gasUrl);
+    const url = new URL(apiUrl);
 
     // For GET requests or GAS, append params to URL
     if (method === "GET") {
@@ -148,15 +165,18 @@ export const runGasFn = async (fnName, ...args) => {
   }
 };
 
+// Legacy alias
+export const runGasFn = runApiFn;
+
 /**
  * Retry wrapper for API calls
  */
-export const robustRunGasFn = async (fnName, args = {}, opts = {}) => {
+export const robustRunApiFn = async (fnName, args = {}, opts = {}) => {
   const retries = Number(opts.retries || 2);
   let attempt = 0;
   while (true) {
     try {
-      return await runGasFn(fnName, args);
+      return await runApiFn(fnName, args);
     } catch (err) {
       attempt++;
       if (attempt > retries) throw err;
@@ -165,16 +185,19 @@ export const robustRunGasFn = async (fnName, args = {}, opts = {}) => {
   }
 };
 
+// Legacy alias
+export const robustRunGasFn = robustRunApiFn;
+
 // ============================================================================
 // HIGH-LEVEL SERVICES (App.jsx Compatibility)
 // ============================================================================
 
 export const getLeaderboard = async () => {
-  return await runGasFn("getLeaderboardData");
+  return await runApiFn("getLeaderboardData");
 };
 
 export const saveScore = async (data) => {
-  return await runGasFn("saveLeaderboardScore", data);
+  return await runApiFn("saveLeaderboardScore", data);
 };
 
 export const LeaderboardService = {
@@ -183,11 +206,11 @@ export const LeaderboardService = {
 };
 
 export const getChatMessages = async () => {
-  return await runGasFn("getChatData");
+  return await runApiFn("getChatData");
 };
 
 export const postChatMessage = async (data) => {
-  return await runGasFn("postChatData", data);
+  return await runApiFn("postChatData", data);
 };
 
 export const ChatService = {
@@ -215,16 +238,16 @@ export const UnlockService = {
 
 export const BadgeService = {
   getUserBadges: async (userId) => {
-    return await runGasFn("getUserBadges", { userId });
+    return await runApiFn("getUserBadges", { userId });
   },
   awardBadge: async (userId, badgeId) => {
-    return await runGasFn("awardBadge", { userId, badgeId });
+    return await runApiFn("awardBadge", { userId, badgeId });
   },
 };
 
 export const logError = async (errorInfo) => {
   console.error("Client Error:", errorInfo);
-  return await runGasFn("logClientError", errorInfo);
+  return await runApiFn("logClientError", errorInfo);
 };
 
 // ============================================================================
@@ -373,5 +396,6 @@ export const StorageService = {
 };
 
 // Export to window for global access if needed
-window.runGasFn = runGasFn;
+window.runApiFn = runApiFn;
+window.runGasFn = runGasFn; // Deprecated
 window.StorageService = StorageService;

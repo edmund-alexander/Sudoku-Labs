@@ -1,10 +1,37 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access to all documents for now
-    // WARNING: This is insecure and should be locked down before production
+    // Users collection
+    match /users/{userId} {
+      allow read: if true; // Public profiles
+      allow write: if request.auth != null && request.auth.uid == userId; // Only owner can write
+    }
+    
+    // Leaderboard
+    match /leaderboard/{scoreId} {
+      allow read: if true;
+      allow create: if true; // Anyone can post scores (validated by function)
+    }
+    
+    // Chat
+    match /chat/{messageId} {
+      allow read: if true;
+      allow create: if true; // Anyone can post (validated by function)
+    }
+    
+    // User State
+    match /userState/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Logs
+    match /logs/{logId} {
+      allow create: if true;
+    }
+    
+    // Default deny
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

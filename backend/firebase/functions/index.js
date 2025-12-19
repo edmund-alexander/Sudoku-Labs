@@ -92,6 +92,38 @@ exports.api = functions.https.onRequest((req, res) => {
           result = await awardBadge(params);
           break;
 
+        // --- Admin Endpoints ---
+        case "adminLogin":
+          result = await adminLogin(params);
+          break;
+        case "getAdminStats":
+          result = await getAdminStats(params);
+          break;
+        case "getAdminChatHistory":
+          result = await getAdminChatHistory(params);
+          break;
+        case "getAdminUsers":
+          result = await getAdminUsers(params);
+          break;
+        case "deleteMessages":
+          result = await deleteMessages(params);
+          break;
+        case "banUser":
+          result = await banUser(params);
+          break;
+        case "unbanUser":
+          result = await unbanUser(params);
+          break;
+        case "muteUser":
+          result = await muteUser(params);
+          break;
+        case "updateUserStats":
+          result = await updateUserStats(params);
+          break;
+        case "clearAllChat":
+          result = await clearAllChat(params);
+          break;
+
         case "ping":
           result = { ok: true, timestamp: new Date().toISOString() };
           break;
@@ -400,4 +432,134 @@ async function awardBadge(params) {
   });
 
   return { success: true, badgeId };
+}
+
+// --- Admin Implementation ---
+
+// Hardcoded admin password hash (SHA-256 for "admin")
+// In production, store this in Firestore or use Firebase Auth Claims
+const ADMIN_PASSWORD_HASH =
+  "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+const ADMIN_TOKEN_SECRET = "admin-secret-token-123"; // Simple token for session
+
+function verifyAdminToken(token) {
+  // In a real app, use JWT or Firebase Auth ID Token with custom claims
+  return token === ADMIN_TOKEN_SECRET;
+}
+
+async function adminLogin(params) {
+  const { username, passwordHash } = params;
+  // Simple check: username "admin" and matching hash
+  if (username === "admin" && passwordHash === ADMIN_PASSWORD_HASH) {
+    return {
+      success: true,
+      token: ADMIN_TOKEN_SECRET,
+      expiry: Date.now() + 3600000,
+    };
+  }
+  return { success: false, error: "Invalid credentials" };
+}
+
+async function getAdminStats(params) {
+  if (!verifyAdminToken(params.token))
+    return { success: false, error: "Unauthorized" };
+
+  const usersSnap = await db.collection("users").count().get();
+  const gamesSnap = await db.collection("leaderboard").count().get();
+  const chatSnap = await db.collection("chat").count().get();
+
+  return {
+    success: true,
+    stats: {
+      totalUsers: usersSnap.data().count,
+      totalGames: gamesSnap.data().count,
+      totalMessages: chatSnap.data().count,
+      serverTime: new Date().toISOString(),
+    },
+  };
+}
+
+async function getAdminChatHistory(params) {
+  if (!verifyAdminToken(params.token))
+    return { success: false, error: "Unauthorized" };
+
+  const snapshot = await db
+    .collection("chat")
+    .orderBy("timestamp", "desc")
+    .limit(100)
+    .get();
+  const messages = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+    timestamp: doc.data().timestamp?.toMillis(),
+  }));
+  return { success: true, messages };
+}
+
+async function getAdminUsers(params) {
+  if (!verifyAdminToken(params.token))
+    return { success: false, error: "Unauthorized" };
+
+  const snapshot = await db.collection("users").limit(100).get();
+  const users = snapshot.docs.map((doc) => doc.data());
+
+  // Get banned/muted users (stored in a separate collection or flag)
+  // For now, we'll just return empty lists as we haven't implemented banning logic fully
+  return { success: true, users, bannedUsers: [], mutedUsers: [] };
+}
+
+async function deleteMessages(params) {
+  if (!verifyAdminToken(params.token))
+    return { success: false, error: "Unauthorized" };
+
+  const messageIds = (params.messageIds || "").split(",");
+  const batch = db.batch();
+
+  messageIds.forEach((id) => {
+    if (id) batch.delete(db.collection("chat").doc(id));
+  });
+
+  await batch.commit();
+  return { success: true };
+}
+
+async function banUser(params) {
+  if (!verifyAdminToken(params.token))
+    return { success: false, error: "Unauthorized" };
+  // Implement ban logic (e.g., add to 'banned' collection)
+  return { success: true };
+}
+
+async function unbanUser(params) {
+  if (!verifyAdminToken(params.token))
+    return { success: false, error: "Unauthorized" };
+  // Implement unban logic
+  return { success: true };
+}
+
+async function muteUser(params) {
+  if (!verifyAdminToken(params.token))
+    return { success: false, error: "Unauthorized" };
+  // Implement mute logic
+  return { success: true };
+}
+
+async function updateUserStats(params) {
+  if (!verifyAdminToken(params.token))
+    return { success: false, error: "Unauthorized" };
+  // Reuse updateUserProfile logic but bypass auth checks if any
+  return updateUserProfile(params);
+}
+
+async function clearAllChat(params) {
+  if (!verifyAdminToken(params.token))
+    return { success: false, error: "Unauthorized" };
+
+  // Delete all chat messages (batch delete)
+  const snapshot = await db.collection("chat").limit(500).get();
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+
+  return { success: true };
 }

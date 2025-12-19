@@ -75,16 +75,16 @@ const AdminManager = {
     // Hash password (SHA-256)
     const passwordHash = await this.sha256(password);
 
-    const gasUrl = window.CONFIG?.GAS_URL;
-    if (!gasUrl) {
-      this.renderStatus("❌ Configuration Error: GAS_URL is missing.", "error");
+    const apiUrl = window.CONFIG?.API_URL;
+    if (!apiUrl) {
+      this.renderStatus("❌ Configuration Error: API_URL is missing.", "error");
       console.log("Check public/config/config.local.js");
       return;
     }
 
     this.renderStatus("📡 Connecting to secure backend...", "info");
 
-    const requestUrl = `${gasUrl}?action=adminLogin&username=${encodeURIComponent(
+    const requestUrl = `${apiUrl}?action=adminLogin&username=${encodeURIComponent(
       username
     )}&passwordHash=${passwordHash}`;
 

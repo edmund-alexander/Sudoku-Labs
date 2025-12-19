@@ -9,8 +9,8 @@ import { BADGES } from "../constants.js";
 import { SoundManager } from "../sound.js";
 import {
   StorageService,
-  isGasEnvironment,
-  runGasFn,
+  isBackendAvailable,
+  runApiFn,
   BadgeService,
 } from "../services.js";
 import { Icons } from "./Icons.jsx";
@@ -44,9 +44,9 @@ export const UserPanel = ({
   useEffect(() => {
     const refreshLocalProfile = async () => {
       if (!localUserSession || profileFetchedRef.current) return;
-      if (!isGasEnvironment()) return;
+      if (!isBackendAvailable()) return;
       try {
-        const res = await runGasFn("getUserProfile", {
+        const res = await runApiFn("getUserProfile", {
           userId: localUserSession.userId || localUserSession.username,
         });
         if (res && res.success && res.user) {
@@ -80,7 +80,7 @@ export const UserPanel = ({
       return;
     }
 
-    if (!isGasEnvironment()) {
+    if (!isBackendAvailable()) {
       setError("Authentication requires backend connection");
       return;
     }
@@ -89,7 +89,7 @@ export const UserPanel = ({
     setError("");
 
     try {
-      const result = await runGasFn("loginUser", { username, password });
+      const result = await runApiFn("loginUser", { username, password });
       if (result && result.success) {
         setLocalUserSession(result.user);
         StorageService.setUserSession(result.user);
@@ -146,7 +146,7 @@ export const UserPanel = ({
       return;
     }
 
-    if (!isGasEnvironment()) {
+    if (!isBackendAvailable()) {
       setError("Authentication requires backend connection");
       return;
     }
@@ -155,7 +155,7 @@ export const UserPanel = ({
     setError("");
 
     try {
-      const result = await runGasFn("registerUser", {
+      const result = await runApiFn("registerUser", {
         username: trimmedUsername,
         email: email.trim(),
         password,
@@ -489,7 +489,7 @@ export const UserPanel = ({
             </button>
           </div>
 
-          {!isGasEnvironment() && (
+          {!isBackendAvailable() && (
             <div className="mt-4 text-xs text-center text-yellow-600 dark:text-yellow-400">
               ⚠️ Backend not configured. Authentication unavailable.
             </div>

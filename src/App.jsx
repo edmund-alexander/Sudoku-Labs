@@ -36,11 +36,11 @@ import {
 } from "./utils.js";
 import { SoundManager } from "./sound.js";
 import {
-  runGasFn,
+  runApiFn,
   StorageService,
   LeaderboardService,
   ChatService,
-  isGasEnvironment,
+  isBackendAvailable,
   isUserAuthenticated,
   UnlockService,
   logError,
@@ -227,7 +227,7 @@ window.runDebugTests = async function () {
   try {
     // Test 1: Check GAS configuration
     dlog("%cTest 1: GAS Configuration...", "font-weight: bold");
-    if (isGasEnvironment()) {
+    if (isBackendAvailable()) {
       console.log("✅ GAS_URL is configured and valid");
       results.passed.push("GAS Configuration");
     } else {
@@ -236,10 +236,10 @@ window.runDebugTests = async function () {
     }
 
     // Test 2: Ping backend (if configured)
-    if (isGasEnvironment()) {
+    if (isBackendAvailable()) {
       console.log("\n%cTest 2: Backend Ping...", "font-weight: bold");
       try {
-        const pingResult = await runGasFn("ping");
+        const pingResult = await runApiFn("ping");
         if (pingResult && pingResult.ok) {
           console.log("✅ Backend is responding");
           console.log("   Timestamp:", pingResult.timestamp);
@@ -266,13 +266,13 @@ window.runDebugTests = async function () {
       results.passed.push("User Session");
 
       // Test 4: Get user profile (if GAS configured)
-      if (isGasEnvironment()) {
+      if (isBackendAvailable()) {
         console.log(
           "\n%cTest 4: Fetching User Profile...",
           "font-weight: bold"
         );
         try {
-          const profile = await runGasFn("getUserProfile", {
+          const profile = await runApiFn("getUserProfile", {
             userId: session.userId,
           });
           if (profile && profile.success) {
@@ -309,7 +309,7 @@ window.runDebugTests = async function () {
           "font-weight: bold"
         );
         try {
-          const state = await runGasFn("getUserState", {
+          const state = await runApiFn("getUserState", {
             userId: session.userId,
           });
           if (state && state.success && state.state) {
@@ -604,7 +604,7 @@ const App = () => {
   const persistUserStateToBackend = useCallback(
     async (partial = {}) => {
       const session = StorageService.getUserSession();
-      if (!isGasEnvironment() || !session?.userId) return;
+      if (!isBackendAvailable() || !session?.userId) return;
 
       const payload = {
         userId: session.userId,
@@ -618,7 +618,7 @@ const App = () => {
       };
 
       try {
-        await runGasFn("saveUserState", payload);
+        await runApiFn("saveUserState", payload);
       } catch (err) {
         console.error("Failed to persist user state:", err);
       }
@@ -638,7 +638,7 @@ const App = () => {
 
   const schedulePersist = useCallback(
     (partial) => {
-      if (!isUserAuthenticated() || !isGasEnvironment()) return;
+      if (!isUserAuthenticated() || !isBackendAvailable()) return;
       pendingPersistRef.current = {
         ...(pendingPersistRef.current || {}),
         ...partial,
@@ -657,9 +657,13 @@ const App = () => {
 
     // Sync latest gameStats from backend to ensure database edits are reflected
     // This merges local and cloud data, taking the higher values
-    if (isUserAuthenticated() && isGasEnvironment() && appUserSession?.userId) {
+    if (
+      isUserAuthenticated() &&
+      isBackendAvailable() &&
+      appUserSession?.userId
+    ) {
       try {
-        const remote = await runGasFn("getUserState", {
+        const remote = await runApiFn("getUserState", {
           userId: appUserSession.userId,
         });
         if (remote?.success && remote.state) {
@@ -727,10 +731,10 @@ const App = () => {
 
   const hydrateUserState = useCallback(
     async (user) => {
-      if (!user?.userId || !isGasEnvironment()) return;
+      if (!user?.userId || !isBackendAvailable()) return;
       try {
         setBackendError(null);
-        const remote = await runGasFn("getUserState", { userId: user.userId });
+        const remote = await runApiFn("getUserState", { userId: user.userId });
         if (!remote || !remote.success || !remote.state) return;
 
         const localStats = StorageService.getGameStats();
@@ -882,7 +886,7 @@ const App = () => {
 
   // Periodically refresh user state so admin edits propagate without a reload
   useEffect(() => {
-    if (!appUserSession || !isGasEnvironment()) return undefined;
+    if (!appUserSession || !isBackendAvailable()) return undefined;
 
     const refresh = () => hydrateUserState(appUserSession);
     const interval = setInterval(refresh, 30000); // 30s balance freshness vs. load
@@ -1011,7 +1015,7 @@ const App = () => {
 
   useEffect(() => {
     // Only poll chat when backend is configured
-    if (!isGasEnvironment()) return;
+    if (!isBackendAvailable()) return;
 
     let interval;
     const fetchChat = async () => {
@@ -1041,7 +1045,7 @@ const App = () => {
           const cached = profileCacheRef.current.get(username);
           if (!cached || Date.now() - cached.timestamp > 5 * 60 * 1000) {
             try {
-              const result = await runGasFn("getUserProfile", {
+              const result = await runApiFn("getUserProfile", {
                 userId: username,
               });
               if (result && result.success) {
@@ -1158,7 +1162,7 @@ const App = () => {
       // Try GAS backend with retries
       while (!newBoard && retries < maxRetries) {
         try {
-          newBoard = await runGasFn("generateSudoku", diff);
+          newBoard = await runApiFn("generateSudoku", diff);
 
           // Validate the board structure
           if (newBoard && Array.isArray(newBoard) && newBoard.length === 81) {
@@ -1283,7 +1287,7 @@ const App = () => {
               StorageService.clearSavedGame();
 
               // Increment games played in backend if authenticated (on loss)
-              if (isUserAuthenticated() && isGasEnvironment()) {
+              if (isUserAuthenticated() && isBackendAvailable()) {
                 const session = StorageService.getUserSession();
                 if (session && session.userId) {
                   try {
@@ -1294,9 +1298,9 @@ const App = () => {
                       difficulty: difficulty,
                     };
                     // Use robust wrapper to handle transient errors
-                    if (typeof window.robustRunGasFn === "function") {
+                    if (typeof window.robustRunApiFn === "function") {
                       window
-                        .robustRunGasFn("updateUserProfile", updateData, {
+                        .robustRunApiFn("updateUserProfile", updateData, {
                           retries: 2,
                           backoff: 250,
                         })
@@ -1307,7 +1311,7 @@ const App = () => {
                           )
                         );
                     } else {
-                      runGasFn && runGasFn("updateUserProfile", updateData);
+                      runApiFn && runApiFn("updateUserProfile", updateData);
                     }
                   } catch (err) {
                     console.error("Failed to update user stats (loss):", err);
@@ -1380,7 +1384,7 @@ const App = () => {
         finalTime,
         userId:
           StorageService.getCurrentUserId && StorageService.getCurrentUserId(),
-        gas: isGasEnvironment && isGasEnvironment(),
+        gas: isBackendAvailable && isBackendAvailable(),
       });
 
       // Save to leaderboard (best-effort)
@@ -1447,7 +1451,7 @@ const App = () => {
       }
 
       // Update user stats if authenticated
-      if (isUserAuthenticated() && isGasEnvironment()) {
+      if (isUserAuthenticated() && isBackendAvailable()) {
         const session = StorageService.getUserSession();
         if (session && session.userId) {
           try {
@@ -1461,14 +1465,14 @@ const App = () => {
               fastWin: finalTime <= 180, // Fast win if 3 minutes or less
             };
 
-            // Use robustRunGasFn to reduce impact of transient failures
-            if (typeof window.robustRunGasFn === "function") {
-              await window.robustRunGasFn("updateUserProfile", updateData, {
+            // Use robustRunApiFn to reduce impact of transient failures
+            if (typeof window.robustRunApiFn === "function") {
+              await window.robustRunApiFn("updateUserProfile", updateData, {
                 retries: 2,
                 backoff: 300,
               });
               // Refresh user profile to get updated stats
-              const updatedProfile = await window.robustRunGasFn(
+              const updatedProfile = await window.robustRunApiFn(
                 "getUserProfile",
                 { userId: session.userId },
                 { retries: 2, backoff: 300 }
@@ -1480,7 +1484,7 @@ const App = () => {
               }
 
               try {
-                await window.robustRunGasFn(
+                await window.robustRunApiFn(
                   "saveUserState",
                   {
                     userId: session.userId,
@@ -1496,8 +1500,8 @@ const App = () => {
                 console.error("Failed to persist user state to backend:", e);
               }
             } else {
-              await runGasFn("updateUserProfile", updateData);
-              const updatedProfile = await runGasFn("getUserProfile", {
+              await runApiFn("updateUserProfile", updateData);
+              const updatedProfile = await runApiFn("getUserProfile", {
                 userId: session.userId,
               });
               if (updatedProfile && updatedProfile.success) {
@@ -1655,7 +1659,7 @@ const App = () => {
 
   // Handle viewing another user's profile from chat
   const handleViewProfile = async (username) => {
-    if (!username || !isGasEnvironment()) return;
+    if (!username || !isBackendAvailable()) return;
 
     setProfileLoading(true);
     if (soundEnabled) SoundManager.play("uiTap");
@@ -1671,7 +1675,7 @@ const App = () => {
       }
 
       // Get user profile from backend using username as userId (they're the same in the system)
-      const result = await runGasFn("getUserProfile", { userId: username });
+      const result = await runApiFn("getUserProfile", { userId: username });
       if (result && result.success) {
         // Cache the result
         profileCacheRef.current.set(username, {
@@ -1694,7 +1698,7 @@ const App = () => {
     // Disable hover profiles on touch devices (mobile/tablet)
     if (window.matchMedia("(hover: none)").matches) return;
 
-    if (!username || username === userId || !isGasEnvironment()) return;
+    if (!username || username === userId || !isBackendAvailable()) return;
 
     // Clear any existing timeout
     if (hoverTimeoutRef.current) {
@@ -1717,7 +1721,7 @@ const App = () => {
     // Wait 300ms before fetching (reduced from 500ms)
     hoverTimeoutRef.current = setTimeout(async () => {
       try {
-        const result = await runGasFn("getUserProfile", { userId: username });
+        const result = await runApiFn("getUserProfile", { userId: username });
         if (result && result.success) {
           // Cache the result
           profileCacheRef.current.set(username, {
@@ -2465,7 +2469,7 @@ const App = () => {
         )}
 
       <div className="w-full max-w-7xl flex flex-col gap-3 sm:gap-6 flex-grow relative z-10">
-        {!isGasEnvironment() && (
+        {!isBackendAvailable() && (
           <div className="w-full mx-auto mb-2 p-2 rounded text-xs sm:text-sm text-yellow-800 bg-yellow-100 border border-yellow-200 text-center">
             GAS not configured — using local generator for puzzles. Create{" "}
             <span className="font-mono">config/config.local.js</span> with your{" "}

@@ -19,7 +19,7 @@ export const SystemTab = ({
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={async () => {
-                if (!window.CONFIG?.GAS_URL) {
+                if (!window.CONFIG?.API_URL) {
                   setMessage({
                     type: "error",
                     text: "Backend URL not configured",
@@ -32,7 +32,7 @@ export const SystemTab = ({
                   setLoading(true);
                   try {
                     const response = await fetch(
-                      `${window.CONFIG.GAS_URL}?action=clearAllChat&token=${sessionToken}`
+                      `${window.CONFIG.API_URL}?action=clearAllChat&token=${sessionToken}`
                     );
                     const data = await response.json();
                     if (data.success) {

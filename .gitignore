@@ -35,3 +35,4 @@ build/
 .cache/
 tailwindcss-linux-*
 backend/gas/sudoku-labs-firebase-adminsdk-*.json
+backend/firebase/functions/sudoku-labs-firebase-adminsdk-*.json

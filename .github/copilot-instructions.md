@@ -22,8 +22,8 @@ Essential knowledge for AI agents to be productive in this codebase.
 
 - Template: `config/config.example.js` (committed)
 - Local: `config/config.local.js` (gitignored, required for backend features)
-- Two config properties: `GAS_URL` (backend endpoint), `BASE_PATH` (subdirectory prefix)
-- Fallback: Without `GAS_URL`, app runs offline with local puzzle generation + localStorage
+- Two config properties: `API_URL` (backend endpoint), `BASE_PATH` (subdirectory prefix)
+- Fallback: Without `API_URL`, app runs offline with local puzzle generation + localStorage
 
 ## Critical Gotchas
 
@@ -31,9 +31,9 @@ Essential knowledge for AI agents to be productive in this codebase.
 
 - **All API calls use HTTP GET**, including writes (saveScore, postChat, logError)
 - Why: GAS public deployments redirect POSTs (302) to auth pages, breaking API
-- Pattern: `runGasFn(fnName, args)` in `src/services.js` builds GET URL with `action` param
+- Pattern: `runApiFn(fnName, args)` in `src/services.js` builds GET URL with `action` param
 - Example: `?action=saveScore&name=Alice&difficulty=Easy&time=180`
-- Adding new endpoints: Update both `actionMap` in `runGasFn` AND `doGet()` switch in `Code.gs`
+- Adding new endpoints: Update both `actionMap` in `runApiFn` AND `doGet()` switch in `Code.gs`
 
 ### Module Load Order
 
@@ -61,7 +61,7 @@ Essential knowledge for AI agents to be productive in this codebase.
 | ---------------- | ------------------------------ | -------------------------------------------------- |
 | API router       | `backend/gas/Code.gs`          | All `doGet()` actions, sheet operations, auth      |
 | React UI         | `src/app.jsx`                  | All components, game logic                         |
-| API client       | `src/services.js`              | `runGasFn` mapping, StorageService (18 methods)    |
+| API client       | `src/services.js`              | `runApiFn` mapping, StorageService (18 methods)    |
 | Game constants   | `src/constants.js`             | `KEYS`, `THEMES`, `SOUND_PACKS`, `CAMPAIGN_LEVELS` |
 | Utilities        | `src/utils.js`                 | Validation, formatting, `generateLocalBoard()`     |
 | Sound system     | `src/sound.js`                 | `SoundManager` with 8 procedural sound packs       |

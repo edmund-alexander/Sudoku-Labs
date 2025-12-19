@@ -1,8 +1,8 @@
 // Simulate browser environment and test module loading
-const fs = require('fs');
-const vm = require('vm');
+const fs = require("fs");
+const vm = require("vm");
 
-console.log('=== Module Load Test ===\n');
+console.log("=== Module Load Test ===\n");
 
 // Create a simple browser-like context
 const context = {
@@ -20,31 +20,31 @@ const context = {
   isNaN: isNaN,
   parseInt: parseInt,
   parseFloat: parseFloat,
-  RegExp: RegExp
+  RegExp: RegExp,
 };
-context.window.CONFIG = { GAS_URL: null, BASE_PATH: '' };
+context.window.CONFIG = { API_URL: null, BASE_PATH: "" };
 context.global = context.window;
 
 // Simulate AudioContext (required by sound.js)
-context.AudioContext = function() {};
+context.AudioContext = function () {};
 context.window.AudioContext = context.AudioContext;
 
 vm.createContext(context);
 
 // Load modules in order
 const modules = [
-  'src/constants.js',
-  'src/utils.js',
-  'src/sound.js',
-  'src/services.js'
+  "src/constants.js",
+  "src/utils.js",
+  "src/sound.js",
+  "src/services.js",
 ];
 
 let allSuccess = true;
 
-modules.forEach(file => {
+modules.forEach((file) => {
   try {
     console.log(`Loading ${file}...`);
-    const code = fs.readFileSync(file, 'utf8');
+    const code = fs.readFileSync(file, "utf8");
     vm.runInContext(code, context);
     console.log(`✅ ${file} loaded successfully`);
   } catch (err) {
@@ -54,17 +54,28 @@ modules.forEach(file => {
   }
 });
 
-console.log('\n=== Checking Exports ===\n');
+console.log("\n=== Checking Exports ===\n");
 
 // Check expected exports
 const expectedExports = [
-  'KEYS', 'THEMES', 'SOUND_PACKS', 'DIFFICULTY', 'EMOJI_CATEGORIES',
-  'getThemeAssetSet', 'VISUAL_BASES', 'THEME_COMBINATIONS',
-  'isValidSudoku', 'generateLocalBoard', 'formatTime',
-  'SoundManager', 'runGasFn', 'StorageService', 'initUser'
+  "KEYS",
+  "THEMES",
+  "SOUND_PACKS",
+  "DIFFICULTY",
+  "EMOJI_CATEGORIES",
+  "getThemeAssetSet",
+  "VISUAL_BASES",
+  "THEME_COMBINATIONS",
+  "isValidSudoku",
+  "generateLocalBoard",
+  "formatTime",
+  "SoundManager",
+  "runApiFn",
+  "StorageService",
+  "initUser",
 ];
 
-expectedExports.forEach(name => {
+expectedExports.forEach((name) => {
   if (context.window[name]) {
     console.log(`✅ ${name} exported`);
   } else {
@@ -73,11 +84,11 @@ expectedExports.forEach(name => {
   }
 });
 
-console.log('\n=== Summary ===');
+console.log("\n=== Summary ===");
 if (allSuccess) {
-  console.log('✅ All modules loaded successfully!');
+  console.log("✅ All modules loaded successfully!");
   process.exit(0);
 } else {
-  console.log('❌ Some modules failed to load');
+  console.log("❌ Some modules failed to load");
   process.exit(1);
 }
