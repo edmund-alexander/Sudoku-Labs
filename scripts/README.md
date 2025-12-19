@@ -22,9 +22,11 @@ scripts/
 ### Admin Console Setup
 
 #### 🔧 Admin Setup - `setup-admin.sh`
+
 **Simple and reliable admin console setup**
 
 #### 🔧 Admin Setup - `setup-admin.sh`
+
 **Simple and reliable admin console setup**
 
 ```bash
@@ -32,15 +34,17 @@ bash scripts/setup-admin.sh
 ```
 
 **What it does:**
+
 - ✅ Configures frontend admin credentials
 - ✅ Generates secure password hash (SHA-256)
 - ✅ Creates gitignored config files
 - ✅ Works in all environments (local, Codespaces, etc.)
 
 **Then you manually:**
+
 - Copy Code.gs to Google Apps Script
 - Set Script Properties
-- Run setupSheets_() function
+- Run setupSheets\_() function
 - Deploy Web App
 
 **Time:** ~10 minutes total
@@ -52,6 +56,7 @@ bash scripts/setup-admin.sh
 ### Setup Scripts
 
 #### Production Setup (`setup/production-setup.sh`)
+
 Interactive script to configure the app for production deployment.
 
 ```bash
@@ -59,6 +64,7 @@ Interactive script to configure the app for production deployment.
 ```
 
 **Features:**
+
 - Prompts for GAS_URL and BASE_PATH
 - Creates `config/config.local.js` with production values
 - Validates configuration format
@@ -67,6 +73,7 @@ Interactive script to configure the app for production deployment.
 ### Development Scripts
 
 #### Diagnostic Tool (`dev/diagnostic.sh`)
+
 Health check script that tests GAS backend connectivity.
 
 ```bash
@@ -74,6 +81,7 @@ Health check script that tests GAS backend connectivity.
 ```
 
 **Usage:**
+
 ```bash
 # Basic health check
 ./scripts/dev/diagnostic.sh
@@ -83,12 +91,14 @@ GAS_URL="https://script.google.com/.../exec" ./scripts/dev/diagnostic.sh
 ```
 
 **Checks:**
+
 - GAS endpoint availability
 - Puzzle generation
 - Leaderboard access
 - Chat functionality
 
 #### Background Generator (`dev/generate_backgrounds.py`)
+
 Generate AI-powered theme backgrounds using Google Gemini.
 
 ```bash
@@ -96,6 +106,7 @@ python scripts/dev/generate_backgrounds.py --api-key YOUR_KEY
 ```
 
 **Features:**
+
 - Generates backgrounds for all theme combinations
 - Uses Google Gemini for high-quality images
 - Outputs to `public/assets/themes/<visual>/<audio>/`
@@ -104,6 +115,7 @@ python scripts/dev/generate_backgrounds.py --api-key YOUR_KEY
 See [dev/README.md](dev/README.md) for detailed usage.
 
 #### Branch Cleanup (`dev/cleanup-merged-branches.sh`)
+
 Clean up merged Git branches safely.
 
 ```bash
@@ -111,6 +123,7 @@ Clean up merged Git branches safely.
 ```
 
 **Features:**
+
 - Lists merged branches
 - Prompts for confirmation
 - Deletes local and remote branches
@@ -130,24 +143,28 @@ chmod +x scripts/dev/*.sh
 When adding new scripts:
 
 1. **Place in appropriate directory:**
+
    - `setup/` - Installation, configuration, initial setup
    - `dev/` - Development tools, testing, utilities
 
 2. **Follow naming conventions:**
+
    - Use kebab-case: `my-script.sh`
    - Be descriptive: `setup-database.sh` not `setup.sh`
    - Include file extension
 
 3. **Add documentation:**
+
    - Update this README
    - Add usage comments in the script
    - Include help text (`--help` flag)
 
 4. **Use bash best practices:**
+
    ```bash
    #!/bin/bash
    set -e  # Exit on error
-   
+
    # Script description
    # Usage: ./script.sh [options]
    ```

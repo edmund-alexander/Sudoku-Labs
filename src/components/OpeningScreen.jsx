@@ -15,6 +15,7 @@ const OpeningScreen = ({
   onShowUserPanel,
   onShowAwards,
   userSession,
+  onOpenAuth,
 }) => {
   const localStats = StorageService.getGameStats();
   const [practiceMode, setPracticeMode] = useState(false);
@@ -164,6 +165,30 @@ const OpeningScreen = ({
               </div>
             </label>
           </div>
+
+          {/* Auth Buttons - Only show if not logged in */}
+          {!userSession && (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  if (soundEnabled) SoundManager.play("uiTap");
+                  onOpenAuth("login");
+                }}
+                className="py-3 px-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-xl font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2"
+              >
+                <Icons.Login /> Login
+              </button>
+              <button
+                onClick={() => {
+                  if (soundEnabled) SoundManager.play("uiTap");
+                  onOpenAuth("register");
+                }}
+                className="py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+              >
+                <Icons.User /> Register
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Stats preview */}

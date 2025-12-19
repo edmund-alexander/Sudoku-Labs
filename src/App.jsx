@@ -519,6 +519,7 @@ const App = () => {
 
   // User Authentication State
   const [showUserPanel, setShowUserPanel] = useState(false);
+  const [userPanelInitialMode, setUserPanelInitialMode] = useState("menu");
   const [appUserSession, setAppUserSession] = useState(
     StorageService.getUserSession()
   );
@@ -1611,6 +1612,11 @@ const App = () => {
     isSendingRef.current = false;
   };
 
+  const openUserPanel = useCallback((mode = "menu") => {
+    setUserPanelInitialMode(mode);
+    setShowUserPanel(true);
+  }, []);
+
   const handleUserPanelClose = (updatedUser) => {
     if (updatedUser) {
       // Update both global storage and component state for consistency
@@ -1644,6 +1650,7 @@ const App = () => {
       setUserStatus(StorageService.getUserStatus());
     }
     setShowUserPanel(false);
+    setUserPanelInitialMode("menu");
   };
 
   // Handle viewing another user's profile from chat
@@ -1684,6 +1691,9 @@ const App = () => {
 
   // Handle hover profile preview
   const handleProfileHoverStart = async (username, event) => {
+    // Disable hover profiles on touch devices (mobile/tablet)
+    if (window.matchMedia("(hover: none)").matches) return;
+
     if (!username || username === userId || !isGasEnvironment()) return;
 
     // Clear any existing timeout
@@ -2287,7 +2297,8 @@ const App = () => {
           loading={loading}
           soundEnabled={soundEnabled}
           toggleSound={toggleSound}
-          onShowUserPanel={() => setShowUserPanel(true)}
+          onShowUserPanel={() => openUserPanel("menu")}
+          onOpenAuth={openUserPanel}
           onShowAwards={() => {
             if (soundEnabled) SoundManager.play("uiTap");
             openAwards();
@@ -2299,6 +2310,7 @@ const App = () => {
             soundEnabled={soundEnabled}
             onClose={handleUserPanelClose}
             appUserSession={appUserSession}
+            initialMode={userPanelInitialMode}
           />
         )}
         {showAwardsZone && (

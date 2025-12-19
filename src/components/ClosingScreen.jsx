@@ -259,18 +259,26 @@ const ClosingScreen = ({
               onRestart();
             }}
             disabled={loading}
-            className="w-full py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm sm:text-base transition-colors disabled:opacity-50"
+            className="w-full py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm sm:text-base transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? "Generating..." : isWin ? "Play Another" : "Try Again"}
+            {loading ? (
+              <>
+                <span className="animate-spin">⏳</span> Generating...
+              </>
+            ) : (
+              <>
+                <Icons.Play /> {isWin ? "Play Another" : "Try Again"}
+              </>
+            )}
           </button>
           <button
             onClick={() => {
               if (soundEnabled) SoundManager.play("uiTap");
               onMenu();
             }}
-            className="w-full py-2.5 sm:py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg font-bold text-sm sm:text-base transition-colors"
+            className="w-full py-2.5 sm:py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg font-bold text-sm sm:text-base transition-colors flex items-center justify-center gap-2"
           >
-            Main Menu
+            <Icons.Home /> Main Menu
           </button>
         </div>
       </div>

@@ -6,14 +6,14 @@ const Cell = memo(
     const isRightBorder = (col + 1) % 3 === 0 && col !== 8;
     const isBottomBorder = (row + 1) % 3 === 0 && row !== 8;
     let baseClasses =
-      "relative flex items-center justify-center text-base sm:text-lg md:text-xl font-medium cursor-pointer transition-all duration-200 select-none h-8 w-8 sm:h-10 sm:w-10 md:h-11 md:w-11 lg:h-12 lg:w-12 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10";
+      "relative flex items-center justify-center text-base sm:text-lg md:text-xl font-medium cursor-pointer transition-all duration-200 select-none h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11 lg:h-12 lg:w-12 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10 active:scale-95";
     if (isRightBorder)
       baseClasses += " border-r-2 border-gray-400 dark:border-gray-500";
     else baseClasses += " border-r border-gray-200 dark:border-gray-700";
     if (isBottomBorder)
       baseClasses += " border-b-2 border-gray-400 dark:border-gray-500";
     else baseClasses += " border-b border-gray-200 dark:border-gray-700";
-    
+
     let bgClass = "";
     if (isSelected) {
       bgClass = "bg-blue-200 dark:bg-blue-900";
@@ -26,7 +26,7 @@ const Cell = memo(
         "bg-orange-100 dark:bg-orange-900/50 ring-1 ring-orange-300 dark:ring-orange-700";
     } else if (isCompletedBox) {
       bgClass =
-        "bg-amber-50 dark:bg-amber-900/30 transition-colors duration-1000";
+        "bg-amber-50 dark:bg-amber-900/30 transition-colors duration-1000 ring-1 ring-amber-200 dark:ring-amber-800";
       if (isFixed) {
         bgClass += " text-gray-900 dark:text-gray-100 font-bold";
       } else {
@@ -36,7 +36,8 @@ const Cell = memo(
       bgClass =
         "bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-bold";
     } else {
-      bgClass = "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400";
+      bgClass =
+        "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30";
     }
 
     // Accessibility labels
@@ -56,7 +57,7 @@ const Cell = memo(
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
               <div
                 key={n}
-                className="flex items-center justify-center text-[0.4rem] sm:text-[0.5rem] md:text-xs leading-none text-gray-500 dark:text-gray-400"
+                className="flex items-center justify-center text-[0.5rem] sm:text-[0.6rem] leading-none text-gray-500 dark:text-gray-400 font-medium"
               >
                 {notes.includes(n) ? n : ""}
               </div>

@@ -15,8 +15,13 @@ import {
 } from "../services.js";
 import { Icons } from "./Icons.jsx";
 
-export const UserPanel = ({ soundEnabled, onClose, appUserSession }) => {
-  const [mode, setMode] = useState("menu"); // menu, login, register
+export const UserPanel = ({
+  soundEnabled,
+  onClose,
+  appUserSession,
+  initialMode = "menu",
+}) => {
+  const [mode, setMode] = useState(initialMode); // menu, login, register
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

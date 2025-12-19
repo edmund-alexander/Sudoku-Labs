@@ -154,6 +154,18 @@
 
 /* Font family */
 body { 
-  font-family: 'Inter', sans-serif; 
+  font-family: 'Inter', sans-serif;
+  touch-action: manipulation; /* Improves touch response by disabling double-tap zoom */
+  -webkit-tap-highlight-color: transparent; /* Removes gray highlight on tap in iOS */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
 }
 
