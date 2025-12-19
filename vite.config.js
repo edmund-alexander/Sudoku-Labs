@@ -6,10 +6,10 @@ export default defineConfig({
   base: "./", // Relative base path for GitHub Pages subdirectory deployment
   define: {
     // Inject config for production build to avoid relying on ignored local files
-    'window.CONFIG': JSON.stringify({
-      API_URL: '/',
-      BASE_PATH: ''
-    })
+    "window.CONFIG": JSON.stringify({
+      API_URL: "/",
+      BASE_PATH: "",
+    }),
   },
   server: {
     port: 3000,
