@@ -47,4 +47,14 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, "index.html"));
 });
 
+// Start the server if run directly
+const PORT = parseInt(process.env.PORT) || 8080;
+const HOST = "0.0.0.0"; // Listen on all network interfaces
+
+if (require.main === module) {
+  app.listen(PORT, HOST, () => {
+    console.log(`Server running and listening on http://${HOST}:${PORT}`);
+  });
+}
+
 module.exports = app;
