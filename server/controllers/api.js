@@ -4,7 +4,15 @@ const axios = require("axios");
 const sudoku = require("../lib/sudoku");
 
 const router = express.Router();
-const db = admin.firestore();
+
+// Lazy initialize db to ensure Firebase Admin is initialized first
+let db;
+function getDb() {
+  if (!db) {
+    db = admin.firestore();
+  }
+  return db;
+}
 
 // --- CONFIGURATION ---
 const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY;
@@ -25,10 +33,15 @@ function sanitizeInput(str, maxLength) {
   return maxLength ? s.substring(0, maxLength) : s;
 }
 
+// Helper to validate userId is not empty
+function validateUserId(userId) {
+  return userId && typeof userId === 'string' && userId.trim().length > 0;
+}
+
 // --- Implementation Functions ---
 
 async function getLeaderboard() {
-  const snapshot = await db
+  const snapshot = await getDb()
     .collection("leaderboard")
     .orderBy("time", "asc")
     .limit(50)
@@ -47,12 +60,12 @@ async function saveScore(params) {
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   };
 
-  await db.collection("leaderboard").add(entry);
+  await getDb().collection("leaderboard").add(entry);
   return getLeaderboard();
 }
 
 async function getChat() {
-  const snapshot = await db
+  const snapshot = await getDb()
     .collection("chat")
     .orderBy("timestamp", "desc") // Get newest first
     .limit(50)
@@ -82,13 +95,13 @@ async function postChat(params) {
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   };
 
-  await db.collection("chat").add(entry);
+  await getDb().collection("chat").add(entry);
   return getChat();
 }
 
 async function logError(params) {
   const { type, message, userAgent, count } = params;
-  await db.collection("logs").add({
+  await getDb().collection("logs").add({
     type: sanitizeInput(type, 20),
     message: sanitizeInput(message, 200),
     userAgent: sanitizeInput(userAgent, 100),
@@ -111,7 +124,7 @@ async function registerUser(params) {
     return { success: false, error: "Invalid email address" };
 
   // Check if username is taken in Firestore
-  const snapshot = await db
+  const snapshot = await getDb()
     .collection("users")
     .where("username_lower", "==", username.toLowerCase())
     .get();
@@ -147,7 +160,7 @@ async function registerUser(params) {
       createdAt,
     };
 
-    await db.collection("users").doc(userId).set(newUser);
+    await getDb().collection("users").doc(userId).set(newUser);
 
     // Return user without sensitive data
     const { username_lower: __, ...safeUser } = newUser;
@@ -170,7 +183,7 @@ async function loginUser(params) {
   }
 
   // 1. Find email for username
-  const snapshot = await db
+  const snapshot = await getDb()
     .collection("users")
     .where("username_lower", "==", username.toLowerCase())
     .limit(1)
@@ -212,13 +225,18 @@ async function loginUser(params) {
 
 async function getUserProfile(params) {
   const userId = sanitizeInput(params.userId, 50);
+  
+  if (!validateUserId(userId)) {
+    console.warn('getUserProfile called with invalid userId');
+    return { success: false, error: 'Invalid user ID' };
+  }
 
   // Try by ID first
-  let doc = await db.collection("users").doc(userId).get();
+  let doc = await getDb().collection("users").doc(userId).get();
 
   if (!doc.exists) {
     // Try by username
-    const snapshot = await db
+    const snapshot = await getDb()
       .collection("users")
       .where("username_lower", "==", userId.toLowerCase())
       .limit(1)
@@ -239,7 +257,13 @@ async function getUserProfile(params) {
 
 async function updateUserProfile(params) {
   const userId = sanitizeInput(params.userId, 50);
-  const docRef = db.collection("users").doc(userId);
+  
+  if (!validateUserId(userId)) {
+    console.warn('updateUserProfile called with invalid userId');
+    return { success: false, error: 'Invalid user ID' };
+  }
+  
+  const docRef = getDb().collection("users").doc(userId);
   const doc = await docRef.get();
 
   if (!doc.exists) return { success: false, error: "User not found" };
@@ -276,7 +300,13 @@ async function updateUserProfile(params) {
 
 async function getUserState(params) {
   const userId = sanitizeInput(params.userId, 50);
-  const doc = await db.collection("userState").doc(userId).get();
+  
+  if (!validateUserId(userId)) {
+    console.warn('getUserState called with invalid userId');
+    return { success: false, error: 'Invalid user ID' };
+  }
+  
+  const doc = await getDb().collection("userState").doc(userId).get();
 
   if (!doc.exists) {
     return { success: false, error: "State not found" };
@@ -287,19 +317,31 @@ async function getUserState(params) {
 
 async function saveUserState(params) {
   const userId = sanitizeInput(params.userId, 50);
+  
+  if (!validateUserId(userId)) {
+    console.warn('saveUserState called with invalid userId');
+    return { success: false, error: 'Invalid user ID' };
+  }
+  
   const stateData = {
     ...params,
     lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
   };
   delete stateData.action; // Remove action param
 
-  await db.collection("userState").doc(userId).set(stateData, { merge: true });
+  await getDb().collection("userState").doc(userId).set(stateData, { merge: true });
   return { success: true };
 }
 
 async function getUserBadges(params) {
   const userId = sanitizeInput(params.userId, 50);
-  const doc = await db.collection("users").doc(userId).get();
+  
+  if (!validateUserId(userId)) {
+    console.warn('getUserBadges called with invalid userId');
+    return { success: false, badges: [], error: 'Invalid user ID' };
+  }
+  
+  const doc = await getDb().collection("users").doc(userId).get();
   if (!doc.exists) return { success: false, badges: [] };
   return { success: true, badges: doc.data().badges || [] };
 }
@@ -307,8 +349,13 @@ async function getUserBadges(params) {
 async function awardBadge(params) {
   const userId = sanitizeInput(params.userId, 50);
   const badgeId = sanitizeInput(params.badgeId, 50);
+  
+  if (!validateUserId(userId)) {
+    console.warn('awardBadge called with invalid userId');
+    return { success: false, error: 'Invalid user ID' };
+  }
 
-  const userRef = db.collection("users").doc(userId);
+  const userRef = getDb().collection("users").doc(userId);
   const doc = await userRef.get();
 
   if (!doc.exists) return { success: false, error: "User not found" };
@@ -339,7 +386,7 @@ async function verifyAdminToken(idToken) {
     const uid = decodedToken.uid;
 
     // Check if user exists in the admins collection with isAdmin: true
-    const adminDoc = await db.collection("admins").doc(uid).get();
+    const adminDoc = await getDb().collection("admins").doc(uid).get();
     
     if (!adminDoc.exists) {
       return { valid: false, error: "User is not an admin" };
@@ -402,7 +449,7 @@ async function adminLogin(params) {
     const uid = authResponse.data.localId;
 
     // Verify admin status in Firestore
-    const adminDoc = await db.collection("admins").doc(uid).get();
+    const adminDoc = await getDb().collection("admins").doc(uid).get();
     
     if (!adminDoc.exists) {
       return { success: false, error: "User is not an admin" };
@@ -431,9 +478,9 @@ async function getAdminStats(params) {
     return { success: false, error: verification.error || "Unauthorized" };
   }
 
-  const usersSnap = await db.collection("users").count().get();
-  const gamesSnap = await db.collection("leaderboard").count().get();
-  const chatSnap = await db.collection("chat").count().get();
+  const usersSnap = await getDb().collection("users").count().get();
+  const gamesSnap = await getDb().collection("leaderboard").count().get();
+  const chatSnap = await getDb().collection("chat").count().get();
 
   return {
     success: true,
@@ -452,7 +499,7 @@ async function getAdminChatHistory(params) {
     return { success: false, error: verification.error || "Unauthorized" };
   }
 
-  const snapshot = await db
+  const snapshot = await getDb()
     .collection("chat")
     .orderBy("timestamp", "desc")
     .limit(100)
@@ -471,7 +518,7 @@ async function getAdminUsers(params) {
     return { success: false, error: verification.error || "Unauthorized" };
   }
 
-  const snapshot = await db.collection("users").limit(100).get();
+  const snapshot = await getDb().collection("users").limit(100).get();
   const users = snapshot.docs.map((doc) => doc.data());
 
   return { success: true, users, bannedUsers: [], mutedUsers: [] };
@@ -484,10 +531,10 @@ async function deleteMessages(params) {
   }
 
   const messageIds = (params.messageIds || "").split(",");
-  const batch = db.batch();
+  const batch = getDb().batch();
 
   messageIds.forEach((id) => {
-    if (id) batch.delete(db.collection("chat").doc(id));
+    if (id) batch.delete(getDb().collection("chat").doc(id));
   });
 
   await batch.commit();
@@ -537,8 +584,8 @@ async function clearAllChat(params) {
   }
 
   // Delete all chat messages (batch delete)
-  const snapshot = await db.collection("chat").limit(500).get();
-  const batch = db.batch();
+  const snapshot = await getDb().collection("chat").limit(500).get();
+  const batch = getDb().batch();
   snapshot.docs.forEach((doc) => batch.delete(doc.ref));
   await batch.commit();
 
