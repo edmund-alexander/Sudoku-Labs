@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A modern, browser-based Sudoku game with leaderboard, chat, and campaign features. Built with React and Firebase.",
   "engines": {
-    "node": "20"
+    "node": ">=20"
   },
   "main": "server/index.js",
   "scripts": {
@@ -29,13 +29,17 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
-    "vite": "^5.4.11"
+    "vite": "^7.3.0"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
     "axios": "^1.13.2",
     "cors": "^2.8.5",
     "express": "^5.2.1",
-    "firebase-admin": "^11.8.0",
+    "firebase-admin": "^13.6.0",
+    "google-gax": "^5.0.6",
+    "protobufjs": "^7.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }
