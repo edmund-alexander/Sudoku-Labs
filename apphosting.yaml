@@ -9,3 +9,7 @@ env:
     value: "8080"
   - variable: FIREBASE_WEB_API_KEY
     value: "AIzaSyAEriKsDKgTv4wlXEH2KM8Z3fZsY0Nbbrc"
+  - variable: ADMIN_PASSWORD_HASH
+    value: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918" # SHA-256 for "admin"
+  - variable: ADMIN_TOKEN_SECRET
+    value: "change-this-secret-token-in-production"

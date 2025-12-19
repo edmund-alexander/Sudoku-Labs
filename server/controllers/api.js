@@ -7,8 +7,18 @@ const router = express.Router();
 const db = admin.firestore();
 
 // --- CONFIGURATION ---
-// IMPORTANT: Set this via environment variables in production
-const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY || "YOUR_API_KEY_HERE";
+const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY;
+
+// Admin Credentials (from Environment)
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
+const ADMIN_TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET;
+
+if (!FIREBASE_WEB_API_KEY) {
+  console.warn("WARNING: FIREBASE_WEB_API_KEY is not set. Auth features will fail.");
+}
+if (!ADMIN_PASSWORD_HASH || !ADMIN_TOKEN_SECRET) {
+  console.warn("WARNING: Admin credentials not set in environment. Admin console disabled.");
+}
 
 // Helper to sanitize input (basic XSS prevention)
 function sanitizeInput(str, maxLength) {
@@ -319,20 +329,19 @@ async function awardBadge(params) {
 
 // --- Admin Implementation ---
 
-// Hardcoded admin password hash (SHA-256 for "admin")
-// In production, store this in Firestore or use Firebase Auth Claims
-const ADMIN_PASSWORD_HASH =
-  "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
-const ADMIN_TOKEN_SECRET = "admin-secret-token-123"; // Simple token for session
-
 function verifyAdminToken(token) {
-  // In a real app, use JWT or Firebase Auth ID Token with custom claims
+  if (!ADMIN_TOKEN_SECRET) return false;
   return token === ADMIN_TOKEN_SECRET;
 }
 
 async function adminLogin(params) {
   const { username, passwordHash } = params;
-  // Simple check: username "admin" and matching hash
+  
+  if (!ADMIN_PASSWORD_HASH || !ADMIN_TOKEN_SECRET) {
+     return { success: false, error: "Admin system not configured." };
+  }
+
+  // Check username (hardcoded as 'admin' for now, could be env var too)
   if (username === "admin" && passwordHash === ADMIN_PASSWORD_HASH) {
     return {
       success: true,
