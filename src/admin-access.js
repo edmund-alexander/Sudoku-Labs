@@ -58,29 +58,6 @@
       const passwordHash = await this.sha256(password);
       console.log(`[Debug] Generated Hash: ${passwordHash}`);
 
-      // Verify locally first (if config loaded)
-      if (window.ADMIN_CONFIG) {
-        const localUser = window.ADMIN_CONFIG.ADMIN_USERNAME;
-        const localHash = window.ADMIN_CONFIG.ADMIN_PASSWORD_HASH;
-
-        // Only perform local check if both are defined in the config
-        if (localUser && localHash) {
-          if (
-            username !== localUser ||
-            passwordHash.toLowerCase() !== localHash.toLowerCase()
-          ) {
-            console.error("❌ Invalid credentials (Local check failed)");
-            console.log(`Expected User: ${localUser}, Got: ${username}`);
-            // console.log(`Expected Hash: ${localHash}, Got: ${passwordHash}`);
-            return;
-          }
-        } else {
-          console.warn(
-            "⚠️ Local admin config found but incomplete. Skipping local verification."
-          );
-        }
-      }
-
       // Request session token from backend
       try {
         const response = await fetch(
