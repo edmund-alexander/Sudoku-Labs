@@ -276,12 +276,12 @@ export const StorageService = {
 
   // --- Theme ---
   saveTheme: (themeId) => StorageService.set(KEYS.THEME, themeId),
-  getTheme: () => StorageService.get(KEYS.THEME) || THEMES.DEFAULT,
+  getTheme: () => StorageService.get(KEYS.THEME) || 'default',
 
   // --- Sound ---
   saveSoundPack: (packId) => StorageService.set(KEYS.SOUND_PACK, packId),
   getSoundPack: () =>
-    StorageService.get(KEYS.SOUND_PACK) || SOUND_PACKS.DEFAULT,
+    StorageService.get(KEYS.SOUND_PACK) || 'classic',
 
   // --- Campaign Progress ---
   saveCampaignProgress: (progress) =>
@@ -330,23 +330,23 @@ export const StorageService = {
   saveUnlockedThemes: (themes) =>
     StorageService.set(KEYS.UNLOCKED_THEMES, themes),
   getUnlockedThemes: () =>
-    StorageService.get(KEYS.UNLOCKED_THEMES) || [THEMES.DEFAULT],
+    StorageService.get(KEYS.UNLOCKED_THEMES) || ['default'],
 
   // --- Active Theme ---
   saveActiveTheme: (themeId) => StorageService.set(KEYS.ACTIVE_THEME, themeId),
-  getActiveTheme: () => StorageService.get(KEYS.ACTIVE_THEME) || THEMES.DEFAULT,
+  getActiveTheme: () => StorageService.get(KEYS.ACTIVE_THEME) || 'default',
 
   // --- Unlocked Sound Packs ---
   saveUnlockedSoundPacks: (packs) =>
     StorageService.set(KEYS.UNLOCKED_SOUND_PACKS, packs),
   getUnlockedSoundPacks: () =>
-    StorageService.get(KEYS.UNLOCKED_SOUND_PACKS) || [SOUND_PACKS.DEFAULT],
+    StorageService.get(KEYS.UNLOCKED_SOUND_PACKS) || ['classic'],
 
   // --- Active Sound Pack ---
   saveActiveSoundPack: (packId) =>
     StorageService.set(KEYS.ACTIVE_SOUND_PACK, packId),
   getActiveSoundPack: () =>
-    StorageService.get(KEYS.ACTIVE_SOUND_PACK) || SOUND_PACKS.DEFAULT,
+    StorageService.get(KEYS.ACTIVE_SOUND_PACK) || 'classic',
 
   // --- Game Stats ---
   saveGameStats: (stats) => StorageService.set(KEYS.GAME_STATS, stats),

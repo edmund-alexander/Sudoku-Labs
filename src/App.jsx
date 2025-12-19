@@ -91,6 +91,10 @@ const App = () => {
   const [practiceMode, setPracticeMode] = useState(false);
   const [theme, setTheme] = useState(StorageService.getPreferences().theme);
   const [showAdminConsole, setShowAdminConsole] = useState(false);
+  const [activeThemeId, setActiveThemeId] = useState(StorageService.getActiveTheme() || 'default');
+  const [unlockedThemes, setUnlockedThemes] = useState(StorageService.getUnlockedThemes() || ['default']);
+  const [activePackId, setActivePackId] = useState(StorageService.getActiveSoundPack() || 'classic');
+  const [unlockedPacks, setUnlockedPacks] = useState(StorageService.getUnlockedSoundPacks() || ['classic']);
 
   // Load sound preferences
   useEffect(() => {
@@ -449,6 +453,18 @@ const App = () => {
       setShowUserPanel(false);
   };
 
+  const handleSelectTheme = (themeId) => {
+    setActiveThemeId(themeId);
+    StorageService.saveActiveTheme(themeId);
+    if (soundEnabled) SoundManager.play('select');
+  };
+
+  const handleSelectPack = (packId) => {
+    setActivePackId(packId);
+    StorageService.saveActiveSoundPack(packId);
+    if (soundEnabled) SoundManager.play('select');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300">
       {currentScreen === "opening" && (
@@ -607,7 +623,16 @@ const App = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setShowAwards(false)}></div>
               <div className="relative w-full max-w-4xl h-[80vh] bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden animate-scale-up">
-                 <AwardsZone onClose={() => setShowAwards(false)} />
+                 <AwardsZone 
+                   onClose={() => setShowAwards(false)}
+                   soundEnabled={soundEnabled}
+                   activeThemeId={activeThemeId}
+                   unlockedThemes={unlockedThemes}
+                   onSelectTheme={handleSelectTheme}
+                   activePackId={activePackId}
+                   unlockedPacks={unlockedPacks}
+                   onSelectPack={handleSelectPack}
+                 />
               </div>
           </div>
       )}
