@@ -9,14 +9,11 @@
  */
 
 window.ADMIN_CONFIG = {
-  // Replace with your admin username
-  ADMIN_USERNAME: "admin",
-
-  // Replace with your admin password hash (SHA-256)
-  // To generate: Use a SHA-256 generator with your password
-  // Example online tool: https://emn178.github.io/online-tools/sha256.html
-  ADMIN_PASSWORD_HASH: "YOUR_SHA256_HASH_HERE",
-
   // Session timeout in milliseconds (default 30 minutes)
   SESSION_TIMEOUT: 30 * 60 * 1000,
+
+  // Admin Trigger Token
+  // Used for automated maintenance tasks (server-to-server)
+  // Not used for browser login
+  ADMIN_TRIGGER_TOKEN: "YOUR_TRIGGER_TOKEN_HERE",
 };
