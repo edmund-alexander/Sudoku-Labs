@@ -19,45 +19,6 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-
-    <!-- Config Loading -->
-    <script>
-      // Default config values
-      window.CONFIG = {
-        API_URL: null,
-        BASE_PATH: "",
-      };
-
-      // Load config files
-      // We use a simple script tag injection to load config.local.js if it exists.
-      // This must happen before the main app loads.
-      function loadConfig(src) {
-        const script = document.createElement("script");
-        // Ensure path is relative to the current directory
-        script.src = src.startsWith("./") ? src : "./" + src;
-        script.async = false;
-        script.onerror = () => {
-          // Only log if it's not the optional admin config
-          if (!src.includes("admin.local.js")) {
-            console.warn("Config file not found (using defaults): " + src);
-          }
-        };
-        document.head.appendChild(script);
-      }
-
-      // Use relative paths for configuration
-      loadConfig("config/config.local.js");
-      loadConfig("config/admin.local.js");
-
-      // Production Check: If we are on github.io but loading a .jsx file,
-      // it means the site is misconfigured to serve the source instead of the build.
-      if (window.location.hostname.includes("github.io")) {
-        console.log(
-          "%c🚀 Sudoku Labs Production Environment",
-          "color: #4f46e5; font-weight: bold;"
-        );
-      }
-    </script>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
     <div id="root"></div>

@@ -8,7 +8,7 @@ const db = admin.firestore();
 
 // --- CONFIGURATION ---
 // IMPORTANT: Set this via environment variables in production
-const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY;
+const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY || "YOUR_API_KEY_HERE";
 
 // Helper to sanitize input (basic XSS prevention)
 function sanitizeInput(str, maxLength) {

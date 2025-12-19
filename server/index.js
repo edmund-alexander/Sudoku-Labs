@@ -20,15 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Routes
-// Mount the API router at /api AND at root for legacy compatibility
 app.use("/api", apiRouter);
-app.use("/", (req, res, next) => {
-  // Only handle requests with ?action= as API calls
-  if (req.query.action || (req.body && req.body.action)) {
-    return apiRouter(req, res, next);
-  }
-  next();
-});
 
 // Static Files
 const PUBLIC_DIR = path.join(__dirname, "../dist");

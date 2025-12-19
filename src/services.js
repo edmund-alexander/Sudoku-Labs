@@ -80,6 +80,7 @@ export const runApiFn = async (fnName, ...args) => {
     const { action, method } = mapping;
 
     // Handle relative URLs correctly
+    // If apiUrl is relative (starts with /), use window.location.origin as base
     const url = new URL(apiUrl, window.location.origin);
 
     // For GET requests, append params to URL

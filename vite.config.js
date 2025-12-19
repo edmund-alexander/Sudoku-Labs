@@ -3,11 +3,11 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "./", // Relative base path for GitHub Pages subdirectory deployment
+  base: "/", // Absolute base path for Firebase Hosting
   define: {
-    // Inject config for production build to avoid relying on ignored local files
+    // Inject config for production build
     "window.CONFIG": JSON.stringify({
-      API_URL: "/",
+      API_URL: "/api",
       BASE_PATH: "",
     }),
   },
