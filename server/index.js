@@ -44,8 +44,14 @@ if (PUBLIC_DIR) {
     "utf8"
   );
 
-  // SPA Fallback (Express 5 requires named wildcard parameter)
-  app.get("/{*path}", (req, res) => {
+  // SPA Fallback - only for non-asset requests
+  // Assets have extensions like .js, .css, .png, etc.
+  app.get("/{*path}", (req, res, next) => {
+    // If the request is for a static asset (has a file extension), let it 404 naturally
+    if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
+      return res.status(404).send('Not found');
+    }
+    // Otherwise serve the SPA
     res.type("html").send(indexHtml);
   });
 } else {
