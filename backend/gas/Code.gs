@@ -1327,7 +1327,11 @@ function adminLogin(params) {
   }
 
   // Verify credentials
-  if (username !== adminUsername || passwordHash !== adminPasswordHash) {
+  // Use case-insensitive comparison for hash to handle hex case differences
+  if (
+    username !== adminUsername ||
+    passwordHash.toLowerCase() !== adminPasswordHash.toLowerCase()
+  ) {
     return { success: false, error: "Invalid credentials" };
   }
 
