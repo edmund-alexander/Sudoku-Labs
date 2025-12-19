@@ -1,0 +1,41 @@
+name: CI - Build Verification
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    name: Build & Check
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Verify Build
+      run: npm run build
+      env:
+        CI: true
+        # We mock the key for build purposes since it's just verification
+        FIREBASE_WEB_API_KEY: "build-verification-key"
+
+    - name: Check for Type/Lint Errors (Optional)
+      # If you had a lint script, it would go here.
+      # run: npm run lint
+      run: echo "Lint check skipped (not configured)"
