@@ -60,21 +60,15 @@ const AwardsZone = ({
       case "forest":
         return `${Math.min(totalWins, 10)}/10 wins`;
       case "sunset":
-        return hardWins >= 1
-          ? "Unlocked!"
-          : `${hardWins}/1 Hard win`;
+        return hardWins >= 1 ? "Unlocked!" : `${hardWins}/1 Hard win`;
       case "midnight":
-        return perfectWins >= 1
-          ? "Unlocked!"
-          : `${perfectWins}/1 perfect win`;
+        return perfectWins >= 1 ? "Unlocked!" : `${perfectWins}/1 perfect win`;
       case "sakura":
         return `${Math.min(easyWins, 3)}/3 Easy wins`;
       case "volcano":
         return `${Math.min(mediumWins, 3)}/3 Medium wins`;
       case "arctic":
-        return fastWins >= 1
-          ? "Unlocked!"
-          : `${fastWins}/1 fast win`;
+        return fastWins >= 1 ? "Unlocked!" : `${fastWins}/1 fast win`;
       default:
         return null;
     }
@@ -93,19 +87,13 @@ const AwardsZone = ({
       case "retro":
         return `${Math.min(easyWins, 3)}/3 Easy wins`;
       case "space":
-        return hardWins >= 1
-          ? "Unlocked!"
-          : `${hardWins}/1 Hard win`;
+        return hardWins >= 1 ? "Unlocked!" : `${hardWins}/1 Hard win`;
       case "nature":
         return `${Math.min(mediumWins, 3)}/3 Medium wins`;
       case "crystal":
-        return perfectWins >= 1
-          ? "Unlocked!"
-          : `${perfectWins}/1 perfect win`;
+        return perfectWins >= 1 ? "Unlocked!" : `${perfectWins}/1 perfect win`;
       case "minimal":
-        return fastWins >= 1
-          ? "Unlocked!"
-          : `${fastWins}/1 win ≤3min`;
+        return fastWins >= 1 ? "Unlocked!" : `${fastWins}/1 win ≤3min`;
       default:
         return null;
     }

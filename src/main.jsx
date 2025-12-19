@@ -34,5 +34,8 @@ try {
   }
 } catch (err) {
   console.error("[Sudoku Labs] FATAL render error:", err);
-  document.body.innerHTML = '<div style="padding:20px;color:red;">App failed to load: ' + err.message + '</div>';
+  document.body.innerHTML =
+    '<div style="padding:20px;color:red;">App failed to load: ' +
+    err.message +
+    "</div>";
 }

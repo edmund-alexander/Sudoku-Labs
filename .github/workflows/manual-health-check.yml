@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       check_type:
-        description: 'Type of check to run'
+        description: "Type of check to run"
         required: true
-        default: 'full'
+        default: "full"
         type: choice
         options:
           - full
@@ -21,7 +21,7 @@ permissions:
 jobs:
   health-check:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
         run: npm install @google-cloud/logging puppeteer

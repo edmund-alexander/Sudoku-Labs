@@ -14,7 +14,7 @@ jobs:
     # Only trigger when 'awaiting-agent' label is added
     if: github.event.label.name == 'awaiting-agent'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Check for conflicts
         id: check
@@ -23,7 +23,7 @@ jobs:
         run: |
           # Check if any other issue has 'agent-working' label
           WORKING=$(gh issue list --repo ${{ github.repository }} --label "agent-working" --state open --json number | jq length)
-          
+
           if [ "$WORKING" -gt "0" ]; then
             echo "⏸️ Another issue is being worked on. Will wait."
             echo "should_assign=false" >> $GITHUB_OUTPUT
@@ -42,7 +42,7 @@ jobs:
             --repo ${{ github.repository }} \
             --remove-label "awaiting-agent" \
             --add-label "agent-working"
-          
+
           # Add comment to trigger Copilot coding agent
           COMMENT_BODY=$(cat << 'ENDCOMMENT'
           🤖 **Copilot Coding Agent Assigned**
