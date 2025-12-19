@@ -81,7 +81,12 @@ const AdminManager = {
 
     // Request session token from backend
     try {
-      const response = await fetch(requestUrl);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+      const response = await fetch(requestUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
       console.log(`[Debug] Response status: ${response.status}`);
 
       const text = await response.text();
@@ -238,6 +243,10 @@ const AdminManager = {
 
   // SHA-256 hash function
   async sha256(message) {
+    if (!crypto || !crypto.subtle) {
+      console.error("❌ Web Crypto API not available. Ensure you are using HTTPS or localhost.");
+      throw new Error("Web Crypto API unavailable");
+    }
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
