@@ -24,6 +24,15 @@ export const KEYS = Object.freeze({
   ACTIVE_SOUND_PACK: "sudoku_v2_active_sound_pack",
   GAME_STATS: "sudoku_v2_game_stats",
   USER_STATUS: "sudoku_v2_user_status",
+  PREFERENCES: "sudoku_v2_preferences",
+  USER_PROFILE: "sudoku_v2_user_profile",
+  STATS: "sudoku_v2_stats",
+  SETTINGS: "sudoku_v2_settings",
+  CAMPAIGN_PROGRESS: "sudoku_v2_campaign_progress",
+  GUEST_ID: "sudoku_v2_guest_id",
+  AUTH_TOKEN: "sudoku_v2_auth_token",
+  THEME: "sudoku_v2_theme",
+  SOUND_PACK: "sudoku_v2_sound_pack",
 });
 
 // ============================================================================

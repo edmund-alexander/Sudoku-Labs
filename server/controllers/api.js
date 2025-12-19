@@ -9,15 +9,8 @@ const db = admin.firestore();
 // --- CONFIGURATION ---
 const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY;
 
-// Admin Credentials (from Environment)
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
-const ADMIN_TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET;
-
 if (!FIREBASE_WEB_API_KEY) {
   console.warn("WARNING: FIREBASE_WEB_API_KEY is not set. Auth features will fail.");
-}
-if (!ADMIN_PASSWORD_HASH || !ADMIN_TOKEN_SECRET) {
-  console.warn("WARNING: Admin credentials not set in environment. Admin console disabled.");
 }
 
 // Helper to sanitize input (basic XSS prevention)
@@ -329,32 +322,114 @@ async function awardBadge(params) {
 
 // --- Admin Implementation ---
 
-function verifyAdminToken(token) {
-  if (!ADMIN_TOKEN_SECRET) return false;
-  return token === ADMIN_TOKEN_SECRET;
-}
-
-async function adminLogin(params) {
-  const { username, passwordHash } = params;
-  
-  if (!ADMIN_PASSWORD_HASH || !ADMIN_TOKEN_SECRET) {
-     return { success: false, error: "Admin system not configured." };
+/**
+ * Verify if a user is an admin by checking their Firebase ID token
+ * and the isAdmin field in Firestore's admins collection
+ * @param {string} idToken - Firebase Auth ID token
+ * @returns {Promise<{valid: boolean, uid?: string, error?: string}>}
+ */
+async function verifyAdminToken(idToken) {
+  if (!idToken) {
+    return { valid: false, error: "No token provided" };
   }
 
-  // Check username (hardcoded as 'admin' for now, could be env var too)
-  if (username === "admin" && passwordHash === ADMIN_PASSWORD_HASH) {
+  try {
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+
+    // Check if user exists in the admins collection with isAdmin: true
+    const adminDoc = await db.collection("admins").doc(uid).get();
+    
+    if (!adminDoc.exists) {
+      return { valid: false, error: "User is not an admin" };
+    }
+
+    const adminData = adminDoc.data();
+    if (adminData.isAdmin !== true) {
+      return { valid: false, error: "User is not an admin" };
+    }
+
+    return { valid: true, uid, adminData };
+  } catch (error) {
+    console.error("Admin token verification failed:", error);
+    return { valid: false, error: "Invalid or expired token" };
+  }
+}
+
+/**
+ * Admin login - authenticates user via Firebase Auth and verifies admin status
+ * @param {Object} params - { email, password } or { idToken }
+ */
+async function adminLogin(params) {
+  const { email, password, idToken } = params;
+
+  // If an ID token is provided, verify it directly
+  if (idToken) {
+    const verification = await verifyAdminToken(idToken);
+    if (!verification.valid) {
+      return { success: false, error: verification.error };
+    }
     return {
       success: true,
-      token: ADMIN_TOKEN_SECRET,
+      token: idToken,
+      uid: verification.uid,
       expiry: Date.now() + 3600000,
     };
   }
-  return { success: false, error: "Invalid credentials" };
+
+  // Otherwise, authenticate with email/password via Firebase Auth REST API
+  if (!email || !password) {
+    return { success: false, error: "Email and password required" };
+  }
+
+  if (!FIREBASE_WEB_API_KEY) {
+    return { success: false, error: "Server configuration error: Missing API Key" };
+  }
+
+  try {
+    // Authenticate with Firebase Auth
+    const authResponse = await axios.post(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_WEB_API_KEY}`,
+      {
+        email: email,
+        password: password,
+        returnSecureToken: true,
+      }
+    );
+
+    const authToken = authResponse.data.idToken;
+    const uid = authResponse.data.localId;
+
+    // Verify admin status in Firestore
+    const adminDoc = await db.collection("admins").doc(uid).get();
+    
+    if (!adminDoc.exists) {
+      return { success: false, error: "User is not an admin" };
+    }
+
+    const adminData = adminDoc.data();
+    if (adminData.isAdmin !== true) {
+      return { success: false, error: "User is not an admin" };
+    }
+
+    return {
+      success: true,
+      token: authToken,
+      uid: uid,
+      expiry: Date.now() + 3600000, // 1 hour
+    };
+  } catch (error) {
+    console.error("Admin login error:", error.response?.data || error.message);
+    return { success: false, error: "Invalid credentials" };
+  }
 }
 
 async function getAdminStats(params) {
-  if (!verifyAdminToken(params.token))
-    return { success: false, error: "Unauthorized" };
+  const verification = await verifyAdminToken(params.token);
+  if (!verification.valid) {
+    return { success: false, error: verification.error || "Unauthorized" };
+  }
 
   const usersSnap = await db.collection("users").count().get();
   const gamesSnap = await db.collection("leaderboard").count().get();
@@ -372,8 +447,10 @@ async function getAdminStats(params) {
 }
 
 async function getAdminChatHistory(params) {
-  if (!verifyAdminToken(params.token))
-    return { success: false, error: "Unauthorized" };
+  const verification = await verifyAdminToken(params.token);
+  if (!verification.valid) {
+    return { success: false, error: verification.error || "Unauthorized" };
+  }
 
   const snapshot = await db
     .collection("chat")
@@ -389,8 +466,10 @@ async function getAdminChatHistory(params) {
 }
 
 async function getAdminUsers(params) {
-  if (!verifyAdminToken(params.token))
-    return { success: false, error: "Unauthorized" };
+  const verification = await verifyAdminToken(params.token);
+  if (!verification.valid) {
+    return { success: false, error: verification.error || "Unauthorized" };
+  }
 
   const snapshot = await db.collection("users").limit(100).get();
   const users = snapshot.docs.map((doc) => doc.data());
@@ -399,8 +478,10 @@ async function getAdminUsers(params) {
 }
 
 async function deleteMessages(params) {
-  if (!verifyAdminToken(params.token))
-    return { success: false, error: "Unauthorized" };
+  const verification = await verifyAdminToken(params.token);
+  if (!verification.valid) {
+    return { success: false, error: verification.error || "Unauthorized" };
+  }
 
   const messageIds = (params.messageIds || "").split(",");
   const batch = db.batch();
@@ -414,36 +495,46 @@ async function deleteMessages(params) {
 }
 
 async function banUser(params) {
-  if (!verifyAdminToken(params.token))
-    return { success: false, error: "Unauthorized" };
+  const verification = await verifyAdminToken(params.token);
+  if (!verification.valid) {
+    return { success: false, error: verification.error || "Unauthorized" };
+  }
   // Implement ban logic (e.g., add to 'banned' collection)
   return { success: true };
 }
 
 async function unbanUser(params) {
-  if (!verifyAdminToken(params.token))
-    return { success: false, error: "Unauthorized" };
+  const verification = await verifyAdminToken(params.token);
+  if (!verification.valid) {
+    return { success: false, error: verification.error || "Unauthorized" };
+  }
   // Implement unban logic
   return { success: true };
 }
 
 async function muteUser(params) {
-  if (!verifyAdminToken(params.token))
-    return { success: false, error: "Unauthorized" };
+  const verification = await verifyAdminToken(params.token);
+  if (!verification.valid) {
+    return { success: false, error: verification.error || "Unauthorized" };
+  }
   // Implement mute logic
   return { success: true };
 }
 
 async function updateUserStats(params) {
-  if (!verifyAdminToken(params.token))
-    return { success: false, error: "Unauthorized" };
+  const verification = await verifyAdminToken(params.token);
+  if (!verification.valid) {
+    return { success: false, error: verification.error || "Unauthorized" };
+  }
   // Reuse updateUserProfile logic but bypass auth checks if any
   return updateUserProfile(params);
 }
 
 async function clearAllChat(params) {
-  if (!verifyAdminToken(params.token))
-    return { success: false, error: "Unauthorized" };
+  const verification = await verifyAdminToken(params.token);
+  if (!verification.valid) {
+    return { success: false, error: verification.error || "Unauthorized" };
+  }
 
   // Delete all chat messages (batch delete)
   const snapshot = await db.collection("chat").limit(500).get();
